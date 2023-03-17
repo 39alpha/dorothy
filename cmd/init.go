@@ -1,0 +1,25 @@
+package cmd
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/39alpha/dorthy/core"
+	"github.com/spf13/cobra"
+)
+
+var initCmd = &cobra.Command{
+	Use:   "init",
+	Short: "initialize a repository",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := core.Init(); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Dorthy initialized")
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(initCmd)
+}
