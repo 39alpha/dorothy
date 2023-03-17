@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/39alpha/dorthy/core"
+	"github.com/39alpha/dorthy/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +13,7 @@ var checkoutCmd = &cobra.Command{
 	Short: "checkout a version to a specific destination",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := core.Checkout(args[0], args[1]); err != nil {
+		if err := cli.Checkout(args[0], args[1]); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}

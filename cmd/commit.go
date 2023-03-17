@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/39alpha/dorthy/core"
+	"github.com/39alpha/dorthy/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +23,7 @@ var commitCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}
-		if err := core.CommitData(args[0], message, nopin); err != nil {
+		if err := cli.CommitData(args[0], message, nopin); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}

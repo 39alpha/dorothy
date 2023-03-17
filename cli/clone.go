@@ -1,4 +1,4 @@
-package core
+package cli
 
 func Clone(remote string) error {
 	if err := Init(); err != nil {
