@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/39alpha/dorthy/core"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
@@ -27,25 +28,25 @@ func CommitData(path, message string, nopin bool) (err error) {
 		}
 	}
 
-	manifest, err := ReadManifestFile(manifestpath)
+	manifest, err := core.ReadManifestFile(manifestpath)
 	if err != nil {
 		return fmt.Errorf("failed to read manifest")
 	}
 
 	var hash string
-	var pathtype PathType
+	var pathtype core.PathType
 
 	client := ipfs.NewLocalShell()
 	if stat, err := os.Stat(path); err != nil {
 		return fmt.Errorf("cannot access dataset %q: %v", path, err)
 	} else if stat.IsDir() {
-		pathtype = D_DIR
+		pathtype = core.D_DIR
 		hash, err = client.AddDir(path, ipfs.Pin(!nopin), ipfs.Progress(true))
 		if err != nil {
 			return fmt.Errorf("failed to add dataset %q: %v", path, err)
 		}
 	} else {
-		pathtype = D_FILE
+		pathtype = core.D_FILE
 		handle, err := os.Open(path)
 		defer handle.Close()
 		if err != nil {
@@ -64,7 +65,7 @@ func CommitData(path, message string, nopin bool) (err error) {
 		}
 	}
 
-	commit := Commit{
+	commit := core.Commit{
 		Author:    config.User.String(),
 		Date:      time.Now(),
 		Message:   message,
@@ -74,7 +75,7 @@ func CommitData(path, message string, nopin bool) (err error) {
 	}
 
 	manifest = append(manifest, commit)
-	return WriteManifestFile(manifestpath, manifest)
+	return core.WriteManifestFile(manifestpath, manifest)
 }
 
 func FromEditor(config *Config, filename string) (string, error) {

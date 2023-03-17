@@ -2,10 +2,12 @@ package cli
 
 import (
 	"fmt"
+
+	"github.com/39alpha/dorthy/core"
 )
 
 func Log() error {
-	manifest, err := ReadManifestFile(manifestpath)
+	manifest, err := core.ReadManifestFile(manifestpath)
 	if err != nil {
 		return err
 	}
@@ -17,7 +19,7 @@ func Log() error {
 	return nil
 }
 
-func printCommit(commit Commit) {
+func printCommit(commit core.Commit) {
 	fmt.Printf("hash:   %v\n", commit.Hash)
 	fmt.Printf("Author: %v\n", commit.Author)
 	fmt.Printf("Date:   %s\n\n", commit.Date.Format("Mon Jan 02 15:04:05 2006 -0700"))

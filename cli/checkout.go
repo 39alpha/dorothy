@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/39alpha/dorthy/core"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
 func Checkout(hash, dest string) error {
-	manifest, err := ReadManifestFile(manifestpath)
+	manifest, err := core.ReadManifestFile(manifestpath)
 	if err != nil {
 		return fmt.Errorf("failed to read manifest")
 	}
@@ -19,7 +20,7 @@ func Checkout(hash, dest string) error {
 		}
 	}
 
-	var matches []Commit
+	var matches []core.Commit
 	for _, entry := range manifest {
 		if strings.HasPrefix(entry.Hash, hash) {
 			matches = append(matches, entry)

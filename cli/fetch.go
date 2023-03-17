@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/39alpha/dorthy/core"
 )
 
 func Fetch() error {
@@ -30,10 +32,10 @@ func Fetch() error {
 		return err
 	}
 
-	var manifest Manifest
+	var manifest core.Manifest
 	if err := json.Unmarshal(body, &manifest); err != nil {
 		return err
 	}
 
-	return WriteManifestFile(manifestpath, manifest)
+	return core.WriteManifestFile(manifestpath, manifest)
 }

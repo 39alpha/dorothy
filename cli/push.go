@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/39alpha/dorthy/core"
 )
 
 func Push() error {
@@ -41,10 +43,10 @@ func Push() error {
 		return fmt.Errorf("push failed: %s", content)
 	}
 
-	var manifest Manifest
+	var manifest core.Manifest
 	if err := json.Unmarshal(content, &manifest); err != nil {
 		return fmt.Errorf("invalid manifest received from the server: %v", err)
 	}
 
-	return WriteManifestFile(manifestpath, manifest)
+	return core.WriteManifestFile(manifestpath, manifest)
 }

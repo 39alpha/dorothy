@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 	"os"
+
+	"github.com/39alpha/dorthy/core"
 )
 
 func Init() error {
@@ -18,7 +20,7 @@ func Init() error {
 		return fmt.Errorf("failed to write configuration")
 	}
 
-	if err := WriteManifestFile(manifestpath, Manifest{}); err != nil {
+	if err := core.WriteManifestFile(manifestpath, core.Manifest{}); err != nil {
 		return fmt.Errorf("failed to open manifest")
 	}
 
