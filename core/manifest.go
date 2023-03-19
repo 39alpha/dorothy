@@ -19,12 +19,12 @@ const (
 type Manifest = []Commit
 
 type Commit struct {
-	Author    string    `json:"author"`
-	Date      time.Time `json:"date"`
-	Message   string    `json:"message"`
-	Hash      string    `json:"hash"`
-	Type      PathType  `json:"path_type"`
-	Ancestors []string  `json:"ancestors"`
+	Author  string    `json:"author"`
+	Date    time.Time `json:"date"`
+	Message string    `json:"message"`
+	Hash    string    `json:"hash"`
+	Type    PathType  `json:"path_type"`
+	Parents []string  `json:"parents"`
 }
 
 func (c Commit) SameHash(o Commit) bool {

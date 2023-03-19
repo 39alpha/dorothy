@@ -157,12 +157,12 @@ func TestCommit(t *testing.T) {
 
 	manifest := Manifest{
 		Commit{
-			Author:    "Douglas G. Moore <doug@dglmoore.com>",
-			Date:      time.Now(),
-			Message:   "Aardvark Wikipedia Article",
-			Hash:      hash,
-			Type:      D_FILE,
-			Ancestors: nil,
+			Author:  "Douglas G. Moore <doug@dglmoore.com>",
+			Date:    time.Now(),
+			Message: "Aardvark Wikipedia Article",
+			Hash:    hash,
+			Type:    D_FILE,
+			Parents: nil,
 		},
 	}
 
@@ -222,22 +222,22 @@ func TestMultipleCommits(t *testing.T) {
 
 	manifest1 := Manifest{
 		{
-			Author:    "Douglas G. Moore <doug@dglmoore.com>",
-			Date:      time.Now(),
-			Message:   "Aardvark Wikipedia Article",
-			Hash:      hash1,
-			Type:      D_FILE,
-			Ancestors: nil,
+			Author:  "Douglas G. Moore <doug@dglmoore.com>",
+			Date:    time.Now(),
+			Message: "Aardvark Wikipedia Article",
+			Hash:    hash1,
+			Type:    D_FILE,
+			Parents: nil,
 		},
 	}
 
 	manifest2 := append(manifest1, Commit{
-		Author:    "Douglas G. Moore <doug@dglmoore.com>",
-		Date:      time.Now(),
-		Message:   "Africa Wikipedia Article",
-		Hash:      hash2,
-		Type:      D_FILE,
-		Ancestors: nil,
+		Author:  "Douglas G. Moore <doug@dglmoore.com>",
+		Date:    time.Now(),
+		Message: "Africa Wikipedia Article",
+		Hash:    hash2,
+		Type:    D_FILE,
+		Parents: nil,
 	})
 
 	if _, err := client.Commit(ctx, organization, name, manifest1); err != nil {
@@ -306,28 +306,28 @@ func TestConflictingCommits(t *testing.T) {
 
 	commits := Manifest{
 		{
-			Author:    "Douglas G. Moore <doug@dglmoore.com>",
-			Date:      time1,
-			Message:   "Aardvark Wikipedia Article",
-			Hash:      hash1,
-			Type:      D_FILE,
-			Ancestors: nil,
+			Author:  "Douglas G. Moore <doug@dglmoore.com>",
+			Date:    time1,
+			Message: "Aardvark Wikipedia Article",
+			Hash:    hash1,
+			Type:    D_FILE,
+			Parents: nil,
 		},
 		{
-			Author:    "Douglas G. Moore <doug@dglmoore.com>",
-			Date:      time2,
-			Message:   "Africa Wikipedia Article",
-			Hash:      hash2,
-			Type:      D_FILE,
-			Ancestors: nil,
+			Author:  "Douglas G. Moore <doug@dglmoore.com>",
+			Date:    time2,
+			Message: "Africa Wikipedia Article",
+			Hash:    hash2,
+			Type:    D_FILE,
+			Parents: nil,
 		},
 		{
-			Author:    "Douglas G. Moore <doug@dglmoore.com>",
-			Date:      time3,
-			Message:   "Cold War Wikipedia Article",
-			Hash:      hash3,
-			Type:      D_FILE,
-			Ancestors: nil,
+			Author:  "Douglas G. Moore <doug@dglmoore.com>",
+			Date:    time3,
+			Message: "Cold War Wikipedia Article",
+			Hash:    hash3,
+			Type:    D_FILE,
+			Parents: nil,
 		},
 	}
 

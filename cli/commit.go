@@ -66,12 +66,12 @@ func CommitData(path, message string, nopin bool) (err error) {
 	}
 
 	commit := core.Commit{
-		Author:    config.User.String(),
-		Date:      time.Now(),
-		Message:   message,
-		Hash:      hash,
-		Type:      pathtype,
-		Ancestors: []string{},
+		Author:  config.User.String(),
+		Date:    time.Now(),
+		Message: message,
+		Hash:    hash,
+		Type:    pathtype,
+		Parents: []string{},
 	}
 
 	manifest = append(manifest, commit)
