@@ -7,13 +7,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"time"
 
 	"github.com/39alpha/dorthy/core"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
-func CommitData(path, message string, nopin bool) (err error) {
+func CommitData(path, message string, nopin bool, parents []string, pick bool) (err error) {
 	config, err := ReadConfigFile(configpath)
 	if err != nil {
 		return fmt.Errorf("failed to read configuration")
@@ -32,6 +34,15 @@ func CommitData(path, message string, nopin bool) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to read manifest")
 	}
+
+	parents, ok, err := checkParentage(manifest, parents, pick)
+	if err != nil {
+		return fmt.Errorf("%v; aborting commit", err)
+	} else if !ok {
+		return nil
+	}
+
+	fmt.Println(parents)
 
 	var hash string
 	var pathtype core.PathType
@@ -112,4 +123,66 @@ func FromEditor(config *Config, filename string) (string, error) {
 	body = bytes.TrimRight(body, "\n\r")
 
 	return string(body), nil
+}
+
+func checkParentage(manifest core.Manifest, parents []string, pick bool) ([]string, bool, error) {
+	if len(manifest) != 0 && (pick || len(parents) == 0) {
+		var picked []string
+		for {
+			var err error
+			picked, err = chooseVersions(
+				"Which versions are parents of this version?",
+				manifest,
+				false,
+			)
+			if err != nil {
+				return nil, false, err
+			} else if len(picked) == 0 {
+				fmt.Print("No parents selected. Do you want to continue (y/N) ")
+				var res string
+				fmt.Scanln(&res)
+				if ok, err := regexp.MatchString("(?i)^y(es)?$", res); err == nil && ok {
+					break
+				}
+			} else {
+				break
+			}
+		}
+		parents = append(parents, picked...)
+	}
+
+	var unknown []string
+	for _, parent := range parents {
+		seen := false
+		for _, commit := range manifest {
+			if commit.Hash == parent {
+				seen = true
+				break
+			}
+		}
+		if !seen {
+			unknown = append(unknown, parent)
+		}
+	}
+
+	if len(unknown) != 0 {
+		fmt.Println("The following parents are not in the manifest")
+		for _, parent := range unknown {
+			fmt.Printf("  %s\n", parent)
+		}
+		for {
+			fmt.Print("Do you want to continue (y/N) ")
+			var res string
+			fmt.Scanln(&res)
+			if ok, err := regexp.MatchString("(?i)^y(es)?$", res); err == nil && ok {
+				return parents, true, nil
+			} else if ok, err := regexp.MatchString("(?i)^n(o)?$", res); err == nil && ok {
+				return nil, false, nil
+			}
+		}
+	}
+
+	sort.Strings(parents)
+
+	return parents, true, nil
 }

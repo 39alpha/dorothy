@@ -5,9 +5,13 @@ go 1.20
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/adrg/xdg v0.4.0
+	github.com/charmbracelet/bubbles v0.15.0
+	github.com/charmbracelet/bubbletea v0.23.2
+	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/ipfs/go-ipfs-api v0.4.0
 	github.com/iris-contrib/middleware/cors v0.0.0-20230311205048-b568fe9b470f
 	github.com/kataras/iris/v12 v12.2.0
+	github.com/muesli/termenv v0.15.1
 	github.com/spf13/cobra v1.6.1
 	github.com/upper/db/v4 v4.6.0
 )
@@ -18,8 +22,12 @@ require (
 	github.com/Joker/jade v1.1.3 // indirect
 	github.com/Shopify/goreferrer v0.0.0-20220729165902-8cddb4f5de06 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/aymanbagabas/go-osc52 v1.2.1 // indirect
+	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
+	github.com/containerd/console v1.0.3 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385 // indirect
@@ -45,14 +53,21 @@ require (
 	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
 	github.com/libp2p/go-libp2p v0.24.2 // indirect
 	github.com/libp2p/go-openssl v0.1.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailgun/raymond/v2 v2.0.48 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-pointer v0.0.1 // indirect
+	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.23 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
+	github.com/muesli/ansi v0.0.0-20211018074035-2e021307bc4b // indirect
+	github.com/muesli/cancelreader v0.2.2 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
 	github.com/multiformats/go-multiaddr v0.8.0 // indirect
@@ -60,7 +75,9 @@ require (
 	github.com/multiformats/go-multicodec v0.7.0 // indirect
 	github.com/multiformats/go-multihash v0.2.1 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
+	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/sahilm/fuzzy v0.1.0 // indirect
 	github.com/schollz/closestmatch v2.1.0+incompatible // indirect
 	github.com/segmentio/fasthash v1.0.3 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
@@ -76,7 +93,9 @@ require (
 	github.com/yosssi/ace v0.0.5 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/protobuf v1.29.0 // indirect
