@@ -25,3 +25,4 @@ go.work
 # Configuration files
 .dorthy
 config.toml
+good-hashes
