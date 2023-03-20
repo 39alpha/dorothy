@@ -12,8 +12,10 @@ require (
 	github.com/iris-contrib/middleware/cors v0.0.0-20230311205048-b568fe9b470f
 	github.com/kataras/iris/v12 v12.2.0
 	github.com/muesli/termenv v0.15.1
+	github.com/oko/toposort v0.0.0-20200217213521-a50413543049
 	github.com/spf13/cobra v1.6.1
 	github.com/upper/db/v4 v4.6.0
+	v.io/x/lib v0.1.14
 )
 
 require (
@@ -31,6 +33,7 @@ require (
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385 // indirect
+	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/flosch/pongo2/v4 v4.0.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect

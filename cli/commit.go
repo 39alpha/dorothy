@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/39alpha/dorthy/core"
@@ -42,8 +43,6 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 		return nil
 	}
 
-	fmt.Println(parents)
-
 	var hash string
 	var pathtype core.PathType
 
@@ -70,22 +69,28 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 		}
 	}
 
-	for _, entry := range manifest {
-		if entry.Hash == hash {
-			return fmt.Errorf("version is already tracked; aborting")
-		}
-	}
-
 	commit := core.Commit{
 		Author:  config.User.String(),
 		Date:    time.Now(),
 		Message: message,
 		Hash:    hash,
 		Type:    pathtype,
-		Parents: []string{},
+		Parents: parents,
 	}
 
-	manifest = append(manifest, commit)
+	var conflicts []core.Conflict
+	manifest, conflicts, err = core.Merge(manifest, []core.Commit{commit})
+	if len(conflicts) != 0 {
+		s := strings.Builder{}
+		s.WriteString("Version conflicts with one ore more previous versions:\n\n")
+		for _, conflict := range conflicts {
+			s.WriteString(conflict.String())
+		}
+		return fmt.Errorf(s.String())
+	} else if err != nil {
+		return err
+	}
+
 	return core.WriteManifestFile(manifestpath, manifest)
 }
 
