@@ -26,8 +26,8 @@ var (
 )
 
 type version struct {
-	commit *core.Commit
-	chosen bool
+	version *core.Version
+	chosen  bool
 }
 
 func (v *version) Title() string {
@@ -37,16 +37,16 @@ func (v *version) Title() string {
 	} else {
 		s.WriteString("[ ] ")
 	}
-	s.WriteString(v.commit.Message)
+	s.WriteString(v.version.Message)
 	return s.String()
 }
 
 func (v *version) Description() string {
-	return v.commit.Hash
+	return v.version.Hash
 }
 
 func (v *version) FilterValue() string {
-	return v.commit.Message
+	return v.version.Message
 }
 
 func (v *version) toggle() {
@@ -150,8 +150,8 @@ func newModel(title string, manifest core.Manifest, required bool) model {
 	var versions []list.Item
 	for i := len(manifest) - 1; i >= 0; i-- {
 		versions = append(versions, &version{
-			commit: &manifest[i],
-			chosen: false,
+			version: &manifest[i],
+			chosen:  false,
 		})
 	}
 
@@ -255,7 +255,7 @@ func chooseVersions(title string, manifest core.Manifest, required bool) ([]stri
 	for _, item := range m.(model).choices {
 		version := item.(*version)
 		if version.chosen {
-			parents = append(parents, version.commit.Hash)
+			parents = append(parents, version.version.Hash)
 		}
 	}
 

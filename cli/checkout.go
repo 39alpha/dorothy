@@ -20,7 +20,7 @@ func Checkout(hash, dest string) error {
 		}
 	}
 
-	var matches []core.Commit
+	var matches []core.Version
 	for _, entry := range manifest {
 		if strings.HasPrefix(entry.Hash, hash) {
 			matches = append(matches, entry)

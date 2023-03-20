@@ -69,7 +69,7 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 		}
 	}
 
-	commit := core.Commit{
+	version := core.Version{
 		Author:  config.User.String(),
 		Date:    time.Now(),
 		Message: message,
@@ -79,7 +79,7 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 	}
 
 	var conflicts []core.Conflict
-	manifest, conflicts, err = core.Merge(manifest, []core.Commit{commit})
+	manifest, conflicts, err = core.Merge(manifest, []core.Version{version})
 	if len(conflicts) != 0 {
 		s := strings.Builder{}
 		s.WriteString("Version conflicts with one ore more previous versions:\n\n")
@@ -159,8 +159,8 @@ func checkParentage(manifest core.Manifest, parents []string, pick bool) ([]stri
 	var unknown []string
 	for _, parent := range parents {
 		seen := false
-		for _, commit := range manifest {
-			if commit.Hash == parent {
+		for _, version := range manifest {
+			if version.Hash == parent {
 				seen = true
 				break
 			}

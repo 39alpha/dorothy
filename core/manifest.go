@@ -31,9 +31,9 @@ func PathTypeString(p PathType) string {
 	}
 }
 
-type Manifest = []Commit
+type Manifest = []Version
 
-type Commit struct {
+type Version struct {
 	Author  string    `json:"author"`
 	Date    time.Time `json:"date"`
 	Message string    `json:"message"`
@@ -42,16 +42,16 @@ type Commit struct {
 	Parents []string  `json:"parents"`
 }
 
-func (c Commit) SameHash(o Commit) bool {
-	return c.Hash == o.Hash
+func (v Version) SameHash(o Version) bool {
+	return v.Hash == o.Hash
 }
 
-func (c Commit) SameParents(o Commit) bool {
-	if len(c.Parents) != len(o.Parents) {
+func (v Version) SameParents(o Version) bool {
+	if len(v.Parents) != len(o.Parents) {
 		return false
 	}
 	var these, those []string
-	these = append(these, c.Parents...)
+	these = append(these, v.Parents...)
 	those = append(these, o.Parents...)
 	for i := range these {
 		if these[i] != those[i] {
@@ -61,17 +61,17 @@ func (c Commit) SameParents(o Commit) bool {
 	return true
 }
 
-func (c Commit) Equal(o Commit) bool {
-	return c.SameHash(o) &&
-		c.Author == o.Author &&
-		c.Date.Equal(o.Date) &&
-		c.Message == o.Message &&
-		c.Type == o.Type &&
-		c.SameParents(c)
+func (v Version) Equal(o Version) bool {
+	return v.SameHash(o) &&
+		v.Author == o.Author &&
+		v.Date.Equal(o.Date) &&
+		v.Message == o.Message &&
+		v.Type == o.Type &&
+		v.SameParents(o)
 }
 
-func (c Commit) Less(o Commit) bool {
-	return !c.SameHash(o) && c.Date.Before(o.Date)
+func (v Version) Less(o Version) bool {
+	return !v.SameHash(o) && v.Date.Before(o.Date)
 }
 
 func ReadManifestFile(filename string) (Manifest, error) {
@@ -105,27 +105,27 @@ func WriteManifest(w io.Writer, manifest Manifest) error {
 	return encoder.Encode(manifest)
 }
 
-func Diff(old, new Manifest) ([]Commit, error) {
+func Diff(old, new Manifest) ([]Version, error) {
 	if _, ok := Conflicts(old, new); !ok {
 		return nil, fmt.Errorf("merge conflict")
 	}
 
-	var commits []Commit
-	for _, newcommit := range new {
+	var verisons []Version
+	for _, newverison := range new {
 		found := false
-		for _, oldcommit := range old {
-			if newcommit.Equal(oldcommit) {
+		for _, oldverison := range old {
+			if newverison.Equal(oldverison) {
 				found = true
 				break
 			}
 		}
 
 		if !found {
-			commits = append(commits, newcommit)
+			verisons = append(verisons, newverison)
 		}
 	}
 
-	return commits, nil
+	return verisons, nil
 }
 
 func Merge(old, new Manifest) (Manifest, []Conflict, error) {
@@ -135,19 +135,19 @@ func Merge(old, new Manifest) (Manifest, []Conflict, error) {
 
 	var updated Manifest
 
-	for _, commit := range old {
-		updated = append(updated, commit)
+	for _, verison := range old {
+		updated = append(updated, verison)
 	}
-	for _, newcommit := range new {
+	for _, newverison := range new {
 		found := false
-		for _, oldcommit := range old {
-			if newcommit.Equal(oldcommit) {
+		for _, oldverison := range old {
+			if newverison.Equal(oldverison) {
 				found = true
 				break
 			}
 		}
 		if !found {
-			updated = append(updated, newcommit)
+			updated = append(updated, newverison)
 		}
 	}
 
@@ -160,18 +160,18 @@ func Merge(old, new Manifest) (Manifest, []Conflict, error) {
 }
 
 type Conflict struct {
-	Left  Commit
-	Right Commit
+	Left  Version
+	Right Version
 }
 
 func Conflicts(old, new Manifest) ([]Conflict, bool) {
 	var conflicts []Conflict
-	for _, newcommit := range new {
-		for _, oldcommit := range old {
-			if newcommit.SameHash(oldcommit) && !newcommit.Equal(oldcommit) {
+	for _, newverison := range new {
+		for _, oldverison := range old {
+			if newverison.SameHash(oldverison) && !newverison.Equal(oldverison) {
 				conflicts = append(conflicts, Conflict{
-					Left:  oldcommit,
-					Right: newcommit,
+					Left:  oldverison,
+					Right: newverison,
 				})
 			}
 		}
@@ -256,9 +256,9 @@ func toposort(manifest Manifest) (Manifest, error) {
 		return nil, fmt.Errorf("cycle(s) detected in manifest")
 	}
 
-	var newmanifest []Commit
+	var newmanifest Manifest
 	for i := len(sorted) - 1; i >= 0; i-- {
-		newmanifest = append(newmanifest, *sorted[i].(*Commit))
+		newmanifest = append(newmanifest, *sorted[i].(*Version))
 	}
 
 	return newmanifest, nil

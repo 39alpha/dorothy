@@ -111,7 +111,7 @@ func (s Ipfs) GetRepositories(ctx context.Context, organization string) ([]Dorth
 }
 
 func (s Ipfs) CreateManifest(ctx context.Context, organization, repo string) (DorthyPath, error) {
-	return s.saveManifest(ctx, organization, repo, []Commit{})
+	return s.saveManifest(ctx, organization, repo, []Version{})
 }
 
 func (s Ipfs) saveManifest(ctx context.Context, organization, repo string, manifest Manifest) (DorthyPath, error) {
@@ -165,8 +165,8 @@ func (s Ipfs) Commit(ctx context.Context, organization, repo string, new Manifes
 
 	var errors []error
 	var paths []DorthyPath
-	for _, commit := range delta {
-		path, err := s.AddCommit(ctx, organization, repo, commit)
+	for _, version := range delta {
+		path, err := s.AddCommit(ctx, organization, repo, version)
 		if err != nil {
 			errors = append(errors, err)
 			continue
@@ -188,16 +188,16 @@ func (s Ipfs) Commit(ctx context.Context, organization, repo string, new Manifes
 	return merged, err
 }
 
-func (s Ipfs) AddCommit(ctx context.Context, organization, repo string, commit Commit) (DorthyPath, error) {
-	path := NewDorthyPath(commit.Type, commit.Hash, organization, repo)
+func (s Ipfs) AddCommit(ctx context.Context, organization, repo string, version Version) (DorthyPath, error) {
+	path := NewDorthyPath(version.Type, version.Hash, organization, repo)
 
-	ipfspath := "/ipfs/" + commit.Hash
+	ipfspath := "/ipfs/" + version.Hash
 
 	if err := s.Pin(ipfspath); err != nil {
 		return path, err
 	}
 
-	return path, s.FilesCp(ctx, "/ipfs/"+commit.Hash, path.ToIpfsPath())
+	return path, s.FilesCp(ctx, "/ipfs/"+version.Hash, path.ToIpfsPath())
 }
 
 func (s Ipfs) RemovePath(ctx context.Context, path DorthyPath) error {

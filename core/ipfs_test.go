@@ -156,7 +156,7 @@ func TestCommit(t *testing.T) {
 	}
 
 	manifest := Manifest{
-		Commit{
+		Version{
 			Author:  "Douglas G. Moore <doug@dglmoore.com>",
 			Date:    time.Now(),
 			Message: "Aardvark Wikipedia Article",
@@ -175,9 +175,9 @@ func TestCommit(t *testing.T) {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(returned))
 	}
 
-	for i, commit := range manifest {
-		if !commit.Equal(returned[i]) {
-			t.Fatalf("expected returned[%d] = %v, got %v", i, commit, returned[0])
+	for i, version := range manifest {
+		if !version.Equal(returned[i]) {
+			t.Fatalf("expected returned[%d] = %v, got %v", i, version, returned[0])
 		}
 	}
 
@@ -190,9 +190,9 @@ func TestCommit(t *testing.T) {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(saved))
 	}
 
-	for i, commit := range manifest {
-		if !commit.Equal(saved[i]) {
-			t.Fatalf("expected saved[%d] = %v, got %v", i, commit, saved[0])
+	for i, version := range manifest {
+		if !version.Equal(saved[i]) {
+			t.Fatalf("expected saved[%d] = %v, got %v", i, version, saved[0])
 		}
 	}
 }
@@ -231,7 +231,7 @@ func TestMultipleCommits(t *testing.T) {
 		},
 	}
 
-	manifest2 := append(manifest1, Commit{
+	manifest2 := append(manifest1, Version{
 		Author:  "Douglas G. Moore <doug@dglmoore.com>",
 		Date:    time.Now(),
 		Message: "Africa Wikipedia Article",
@@ -253,9 +253,9 @@ func TestMultipleCommits(t *testing.T) {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(returned))
 	}
 
-	for i, commit := range manifest2 {
-		if !commit.Equal(returned[i]) {
-			t.Fatalf("expected returned[%d] = %v, got %v", i, commit, returned[0])
+	for i, version := range manifest2 {
+		if !version.Equal(returned[i]) {
+			t.Fatalf("expected returned[%d] = %v, got %v", i, version, returned[0])
 		}
 	}
 
@@ -268,9 +268,9 @@ func TestMultipleCommits(t *testing.T) {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(saved))
 	}
 
-	for i, commit := range manifest2 {
-		if !commit.Equal(saved[i]) {
-			t.Fatalf("expected saved[%d] = %v, got %v", i, commit, saved[0])
+	for i, version := range manifest2 {
+		if !version.Equal(saved[i]) {
+			t.Fatalf("expected saved[%d] = %v, got %v", i, version, saved[0])
 		}
 	}
 }
@@ -304,7 +304,7 @@ func TestConflictingCommits(t *testing.T) {
 	time2, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T11:00:00")
 	time3, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T12:00:00")
 
-	commits := Manifest{
+	versions := Manifest{
 		{
 			Author:  "Douglas G. Moore <doug@dglmoore.com>",
 			Date:    time1,
@@ -331,8 +331,8 @@ func TestConflictingCommits(t *testing.T) {
 		},
 	}
 
-	manifest1 := Manifest{commits[0], commits[2]}
-	manifest2 := Manifest{commits[0], commits[1]}
+	manifest1 := Manifest{versions[0], versions[2]}
+	manifest2 := Manifest{versions[0], versions[1]}
 
 	if _, err := client.Commit(ctx, organization, name, manifest1); err != nil {
 		t.Fatal(err)
@@ -347,9 +347,9 @@ func TestConflictingCommits(t *testing.T) {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(returned))
 	}
 
-	for i, commit := range commits {
-		if !commit.Equal(returned[i]) {
-			t.Fatalf("expected returned[%d] = %v, got %v", i, commit, returned[0])
+	for i, version := range versions {
+		if !version.Equal(returned[i]) {
+			t.Fatalf("expected returned[%d] = %v, got %v", i, version, returned[0])
 		}
 	}
 
@@ -362,9 +362,9 @@ func TestConflictingCommits(t *testing.T) {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(saved))
 	}
 
-	for i, commit := range commits {
-		if !commit.Equal(saved[i]) {
-			t.Fatalf("expected saved[%d] = %v, got %v", i, commit, saved[0])
+	for i, version := range versions {
+		if !version.Equal(saved[i]) {
+			t.Fatalf("expected saved[%d] = %v, got %v", i, version, saved[0])
 		}
 	}
 }
