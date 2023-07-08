@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/39alpha/dorthy/core"
+	"github.com/39alpha/dorothy/core"
 )
 
 func Fetch() error {

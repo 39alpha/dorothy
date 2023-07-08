@@ -42,10 +42,10 @@ func NewDorthy(config *Config) (*Dorthy, error) {
 		v0.Post("/organization/{organization:string}/repository/{repository:string}", Push)
 	}
 
-	dorthy := &Dorthy{app, config}
-	err = dorthy.initialize()
+	dorothy := &Dorthy{app, config}
+	err = dorothy.initialize()
 
-	return dorthy, err
+	return dorothy, err
 }
 
 func (d *Dorthy) initialize() error {

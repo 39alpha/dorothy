@@ -8,7 +8,7 @@
 *.so
 *.dylib
 *.db
-dorthy
+dorothy
 
 # Test binary, built with `go test -c`
 *.test
@@ -23,6 +23,9 @@ dorthy
 go.work
 
 # Configuration files
-.dorthy
 config.toml
 good-hashes
+
+# Generated Files
+.dorothy
+manifest.json

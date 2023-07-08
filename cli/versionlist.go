@@ -3,7 +3,7 @@ package cli
 import (
 	"strings"
 
-	"github.com/39alpha/dorthy/core"
+	"github.com/39alpha/dorothy/core"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"

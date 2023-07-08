@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	FS_ROOT  string = "/dorthy"
+	FS_ROOT  string = "/dorothy"
 	WEB_ROOT        = "/"
 )
 
@@ -125,7 +125,7 @@ func (s Ipfs) saveManifest(ctx context.Context, organization, repo string, manif
 	}
 
 	if err := s.RemovePath(ctx, path); err != nil {
-		return path, nil
+		return path, err
 	}
 
 	hash, err := s.Add(buffer, ipfs.Pin(true))

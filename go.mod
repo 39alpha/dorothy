@@ -1,4 +1,4 @@
-module github.com/39alpha/dorthy
+module github.com/39alpha/dorothy
 
 go 1.20
 

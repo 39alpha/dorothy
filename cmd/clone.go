@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/39alpha/dorthy/cli"
+	"github.com/39alpha/dorothy/cli"
 	"github.com/spf13/cobra"
 )
 

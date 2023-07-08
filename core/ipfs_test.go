@@ -36,8 +36,8 @@ func TestCreateOrganization(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if path.IpfsDir != "/dorthy" {
-		t.Errorf("expected name %q, got %q", "/dorthy", path.IpfsDir)
+	if path.IpfsDir != "/dorothy" {
+		t.Errorf("expected name %q, got %q", "/dorothy", path.IpfsDir)
 	}
 	if path.WebDir != "/" {
 		t.Errorf("expected %q file type, got %q", "/", path.WebDir)
@@ -88,7 +88,7 @@ func TestCreateRepository(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ipfsDir := "/dorthy/" + organization
+	ipfsDir := "/dorothy/" + organization
 	webDir := "/" + organization
 
 	if path.IpfsDir != ipfsDir {

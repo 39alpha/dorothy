@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/39alpha/dorthy/core"
+	"github.com/39alpha/dorothy/core"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 

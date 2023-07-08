@@ -17,7 +17,7 @@ type DatabaseSession struct {
 }
 
 func NewDatabaseSession(config *Config) (*DatabaseSession, error) {
-	database_path := filepath.Join(DorthyRoot(), "dorthy.db")
+	database_path := filepath.Join(DorthyRoot(), "dorothy.db")
 
 	settings := sqlite.ConnectionURL{
 		Database: database_path,

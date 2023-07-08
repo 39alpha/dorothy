@@ -155,7 +155,9 @@ func GetManifest(ctx iris.Context) {
 	}
 
 	ctx.JSON(manifest)
+
 }
+
 func Push(ctx iris.Context) {
 	config, ok := ctx.Values().Get("config").(*Config)
 	if !ok {

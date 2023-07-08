@@ -2,7 +2,7 @@ package cli
 
 import "path/filepath"
 
-const ROOT_PATH string = ".dorthy"
+const ROOT_PATH string = ".dorothy"
 
 var configpath, manifestpath string
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/39alpha/dorthy/core"
+	"github.com/39alpha/dorothy/core"
 )
 
 func ServeApi(configpath string, port int, genconf bool) error {

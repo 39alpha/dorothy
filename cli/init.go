@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/39alpha/dorthy/core"
+	"github.com/39alpha/dorothy/core"
 )
 
 func Init() error {
-	if err := os.Mkdir(".dorthy", 0755); err != nil {
+	if err := os.Mkdir(".dorothy", 0755); err != nil {
 		if os.IsExist(err) {
-			return fmt.Errorf("dorthy already initialized")
+			return fmt.Errorf("dorothy already initialized")
 		} else {
-			return fmt.Errorf("failed to create the .dorthy directory")
+			return fmt.Errorf("failed to create the .dorothy directory")
 		}
 	}
 

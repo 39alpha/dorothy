@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/39alpha/dorthy/core"
+	"github.com/39alpha/dorothy/core"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
@@ -21,7 +21,7 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 	if err != nil {
 		return fmt.Errorf("failed to read configuration")
 	} else if config.User == nil || config.User.Name == "" || config.User.Email == "" {
-		return fmt.Errorf("user not configured; see `dorthy config user`")
+		return fmt.Errorf("user not configured; see `dorothy config user`")
 	}
 
 	if message == "" {

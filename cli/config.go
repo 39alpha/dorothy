@@ -32,7 +32,7 @@ func ParseRemote(remote string) (Remote, error) {
 }
 
 func (r Remote) String() string {
-	return "dorthy://" + r.Host + "/" + r.Organization + "/" + r.Repository
+	return "dorothy://" + r.Host + "/" + r.Organization + "/" + r.Repository
 }
 
 func (r Remote) Url() string {

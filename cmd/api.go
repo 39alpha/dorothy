@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/39alpha/dorthy/cli"
+	"github.com/39alpha/dorothy/cli"
 	"github.com/adrg/xdg"
 	"github.com/spf13/cobra"
 )
@@ -43,7 +43,7 @@ func init() {
 	apiCmd.Flags().StringP(
 		"config",
 		"c",
-		filepath.Join(xdg.ConfigHome, "dorthy", "config.toml"),
+		filepath.Join(xdg.ConfigHome, "dorothy", "config.toml"),
 		"path to configuration file",
 	)
 }

@@ -7,7 +7,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "dorthy",
+	Use:   "dorothy",
 	Short: "A stab at data management",
 }
 

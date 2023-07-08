@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/39alpha/dorthy/core"
+	"github.com/39alpha/dorothy/core"
 )
 
 func Push() error {
