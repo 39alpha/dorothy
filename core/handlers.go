@@ -67,7 +67,7 @@ func CreateOrganization(ctx iris.Context) {
 	ctx.JSON(iris.Map{"name": org, "path": path.ToWebPath()})
 }
 
-func ListRepositories(ctx iris.Context) {
+func ListDatasets(ctx iris.Context) {
 	config, ok := ctx.Values().Get("config").(*Config)
 	if !ok {
 		ctx.StopWithError(iris.StatusInternalServerError, fmt.Errorf("an internal error occured"))
@@ -82,21 +82,21 @@ func ListRepositories(ctx iris.Context) {
 
 	org := ctx.Params().Get("organization")
 
-	repos, err := client.GetRepositories(ctx, org)
+	datasets, err := client.GetDatasets(ctx, org)
 	if err != nil {
 		ctx.StopWithStatus(iris.StatusNotFound)
 		return
 	}
 
 	results := []iris.Map{}
-	for _, repo := range repos {
-		results = append(results, iris.Map{"name": repo.Name, "path": repo.ToWebPath()})
+	for _, dataset := range datasets {
+		results = append(results, iris.Map{"name": dataset.Name, "path": dataset.ToWebPath()})
 	}
 
 	ctx.JSON(results)
 }
 
-func CreateRepository(ctx iris.Context) {
+func CreateDataset(ctx iris.Context) {
 	config, ok := ctx.Values().Get("config").(*Config)
 	if !ok {
 		ctx.StopWithError(iris.StatusInternalServerError, fmt.Errorf("an internal error occured"))
@@ -117,19 +117,19 @@ func CreateRepository(ctx iris.Context) {
 		return
 	}
 
-	repo, ok := body["name"]
+	dataset, ok := body["name"]
 	if !ok {
-		ctx.StopWithError(iris.StatusBadRequest, fmt.Errorf(`missing field: "repo"`))
+		ctx.StopWithError(iris.StatusBadRequest, fmt.Errorf(`missing field: "dataset"`))
 		return
 	}
 
-	path, err := client.CreateRepository(ctx, org, repo.(string))
+	path, err := client.CreateDataset(ctx, org, dataset.(string))
 	if err != nil {
 		ctx.StopWithError(iris.StatusBadRequest, fmt.Errorf("an internal error occured"))
 		return
 	}
 
-	ctx.JSON(iris.Map{"name": repo, "path": path.ToWebPath()})
+	ctx.JSON(iris.Map{"name": dataset, "path": path.ToWebPath()})
 }
 
 func GetManifest(ctx iris.Context) {
@@ -146,9 +146,9 @@ func GetManifest(ctx iris.Context) {
 	}
 
 	org := ctx.Params().Get("organization")
-	repo := ctx.Params().Get("repository")
+	dataset := ctx.Params().Get("dataset")
 
-	manifest, err := client.GetManifest(ctx, org, repo)
+	manifest, err := client.GetManifest(ctx, org, dataset)
 	if err != nil {
 		ctx.StopWithStatus(iris.StatusNotFound)
 		return
@@ -166,7 +166,7 @@ func Push(ctx iris.Context) {
 	}
 
 	org := ctx.Params().Get("organization")
-	repo := ctx.Params().Get("repository")
+	dataset := ctx.Params().Get("dataset")
 
 	body, err := ctx.GetBody()
 	if err != nil {
@@ -189,7 +189,7 @@ func Push(ctx iris.Context) {
 		return
 	}
 
-	merged, err := client.Commit(ctx, org, repo, manifest)
+	merged, err := client.Commit(ctx, org, dataset, manifest)
 	if err != nil {
 		ctx.StopWithError(iris.StatusBadRequest, fmt.Errorf("an internal error occured"))
 		return

@@ -36,10 +36,10 @@ func NewDorthy(config *Config) (*Dorthy, error) {
 	{
 		v0.Get("/organization", ListOrganizations)
 		v0.Put("/organization", ParseBody, CreateOrganization)
-		v0.Get("/organization/{organization:string}/repository", ListRepositories)
-		v0.Put("/organization/{organization:string}/repository", ParseBody, CreateRepository)
-		v0.Get("/organization/{organization:string}/repository/{repository:string}", GetManifest)
-		v0.Post("/organization/{organization:string}/repository/{repository:string}", Push)
+		v0.Get("/organization/{organization:string}/dataset", ListDatasets)
+		v0.Put("/organization/{organization:string}/dataset", ParseBody, CreateDataset)
+		v0.Get("/organization/{organization:string}/dataset/{dataset:string}", GetManifest)
+		v0.Post("/organization/{organization:string}/dataset/{dataset:string}", Push)
 	}
 
 	dorothy := &Dorthy{app, config}

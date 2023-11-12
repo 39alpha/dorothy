@@ -13,7 +13,7 @@ import (
 type Remote struct {
 	Host         string
 	Organization string
-	Repository   string
+	Dataset      string
 }
 
 func ParseRemote(remote string) (Remote, error) {
@@ -24,7 +24,7 @@ func ParseRemote(remote string) (Remote, error) {
 		return r, err
 	}
 	r.Host = u.Host
-	r.Organization, r.Repository = filepath.Split(u.Path)
+	r.Organization, r.Dataset = filepath.Split(u.Path)
 	r.Organization = path.Clean(r.Organization)
 	_, r.Organization = filepath.Split(r.Organization)
 
@@ -32,11 +32,11 @@ func ParseRemote(remote string) (Remote, error) {
 }
 
 func (r Remote) String() string {
-	return "dorothy://" + r.Host + "/" + r.Organization + "/" + r.Repository
+	return "dorothy://" + r.Host + "/" + r.Organization + "/" + r.Dataset
 }
 
 func (r Remote) Url() string {
-	return "http://" + r.Host + "/v0/organization/" + r.Organization + "/repository/" + r.Repository
+	return "http://" + r.Host + "/v0/organization/" + r.Organization + "/dataset/" + r.Dataset
 }
 
 type User struct {

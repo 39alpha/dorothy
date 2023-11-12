@@ -10,7 +10,7 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "initialize a repository",
+	Short: "initialize a dataset",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cli.Init(); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)

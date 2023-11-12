@@ -50,7 +50,7 @@ func TestCreateOrganization(t *testing.T) {
 	}
 }
 
-func TestCreateRepositoryAlreadyExists(t *testing.T) {
+func TestCreateDatasetAlreadyExists(t *testing.T) {
 	ctx := context.TODO()
 
 	defer func() {
@@ -59,13 +59,13 @@ func TestCreateRepositoryAlreadyExists(t *testing.T) {
 
 	organization := "team0"
 	name := "CSS0"
-	_, err := client.CreateRepository(ctx, organization, name)
+	_, err := client.CreateDataset(ctx, organization, name)
 	if err == nil {
 		t.Errorf("expected an error, got nil")
 	}
 }
 
-func TestCreateRepository(t *testing.T) {
+func TestCreateDataset(t *testing.T) {
 	ctx := context.TODO()
 
 	organization := "team0"
@@ -83,7 +83,7 @@ func TestCreateRepository(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path, err := client.CreateRepository(ctx, organization, name)
+	path, err := client.CreateDataset(ctx, organization, name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestCreateRepository(t *testing.T) {
 	}
 }
 
-func TestCreateRepositoryCreatesEmptyManifest(t *testing.T) {
+func TestCreateDatasetCreatesEmptyManifest(t *testing.T) {
 	ctx := context.TODO()
 
 	organization := "team0"
@@ -120,7 +120,7 @@ func TestCreateRepositoryCreatesEmptyManifest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CreateRepository(ctx, organization, name); err != nil {
+	if _, err := client.CreateDataset(ctx, organization, name); err != nil {
 		t.Fatal(err)
 	}
 
@@ -151,7 +151,7 @@ func TestCommit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CreateRepository(ctx, organization, name); err != nil {
+	if _, err := client.CreateDataset(ctx, organization, name); err != nil {
 		t.Fatal(err)
 	}
 
@@ -216,7 +216,7 @@ func TestMultipleCommits(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CreateRepository(ctx, organization, name); err != nil {
+	if _, err := client.CreateDataset(ctx, organization, name); err != nil {
 		t.Fatal(err)
 	}
 
@@ -296,7 +296,7 @@ func TestConflictingCommits(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CreateRepository(ctx, organization, name); err != nil {
+	if _, err := client.CreateDataset(ctx, organization, name); err != nil {
 		t.Fatal(err)
 	}
 

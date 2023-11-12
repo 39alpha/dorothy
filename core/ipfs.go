@@ -80,17 +80,17 @@ func (s Ipfs) GetOrganizations(ctx context.Context) ([]DorthyPath, error) {
 	return paths, nil
 }
 
-func (s Ipfs) CreateRepository(ctx context.Context, organization, repo string) (DorthyPath, error) {
-	path := NewDorthyPath(D_DIR, repo, organization)
+func (s Ipfs) CreateDataset(ctx context.Context, organization, dataset string) (DorthyPath, error) {
+	path := NewDorthyPath(D_DIR, dataset, organization)
 	if err := s.FilesMkdir(ctx, path.ToIpfsPath()); err != nil {
 		return path, err
 	}
 
-	_, err := s.CreateManifest(ctx, organization, repo)
+	_, err := s.CreateManifest(ctx, organization, dataset)
 	return path, err
 }
 
-func (s Ipfs) GetRepositories(ctx context.Context, organization string) ([]DorthyPath, error) {
+func (s Ipfs) GetDatasets(ctx context.Context, organization string) ([]DorthyPath, error) {
 	path := NewDorthyPath(D_DIR, organization)
 	entries, err := s.FilesLs(ctx, path.ToIpfsPath())
 	if err != nil {
@@ -110,12 +110,12 @@ func (s Ipfs) GetRepositories(ctx context.Context, organization string) ([]Dorth
 	return paths, nil
 }
 
-func (s Ipfs) CreateManifest(ctx context.Context, organization, repo string) (DorthyPath, error) {
-	return s.saveManifest(ctx, organization, repo, []Version{})
+func (s Ipfs) CreateManifest(ctx context.Context, organization, dataset string) (DorthyPath, error) {
+	return s.saveManifest(ctx, organization, dataset, []Version{})
 }
 
-func (s Ipfs) saveManifest(ctx context.Context, organization, repo string, manifest Manifest) (DorthyPath, error) {
-	path := NewDorthyPath(D_FILE, "manifest.json", organization, repo)
+func (s Ipfs) saveManifest(ctx context.Context, organization, dataset string, manifest Manifest) (DorthyPath, error) {
+	path := NewDorthyPath(D_FILE, "manifest.json", organization, dataset)
 
 	buffer := new(bytes.Buffer)
 
@@ -136,8 +136,8 @@ func (s Ipfs) saveManifest(ctx context.Context, organization, repo string, manif
 	return path, s.FilesCp(ctx, "/ipfs/"+hash, path.ToIpfsPath())
 }
 
-func (s Ipfs) GetManifest(ctx context.Context, organization, repo string) (Manifest, error) {
-	path := NewDorthyPath(D_FILE, "manifest.json", organization, repo)
+func (s Ipfs) GetManifest(ctx context.Context, organization, dataset string) (Manifest, error) {
+	path := NewDorthyPath(D_FILE, "manifest.json", organization, dataset)
 	r, err := s.FilesRead(ctx, path.ToIpfsPath())
 	if err != nil {
 		return nil, err
@@ -152,8 +152,8 @@ func (s Ipfs) GetManifest(ctx context.Context, organization, repo string) (Manif
 	return manifest, err
 }
 
-func (s Ipfs) Commit(ctx context.Context, organization, repo string, new Manifest) (Manifest, error) {
-	old, err := s.GetManifest(ctx, organization, repo)
+func (s Ipfs) Commit(ctx context.Context, organization, dataset string, new Manifest) (Manifest, error) {
+	old, err := s.GetManifest(ctx, organization, dataset)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (s Ipfs) Commit(ctx context.Context, organization, repo string, new Manifes
 	var errors []error
 	var paths []DorthyPath
 	for _, version := range delta {
-		path, err := s.AddCommit(ctx, organization, repo, version)
+		path, err := s.AddCommit(ctx, organization, dataset, version)
 		if err != nil {
 			errors = append(errors, err)
 			continue
@@ -184,12 +184,12 @@ func (s Ipfs) Commit(ctx context.Context, organization, repo string, new Manifes
 		return nil, err
 	}
 
-	_, err = s.saveManifest(ctx, organization, repo, merged)
+	_, err = s.saveManifest(ctx, organization, dataset, merged)
 	return merged, err
 }
 
-func (s Ipfs) AddCommit(ctx context.Context, organization, repo string, version Version) (DorthyPath, error) {
-	path := NewDorthyPath(version.Type, version.Hash, organization, repo)
+func (s Ipfs) AddCommit(ctx context.Context, organization, dataset string, version Version) (DorthyPath, error) {
+	path := NewDorthyPath(version.Type, version.Hash, organization, dataset)
 
 	ipfspath := "/ipfs/" + version.Hash
 
