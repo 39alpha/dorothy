@@ -6,7 +6,7 @@ import (
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "start a Dorthy server",
+	Short: "start a Dorothy server",
 }
 
 func init() {

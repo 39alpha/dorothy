@@ -9,12 +9,12 @@ import (
 	"github.com/kataras/iris/v12/middleware/recover"
 )
 
-type Dorthy struct {
+type Dorothy struct {
 	*iris.Application
 	config *Config
 }
 
-func NewDorthy(config *Config) (*Dorthy, error) {
+func NewDorothy(config *Config) (*Dorothy, error) {
 	session, err := NewDatabaseSession(config)
 	if err != nil {
 		return nil, err
@@ -44,13 +44,13 @@ func NewDorthy(config *Config) (*Dorthy, error) {
 		v0.Post("/organization/{organization:string}/dataset/{dataset:string}", Push)
 	}
 
-	dorothy := &Dorthy{app, config}
+	dorothy := &Dorothy{app, config}
 	err = dorothy.initialize()
 
 	return dorothy, err
 }
 
-func (d *Dorthy) initialize() error {
+func (d *Dorothy) initialize() error {
 	client, err := NewIpfs(d.config)
 	if err != nil {
 		return err

@@ -16,7 +16,7 @@ var initCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println("Dorthy initialized")
+		fmt.Println("Dorothy initialized")
 	},
 }
 

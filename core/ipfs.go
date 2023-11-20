@@ -15,15 +15,15 @@ const (
 	WEB_ROOT        = "/"
 )
 
-type DorthyPath struct {
+type DorothyPath struct {
 	IpfsDir string   `json:"-"`
 	WebDir  string   `json:"path"`
 	Name    string   `json:"name"`
 	Type    PathType `json:"-"`
 }
 
-func NewDorthyPath(ptype PathType, name string, parts ...string) DorthyPath {
-	return DorthyPath{
+func NewDorothyPath(ptype PathType, name string, parts ...string) DorothyPath {
+	return DorothyPath{
 		IpfsDir: filepath.Join(FS_ROOT, filepath.Join(parts...)),
 		WebDir:  filepath.Join(WEB_ROOT, filepath.Join(parts...)),
 		Name:    name,
@@ -31,11 +31,11 @@ func NewDorthyPath(ptype PathType, name string, parts ...string) DorthyPath {
 	}
 }
 
-func (p DorthyPath) ToIpfsPath() string {
+func (p DorothyPath) ToIpfsPath() string {
 	return filepath.Join(p.IpfsDir, p.Name)
 }
 
-func (p DorthyPath) ToWebPath() string {
+func (p DorothyPath) ToWebPath() string {
 	return filepath.Join(p.WebDir, p.Name)
 }
 
@@ -51,8 +51,8 @@ func NewIpfs(config *Config) (*Ipfs, error) {
 	return nil, fmt.Errorf("cannot connect to IPFS")
 }
 
-func (s Ipfs) CreateOrganization(ctx context.Context, name string) (DorthyPath, error) {
-	path := NewDorthyPath(D_DIR, name)
+func (s Ipfs) CreateOrganization(ctx context.Context, name string) (DorothyPath, error) {
+	path := NewDorothyPath(D_DIR, name)
 
 	return path, s.FilesMkdir(ctx, path.ToIpfsPath(), func(r *ipfs.RequestBuilder) error {
 		r.Option("parents", true)
@@ -60,16 +60,16 @@ func (s Ipfs) CreateOrganization(ctx context.Context, name string) (DorthyPath, 
 	})
 }
 
-func (s Ipfs) GetOrganizations(ctx context.Context) ([]DorthyPath, error) {
-	path := NewDorthyPath(D_DIR, "")
+func (s Ipfs) GetOrganizations(ctx context.Context) ([]DorothyPath, error) {
+	path := NewDorothyPath(D_DIR, "")
 	entries, err := s.FilesLs(ctx, path.ToIpfsPath())
 	if err != nil {
 		return nil, err
 	}
 
-	var paths []DorthyPath
+	var paths []DorothyPath
 	for _, entry := range entries {
-		paths = append(paths, DorthyPath{
+		paths = append(paths, DorothyPath{
 			IpfsDir: path.ToIpfsPath(),
 			WebDir:  path.ToWebPath(),
 			Name:    entry.Name,
@@ -80,8 +80,8 @@ func (s Ipfs) GetOrganizations(ctx context.Context) ([]DorthyPath, error) {
 	return paths, nil
 }
 
-func (s Ipfs) GetOrganization(ctx context.Context, organization string) (*DorthyPath, error) {
-	path := NewDorthyPath(D_DIR, organization)
+func (s Ipfs) GetOrganization(ctx context.Context, organization string) (*DorothyPath, error) {
+	path := NewDorothyPath(D_DIR, organization)
 	_, err := s.FilesStat(ctx, path.ToIpfsPath())
 	if err != nil {
 		return nil, err
@@ -89,16 +89,16 @@ func (s Ipfs) GetOrganization(ctx context.Context, organization string) (*Dorthy
 	return &path, err
 }
 
-func (s Ipfs) GetDatasets(ctx context.Context, organization string) ([]DorthyPath, error) {
-	path := NewDorthyPath(D_DIR, organization)
+func (s Ipfs) GetDatasets(ctx context.Context, organization string) ([]DorothyPath, error) {
+	path := NewDorothyPath(D_DIR, organization)
 	entries, err := s.FilesLs(ctx, path.ToIpfsPath())
 	if err != nil {
 		return nil, err
 	}
 
-	var paths []DorthyPath
+	var paths []DorothyPath
 	for _, entry := range entries {
-		paths = append(paths, DorthyPath{
+		paths = append(paths, DorothyPath{
 			IpfsDir: path.ToIpfsPath(),
 			WebDir:  path.ToWebPath(),
 			Name:    entry.Name,
@@ -109,8 +109,8 @@ func (s Ipfs) GetDatasets(ctx context.Context, organization string) ([]DorthyPat
 	return paths, nil
 }
 
-func (s Ipfs) GetDataset(ctx context.Context, organization, dataset string) (*DorthyPath, error) {
-	path := NewDorthyPath(D_DIR, filepath.Join(organization, dataset))
+func (s Ipfs) GetDataset(ctx context.Context, organization, dataset string) (*DorothyPath, error) {
+	path := NewDorothyPath(D_DIR, filepath.Join(organization, dataset))
 	_, err := s.FilesStat(ctx, path.ToIpfsPath())
 	if err != nil {
 		return nil, err
@@ -119,8 +119,8 @@ func (s Ipfs) GetDataset(ctx context.Context, organization, dataset string) (*Do
 	return &path, err
 }
 
-func (s Ipfs) CreateDataset(ctx context.Context, organization, dataset string) (DorthyPath, error) {
-	path := NewDorthyPath(D_DIR, dataset, organization)
+func (s Ipfs) CreateDataset(ctx context.Context, organization, dataset string) (DorothyPath, error) {
+	path := NewDorothyPath(D_DIR, dataset, organization)
 	if err := s.FilesMkdir(ctx, path.ToIpfsPath()); err != nil {
 		return path, err
 	}
@@ -129,12 +129,12 @@ func (s Ipfs) CreateDataset(ctx context.Context, organization, dataset string) (
 	return path, err
 }
 
-func (s Ipfs) CreateManifest(ctx context.Context, organization, dataset string) (DorthyPath, error) {
+func (s Ipfs) CreateManifest(ctx context.Context, organization, dataset string) (DorothyPath, error) {
 	return s.saveManifest(ctx, organization, dataset, []Version{})
 }
 
-func (s Ipfs) saveManifest(ctx context.Context, organization, dataset string, manifest Manifest) (DorthyPath, error) {
-	path := NewDorthyPath(D_FILE, "manifest.json", organization, dataset)
+func (s Ipfs) saveManifest(ctx context.Context, organization, dataset string, manifest Manifest) (DorothyPath, error) {
+	path := NewDorothyPath(D_FILE, "manifest.json", organization, dataset)
 
 	buffer := new(bytes.Buffer)
 
@@ -156,7 +156,7 @@ func (s Ipfs) saveManifest(ctx context.Context, organization, dataset string, ma
 }
 
 func (s Ipfs) GetManifest(ctx context.Context, organization, dataset string) (Manifest, error) {
-	path := NewDorthyPath(D_FILE, "manifest.json", organization, dataset)
+	path := NewDorothyPath(D_FILE, "manifest.json", organization, dataset)
 	r, err := s.FilesRead(ctx, path.ToIpfsPath())
 	if err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func (s Ipfs) Commit(ctx context.Context, organization, dataset string, new Mani
 	}
 
 	var errors []error
-	var paths []DorthyPath
+	var paths []DorothyPath
 	for _, version := range delta {
 		path, err := s.AddCommit(ctx, organization, dataset, version)
 		if err != nil {
@@ -207,8 +207,8 @@ func (s Ipfs) Commit(ctx context.Context, organization, dataset string, new Mani
 	return merged, err
 }
 
-func (s Ipfs) AddCommit(ctx context.Context, organization, dataset string, version Version) (DorthyPath, error) {
-	path := NewDorthyPath(version.Type, version.Hash, organization, dataset)
+func (s Ipfs) AddCommit(ctx context.Context, organization, dataset string, version Version) (DorothyPath, error) {
+	path := NewDorothyPath(version.Type, version.Hash, organization, dataset)
 
 	ipfspath := "/ipfs/" + version.Hash
 
@@ -219,7 +219,7 @@ func (s Ipfs) AddCommit(ctx context.Context, organization, dataset string, versi
 	return path, s.FilesCp(ctx, "/ipfs/"+version.Hash, path.ToIpfsPath())
 }
 
-func (s Ipfs) RemovePath(ctx context.Context, path DorthyPath) error {
+func (s Ipfs) RemovePath(ctx context.Context, path DorothyPath) error {
 	stat, err := s.FilesStat(ctx, path.ToIpfsPath())
 	if stat != nil && err == nil {
 		if err = s.Unpin(stat.Hash); err != nil {

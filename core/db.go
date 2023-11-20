@@ -8,7 +8,7 @@ import (
 	"github.com/upper/db/v4/adapter/sqlite"
 )
 
-func DorthyRoot() string {
+func DorothyRoot() string {
 	return os.Getenv("DORTHY_ROOT")
 }
 
@@ -17,7 +17,7 @@ type DatabaseSession struct {
 }
 
 func NewDatabaseSession(config *Config) (*DatabaseSession, error) {
-	database_path := filepath.Join(DorthyRoot(), "dorothy.db")
+	database_path := filepath.Join(DorothyRoot(), "dorothy.db")
 
 	settings := sqlite.ConnectionURL{
 		Database: database_path,

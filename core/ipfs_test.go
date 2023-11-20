@@ -72,7 +72,7 @@ func TestCreateDataset(t *testing.T) {
 	name := "CSS0"
 
 	defer func() {
-		err := client.RemovePath(ctx, NewDorthyPath(D_FILE, "manifest.json", organization, name))
+		err := client.RemovePath(ctx, NewDorothyPath(D_FILE, "manifest.json", organization, name))
 		if err != nil {
 			panic(err)
 		}
@@ -112,7 +112,7 @@ func TestCreateDatasetCreatesEmptyManifest(t *testing.T) {
 	name := "CSS0"
 
 	defer func() {
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, "manifest.json", organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, "manifest.json", organization, name))
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
@@ -142,8 +142,8 @@ func TestCommit(t *testing.T) {
 	hash := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 
 	defer func() {
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, hash, organization, name))
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, "manifest.json", organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, hash, organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, "manifest.json", organization, name))
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
@@ -206,9 +206,9 @@ func TestMultipleCommits(t *testing.T) {
 	hash2 := "bafybeicysbsujtlq2d7ygbab47lywcb7vehx64zwv4etis6hom45iorjwm"
 
 	defer func() {
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, hash1, organization, name))
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, hash2, organization, name))
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, "manifest.json", organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, hash1, organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, hash2, organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, "manifest.json", organization, name))
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
@@ -285,10 +285,10 @@ func TestConflictingCommits(t *testing.T) {
 	hash3 := "bafybeifvnc6qllx2cuwcrkf5fxuocg7jraesroxeuzd3ru7aexnayjnjgu"
 
 	defer func() {
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, hash1, organization, name))
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, hash2, organization, name))
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, hash3, organization, name))
-		client.RemovePath(ctx, NewDorthyPath(D_FILE, "manifest.json", organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, hash1, organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, hash2, organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, hash3, organization, name))
+		client.RemovePath(ctx, NewDorothyPath(D_FILE, "manifest.json", organization, name))
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
