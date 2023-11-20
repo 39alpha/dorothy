@@ -67,6 +67,31 @@ func CreateOrganization(ctx iris.Context) {
 	ctx.JSON(iris.Map{"name": org, "path": path.ToWebPath()})
 }
 
+func GetOrganization(ctx iris.Context) {
+	config, ok := ctx.Values().Get("config").(*Config)
+	if !ok {
+		ctx.StopWithError(iris.StatusInternalServerError, fmt.Errorf("an internal error occured"))
+		return
+	}
+
+	client, err := NewIpfs(config)
+	if err != nil {
+		ctx.StopWithError(iris.StatusInternalServerError, err)
+		return
+	}
+
+	org_path := ctx.Params().Get("organization")
+
+	org, err := client.GetOrganization(ctx, org_path)
+	if err != nil {
+		ctx.StopWithError(iris.StatusInternalServerError, err)
+	}
+
+	result := iris.Map{"name": org.Name, "path": org.ToWebPath()}
+
+	ctx.JSON(result)
+}
+
 func ListDatasets(ctx iris.Context) {
 	config, ok := ctx.Values().Get("config").(*Config)
 	if !ok {
@@ -94,6 +119,33 @@ func ListDatasets(ctx iris.Context) {
 	}
 
 	ctx.JSON(results)
+}
+
+func GetDataset(ctx iris.Context) {
+	config, ok := ctx.Values().Get("config").(*Config)
+	if !ok {
+		ctx.StopWithError(iris.StatusInternalServerError, fmt.Errorf("an internal error occured"))
+		return
+	}
+
+	client, err := NewIpfs(config)
+	if err != nil {
+		ctx.StopWithError(iris.StatusInternalServerError, err)
+		return
+	}
+
+	org := ctx.Params().Get("organization")
+	dataset_name := ctx.Params().Get("dataset")
+
+	dataset, err := client.GetDataset(ctx, org, dataset_name)
+	if err != nil {
+		ctx.StopWithStatus(iris.StatusNotFound)
+		return
+	}
+
+	result := iris.Map{"name": dataset.Name, "path": dataset.ToWebPath()}
+
+	ctx.JSON(result)
 }
 
 func CreateDataset(ctx iris.Context) {

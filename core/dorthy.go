@@ -36,9 +36,11 @@ func NewDorthy(config *Config) (*Dorthy, error) {
 	{
 		v0.Get("/organization", ListOrganizations)
 		v0.Put("/organization", ParseBody, CreateOrganization)
+		v0.Get("/organization/{organization:string}", GetOrganization)
 		v0.Get("/organization/{organization:string}/dataset", ListDatasets)
 		v0.Put("/organization/{organization:string}/dataset", ParseBody, CreateDataset)
-		v0.Get("/organization/{organization:string}/dataset/{dataset:string}", GetManifest)
+		v0.Get("/organization/{organization:string}/dataset/{dataset:string}", GetDataset)
+		v0.Get("/organization/{organization:string}/dataset/{dataset:string}/manifest", GetManifest)
 		v0.Post("/organization/{organization:string}/dataset/{dataset:string}", Push)
 	}
 

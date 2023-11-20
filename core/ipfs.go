@@ -80,14 +80,13 @@ func (s Ipfs) GetOrganizations(ctx context.Context) ([]DorthyPath, error) {
 	return paths, nil
 }
 
-func (s Ipfs) CreateDataset(ctx context.Context, organization, dataset string) (DorthyPath, error) {
-	path := NewDorthyPath(D_DIR, dataset, organization)
-	if err := s.FilesMkdir(ctx, path.ToIpfsPath()); err != nil {
-		return path, err
+func (s Ipfs) GetOrganization(ctx context.Context, organization string) (*DorthyPath, error) {
+	path := NewDorthyPath(D_DIR, organization)
+	_, err := s.FilesStat(ctx, path.ToIpfsPath())
+	if err != nil {
+		return nil, err
 	}
-
-	_, err := s.CreateManifest(ctx, organization, dataset)
-	return path, err
+	return &path, err
 }
 
 func (s Ipfs) GetDatasets(ctx context.Context, organization string) ([]DorthyPath, error) {
@@ -108,6 +107,26 @@ func (s Ipfs) GetDatasets(ctx context.Context, organization string) ([]DorthyPat
 	}
 
 	return paths, nil
+}
+
+func (s Ipfs) GetDataset(ctx context.Context, organization, dataset string) (*DorthyPath, error) {
+	path := NewDorthyPath(D_DIR, filepath.Join(organization, dataset))
+	_, err := s.FilesStat(ctx, path.ToIpfsPath())
+	if err != nil {
+		return nil, err
+	}
+	path.Name = dataset
+	return &path, err
+}
+
+func (s Ipfs) CreateDataset(ctx context.Context, organization, dataset string) (DorthyPath, error) {
+	path := NewDorthyPath(D_DIR, dataset, organization)
+	if err := s.FilesMkdir(ctx, path.ToIpfsPath()); err != nil {
+		return path, err
+	}
+
+	_, err := s.CreateManifest(ctx, organization, dataset)
+	return path, err
 }
 
 func (s Ipfs) CreateManifest(ctx context.Context, organization, dataset string) (DorthyPath, error) {
