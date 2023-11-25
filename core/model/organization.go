@@ -4,10 +4,11 @@ import "gorm.io/gorm"
 
 type Organization struct {
 	gorm.Model
-	ID          string `json:"id" gorm:"primaryKey"`
-	Name        string `json:"name"`
-	Contact     string `json:"contact" gorm:"index"`
-	Description string `json:"description"`
+	ID          string    `json:"id" gorm:"primaryKey"`
+	Name        string    `json:"name"`
+	Contact     string    `json:"contact" gorm:"index"`
+	Description string    `json:"description"`
+	Datasets    []Dataset `json:"datasets"`
 }
 
 type NewOrganization struct {

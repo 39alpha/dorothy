@@ -27,6 +27,12 @@ func (r *mutationResolver) CreateDataset(ctx context.Context, input model.NewDat
 	return core.CreateDataset(ctx, r.config, r.db, &input)
 }
 
+// Datasets is the resolver for the datasets field.
+func (r *organizationResolver) Datasets(ctx context.Context, obj *model.Organization) ([]*model.Dataset, error) {
+	input := model.GetDatasets{OrganizationID: obj.ID}
+	return core.ListDatasets(ctx, r.config, r.db, &input)
+}
+
 // Organizations is the resolver for the organizations field.
 func (r *queryResolver) Organizations(ctx context.Context) ([]*model.Organization, error) {
 	return core.ListOrganizations(ctx, r.config, r.db)
@@ -53,9 +59,13 @@ func (r *Resolver) Dataset() DatasetResolver { return &datasetResolver{r} }
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
+// Organization returns OrganizationResolver implementation.
+func (r *Resolver) Organization() OrganizationResolver { return &organizationResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type datasetResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
+type organizationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

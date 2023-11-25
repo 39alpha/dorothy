@@ -41,6 +41,7 @@ type Config struct {
 type ResolverRoot interface {
 	Dataset() DatasetResolver
 	Mutation() MutationResolver
+	Organization() OrganizationResolver
 	Query() QueryResolver
 }
 
@@ -63,6 +64,7 @@ type ComplexityRoot struct {
 
 	Organization struct {
 		Contact     func(childComplexity int) int
+		Datasets    func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Name        func(childComplexity int) int
@@ -82,6 +84,9 @@ type DatasetResolver interface {
 type MutationResolver interface {
 	CreateOrganization(ctx context.Context, input model.NewOrganization) (*model.Organization, error)
 	CreateDataset(ctx context.Context, input model.NewDataset) (*model.Dataset, error)
+}
+type OrganizationResolver interface {
+	Datasets(ctx context.Context, obj *model.Organization) ([]*model.Dataset, error)
 }
 type QueryResolver interface {
 	Organizations(ctx context.Context) ([]*model.Organization, error)
@@ -174,6 +179,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Organization.Contact(childComplexity), true
+
+	case "Organization.datasets":
+		if e.complexity.Organization.Datasets == nil {
+			break
+		}
+
+		return e.complexity.Organization.Datasets(childComplexity), true
 
 	case "Organization.description":
 		if e.complexity.Organization.Description == nil {
@@ -719,6 +731,8 @@ func (ec *executionContext) fieldContext_Dataset_organization(ctx context.Contex
 				return ec.fieldContext_Organization_contact(ctx, field)
 			case "description":
 				return ec.fieldContext_Organization_description(ctx, field)
+			case "datasets":
+				return ec.fieldContext_Organization_datasets(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Organization", field.Name)
 		},
@@ -773,6 +787,8 @@ func (ec *executionContext) fieldContext_Mutation_createOrganization(ctx context
 				return ec.fieldContext_Organization_contact(ctx, field)
 			case "description":
 				return ec.fieldContext_Organization_description(ctx, field)
+			case "datasets":
+				return ec.fieldContext_Organization_datasets(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Organization", field.Name)
 		},
@@ -1034,6 +1050,62 @@ func (ec *executionContext) fieldContext_Organization_description(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Organization_datasets(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Organization_datasets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Organization().Datasets(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Dataset)
+	fc.Result = res
+	return ec.marshalNDataset2ᚕᚖgithubᚗcomᚋ39alphaᚋdorothyᚋcoreᚋmodelᚐDatasetᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Organization_datasets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Organization",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Dataset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Dataset_name(ctx, field)
+			case "contact":
+				return ec.fieldContext_Dataset_contact(ctx, field)
+			case "description":
+				return ec.fieldContext_Dataset_description(ctx, field)
+			case "organization":
+				return ec.fieldContext_Dataset_organization(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Dataset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_organizations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_organizations(ctx, field)
 	if err != nil {
@@ -1081,6 +1153,8 @@ func (ec *executionContext) fieldContext_Query_organizations(ctx context.Context
 				return ec.fieldContext_Organization_contact(ctx, field)
 			case "description":
 				return ec.fieldContext_Organization_description(ctx, field)
+			case "datasets":
+				return ec.fieldContext_Organization_datasets(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Organization", field.Name)
 		},
@@ -1135,6 +1209,8 @@ func (ec *executionContext) fieldContext_Query_organization(ctx context.Context,
 				return ec.fieldContext_Organization_contact(ctx, field)
 			case "description":
 				return ec.fieldContext_Organization_description(ctx, field)
+			case "datasets":
+				return ec.fieldContext_Organization_datasets(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Organization", field.Name)
 		},
@@ -3556,23 +3632,59 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 		case "id":
 			out.Values[i] = ec._Organization_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Organization_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "contact":
 			out.Values[i] = ec._Organization_contact(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Organization_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "datasets":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Organization_datasets(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

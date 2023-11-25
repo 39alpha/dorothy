@@ -7,6 +7,7 @@ type Organization {
   name: String!
   contact: String!
   description: String!
+  datasets: [Dataset!]!
 }
 
 input NewOrganization {
