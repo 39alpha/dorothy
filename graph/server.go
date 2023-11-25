@@ -22,6 +22,7 @@ func NewServer(config *core.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	session.Close()
 
 	router := chi.NewRouter()
 
@@ -32,11 +33,10 @@ func NewServer(config *core.Config) (*Server, error) {
 		AllowedMethods:   []string{"GET", "POST", "PUT"},
 	}).Handler)
 
-	router.Use(core.WithConfig(config))
-	router.Use(core.WithDbSession(session))
+	router.Use(WithDbSession(config))
 
-	srv := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: &Resolver{}}))
-	router.Handle("/query", srv)
+	schema := NewExecutableSchema(Config{Resolvers: &Resolver{config}})
+	router.Handle("/query", handler.NewDefaultServer(schema))
 
 	dorothy := &Server{router, config}
 	err = dorothy.initialize()
