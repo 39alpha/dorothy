@@ -4,8 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
-	db "github.com/upper/db/v4"
-	"github.com/upper/db/v4/adapter/sqlite"
+	"github.com/39alpha/dorothy/core/model"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func DorothyRoot() string {
@@ -13,22 +14,17 @@ func DorothyRoot() string {
 }
 
 type DatabaseSession struct {
-	db.Session
+	*gorm.DB
 }
 
 func NewDatabaseSession(config *Config) (*DatabaseSession, error) {
-	database_path := filepath.Join(DorothyRoot(), "dorothy.db")
-
-	settings := sqlite.ConnectionURL{
-		Database: database_path,
-	}
-
-	s, err := sqlite.Open(settings)
+	path := filepath.Join(DorothyRoot(), "dorothy.db")
+	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	return &DatabaseSession{s}, nil
+	return &DatabaseSession{db}, nil
 }
 
 func (s *DatabaseSession) IsInitialized() bool {
@@ -39,6 +35,8 @@ func (s *DatabaseSession) Initialize() error {
 	if s.IsInitialized() {
 		return nil
 	}
+
+	s.AutoMigrate(&model.Organization{})
 
 	return nil
 }

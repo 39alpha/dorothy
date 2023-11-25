@@ -6,19 +6,19 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/core/model"
 )
 
 // CreateOrganization is the resolver for the createOrganization field.
 func (r *mutationResolver) CreateOrganization(ctx context.Context, input model.NewOrganization) (*model.Organization, error) {
-	panic(fmt.Errorf("not implemented: CreateOrganization - createOrganization"))
+	return core.CreateOrganization(ctx, r.config, r.db, input)
 }
 
 // Organizations is the resolver for the organizations field.
 func (r *queryResolver) Organizations(ctx context.Context) ([]*model.Organization, error) {
-	panic(fmt.Errorf("not implemented: Organizations - organizations"))
+	return core.ListOrganizations(ctx, r.config, r.db)
 }
 
 // Mutation returns MutationResolver implementation.

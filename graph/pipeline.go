@@ -3,8 +3,6 @@ package graph
 import (
 	"context"
 	"net/http"
-
-	"github.com/39alpha/dorothy/core"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -23,18 +21,4 @@ func WithContext(a ContextAdder) Middleware {
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-func WithDbSession(config *core.Config) Middleware {
-	return WithContext(func(ctx context.Context) (context.Context, error) {
-		session, err := core.NewDatabaseSession(config)
-		if err != nil {
-			return ctx, err
-		}
-		return context.WithValue(ctx, "db_session", session), nil
-	})
-}
-
-func GetDbSession(ctx context.Context) *core.DatabaseSession {
-	return ctx.Value("db_session").(*core.DatabaseSession)
 }

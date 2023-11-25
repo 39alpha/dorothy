@@ -3,8 +3,7 @@
 # https://gqlgen.com/getting-started/
 
 type Organization {
-  id: ID!
-  slug: String!
+  id: String!
   name: String!
   contact: String!
   description: String!

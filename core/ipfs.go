@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/39alpha/dorothy/core/model"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
@@ -51,8 +52,8 @@ func NewIpfs(config *Config) (*Ipfs, error) {
 	return nil, fmt.Errorf("cannot connect to IPFS")
 }
 
-func (s Ipfs) CreateOrganization(ctx context.Context, name string) (DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, name)
+func (s Ipfs) CreateOrganization(ctx context.Context, org *model.Organization) (DorothyPath, error) {
+	path := NewDorothyPath(D_DIR, org.Id)
 
 	return path, s.FilesMkdir(ctx, path.ToIpfsPath(), func(r *ipfs.RequestBuilder) error {
 		r.Option("parents", true)

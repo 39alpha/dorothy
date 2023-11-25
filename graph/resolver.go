@@ -9,4 +9,5 @@ import "github.com/39alpha/dorothy/core"
 
 type Resolver struct {
 	config *core.Config
+	db     *core.DatabaseSession
 }

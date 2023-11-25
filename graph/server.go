@@ -6,6 +6,7 @@ import (
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -22,7 +23,7 @@ func NewServer(config *core.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	session.Close()
+	session.Initialize()
 
 	router := chi.NewRouter()
 
@@ -33,10 +34,9 @@ func NewServer(config *core.Config) (*Server, error) {
 		AllowedMethods:   []string{"GET", "POST", "PUT"},
 	}).Handler)
 
-	router.Use(WithDbSession(config))
-
-	schema := NewExecutableSchema(Config{Resolvers: &Resolver{config}})
-	router.Handle("/query", handler.NewDefaultServer(schema))
+	c := Config{Resolvers: &Resolver{config: config, db: session}}
+	router.Handle("/", playground.Handler("Dorothy", "/query"))
+	router.Handle("/query", handler.NewDefaultServer(NewExecutableSchema(c)))
 
 	dorothy := &Server{router, config}
 	err = dorothy.initialize()
