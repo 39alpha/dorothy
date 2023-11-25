@@ -53,7 +53,7 @@ func NewIpfs(config *Config) (*Ipfs, error) {
 }
 
 func (s Ipfs) CreateOrganization(ctx context.Context, org *model.Organization) (DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, org.Id)
+	path := NewDorothyPath(D_DIR, org.ID)
 
 	return path, s.FilesMkdir(ctx, path.ToIpfsPath(), func(r *ipfs.RequestBuilder) error {
 		r.Option("parents", true)
@@ -61,72 +61,13 @@ func (s Ipfs) CreateOrganization(ctx context.Context, org *model.Organization) (
 	})
 }
 
-func (s Ipfs) GetOrganizations(ctx context.Context) ([]DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, "")
-	entries, err := s.FilesLs(ctx, path.ToIpfsPath())
-	if err != nil {
-		return nil, err
-	}
-
-	var paths []DorothyPath
-	for _, entry := range entries {
-		paths = append(paths, DorothyPath{
-			IpfsDir: path.ToIpfsPath(),
-			WebDir:  path.ToWebPath(),
-			Name:    entry.Name,
-			Type:    D_DIR,
-		})
-	}
-
-	return paths, nil
-}
-
-func (s Ipfs) GetOrganization(ctx context.Context, organization string) (*DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, organization)
-	_, err := s.FilesStat(ctx, path.ToIpfsPath())
-	if err != nil {
-		return nil, err
-	}
-	return &path, err
-}
-
-func (s Ipfs) GetDatasets(ctx context.Context, organization string) ([]DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, organization)
-	entries, err := s.FilesLs(ctx, path.ToIpfsPath())
-	if err != nil {
-		return nil, err
-	}
-
-	var paths []DorothyPath
-	for _, entry := range entries {
-		paths = append(paths, DorothyPath{
-			IpfsDir: path.ToIpfsPath(),
-			WebDir:  path.ToWebPath(),
-			Name:    entry.Name,
-			Type:    D_DIR,
-		})
-	}
-
-	return paths, nil
-}
-
-func (s Ipfs) GetDataset(ctx context.Context, organization, dataset string) (*DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, filepath.Join(organization, dataset))
-	_, err := s.FilesStat(ctx, path.ToIpfsPath())
-	if err != nil {
-		return nil, err
-	}
-	path.Name = dataset
-	return &path, err
-}
-
-func (s Ipfs) CreateDataset(ctx context.Context, organization, dataset string) (DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, dataset, organization)
+func (s Ipfs) CreateDataset(ctx context.Context, dataset *model.Dataset) (DorothyPath, error) {
+	path := NewDorothyPath(D_DIR, dataset.ID, dataset.OrganizationID)
 	if err := s.FilesMkdir(ctx, path.ToIpfsPath()); err != nil {
 		return path, err
 	}
 
-	_, err := s.CreateManifest(ctx, organization, dataset)
+	_, err := s.CreateManifest(ctx, dataset.OrganizationID, dataset.ID)
 	return path, err
 }
 
@@ -154,6 +95,16 @@ func (s Ipfs) saveManifest(ctx context.Context, organization, dataset string, ma
 	}
 
 	return path, s.FilesCp(ctx, "/ipfs/"+hash, path.ToIpfsPath())
+}
+
+func (s Ipfs) GetDataset(ctx context.Context, organization, dataset string) (*DorothyPath, error) {
+	path := NewDorothyPath(D_DIR, filepath.Join(organization, dataset))
+	_, err := s.FilesStat(ctx, path.ToIpfsPath())
+	if err != nil {
+		return nil, err
+	}
+	path.Name = dataset
+	return &path, err
 }
 
 func (s Ipfs) GetManifest(ctx context.Context, organization, dataset string) (Manifest, error) {

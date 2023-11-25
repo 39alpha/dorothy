@@ -11,9 +11,20 @@ import (
 	"github.com/39alpha/dorothy/core/model"
 )
 
+// Organization is the resolver for the organization field.
+func (r *datasetResolver) Organization(ctx context.Context, obj *model.Dataset) (*model.Organization, error) {
+	input := model.GetOrganization{ID: obj.OrganizationID}
+	return core.GetOrganization(ctx, r.config, r.db, &input)
+}
+
 // CreateOrganization is the resolver for the createOrganization field.
 func (r *mutationResolver) CreateOrganization(ctx context.Context, input model.NewOrganization) (*model.Organization, error) {
 	return core.CreateOrganization(ctx, r.config, r.db, &input)
+}
+
+// CreateDataset is the resolver for the createDataset field.
+func (r *mutationResolver) CreateDataset(ctx context.Context, input model.NewDataset) (*model.Dataset, error) {
+	return core.CreateDataset(ctx, r.config, r.db, &input)
 }
 
 // Organizations is the resolver for the organizations field.
@@ -26,11 +37,25 @@ func (r *queryResolver) Organization(ctx context.Context, input *model.GetOrgani
 	return core.GetOrganization(ctx, r.config, r.db, input)
 }
 
+// Datasets is the resolver for the datasets field.
+func (r *queryResolver) Datasets(ctx context.Context, input *model.GetDatasets) ([]*model.Dataset, error) {
+	return core.ListDatasets(ctx, r.config, r.db, input)
+}
+
+// Dataset is the resolver for the dataset field.
+func (r *queryResolver) Dataset(ctx context.Context, input *model.GetDataset) (*model.Dataset, error) {
+	return core.GetDataset(ctx, r.config, r.db, input)
+}
+
+// Dataset returns DatasetResolver implementation.
+func (r *Resolver) Dataset() DatasetResolver { return &datasetResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type datasetResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

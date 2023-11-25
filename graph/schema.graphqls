@@ -19,11 +19,38 @@ input GetOrganization {
   id: String!
 }
 
+type Dataset {
+  id: String!
+  name: String!
+  contact: String!
+  description: String!
+  organization: Organization!
+}
+
+input NewDataset {
+  name: String!
+  contact: String!
+  description: String
+  organizationId: String!
+}
+
+input GetDatasets {
+  organizationId: String!
+}
+
+input GetDataset {
+  id: String!
+  organizationId: String!
+}
+
 type Query {
   organizations: [Organization!]!
   organization(input: GetOrganization): Organization!
+  datasets(input: GetDatasets): [Dataset!]!
+  dataset(input: GetDataset): Dataset!
 }
 
 type Mutation {
   createOrganization(input: NewOrganization!): Organization!
+  createDataset(input: NewDataset!): Dataset!
 }
