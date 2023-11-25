@@ -29,9 +29,17 @@ type NewOrganization struct {
 	Description *string `json:"description,omitempty"`
 }
 
-func (input NewOrganization) Id() string {
-	id := strings.TrimSpace(input.Name)
-	id = strings.ToLower(id)
-	id = invalidChar.ReplaceAllString(id, "")
-	return spaces.ReplaceAllString(id, "-")
+func slugify(name string) string {
+	slug := strings.TrimSpace(name)
+	slug = strings.ToLower(slug)
+	slug = invalidChar.ReplaceAllString(slug, "")
+	return spaces.ReplaceAllString(slug, "-")
+}
+
+func (input *NewOrganization) Id() string {
+	return slugify(input.Name)
+}
+
+type GetOrganization struct {
+	Id string `json:"id"`
 }

@@ -13,12 +13,17 @@ import (
 
 // CreateOrganization is the resolver for the createOrganization field.
 func (r *mutationResolver) CreateOrganization(ctx context.Context, input model.NewOrganization) (*model.Organization, error) {
-	return core.CreateOrganization(ctx, r.config, r.db, input)
+	return core.CreateOrganization(ctx, r.config, r.db, &input)
 }
 
 // Organizations is the resolver for the organizations field.
 func (r *queryResolver) Organizations(ctx context.Context) ([]*model.Organization, error) {
 	return core.ListOrganizations(ctx, r.config, r.db)
+}
+
+// Organization is the resolver for the organization field.
+func (r *queryResolver) Organization(ctx context.Context, input *model.GetOrganization) (*model.Organization, error) {
+	return core.GetOrganization(ctx, r.config, r.db, input)
 }
 
 // Mutation returns MutationResolver implementation.

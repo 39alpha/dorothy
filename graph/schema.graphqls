@@ -9,14 +9,19 @@ type Organization {
   description: String!
 }
 
-type Query {
-  organizations: [Organization!]!
-}
-
 input NewOrganization {
   name: String!
   contact: String!
   description: String
+}
+
+input GetOrganization {
+  id: String!
+}
+
+type Query {
+  organizations: [Organization!]!
+  organization(input: GetOrganization): Organization!
 }
 
 type Mutation {

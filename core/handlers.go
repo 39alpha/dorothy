@@ -6,7 +6,7 @@ import (
 	"github.com/39alpha/dorothy/core/model"
 )
 
-func CreateOrganization(ctx context.Context, config *Config, db *DatabaseSession, input model.NewOrganization) (*model.Organization, error) {
+func CreateOrganization(ctx context.Context, config *Config, db *DatabaseSession, input *model.NewOrganization) (*model.Organization, error) {
 	description := ""
 	if input.Description != nil {
 		description = *input.Description
@@ -43,4 +43,13 @@ func ListOrganizations(ctx context.Context, config *Config, db *DatabaseSession)
 		return nil, result.Error
 	}
 	return organizations, nil
+}
+
+func GetOrganization(ctx context.Context, config *Config, db *DatabaseSession, input *model.GetOrganization) (*model.Organization, error) {
+	var organization model.Organization
+	result := db.Where("Id = ?", input.Id).First(&organization)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &organization, nil
 }
