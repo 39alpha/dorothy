@@ -1,0 +1,25 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+type Organization {
+  id: ID!
+  slug: String!
+  name: String!
+  contact: String!
+  description: String!
+}
+
+type Query {
+  organizations: [Organization!]!
+}
+
+input NewOrganization {
+  name: String!
+  contact: String!
+  description: String
+}
+
+type Mutation {
+  createOrganization(input: NewOrganization!): Organization!
+}

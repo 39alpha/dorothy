@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/graph"
 )
 
 func ServeApi(configpath string, port int, genconf bool) error {
@@ -18,12 +19,12 @@ func ServeApi(configpath string, port int, genconf bool) error {
 			return fmt.Errorf("Error: invalid configuration file %q\n  %v\n", configpath, err)
 		}
 
-		app, err := core.NewDorothy(config)
+		app, err := graph.NewServer(config)
 		if err != nil {
 			return fmt.Errorf("Error: failed to start Dorothy\n  %v\n", err)
 		}
 
-		app.Listen(fmt.Sprintf(":%d", port))
+		return app.Listen(fmt.Sprintf(":%d", port))
 	}
 
 	return nil

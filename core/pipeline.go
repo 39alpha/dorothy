@@ -1,53 +1,41 @@
 package core
 
 import (
-	"encoding/json"
-
-	"github.com/kataras/iris/v12"
+	"context"
+	"net/http"
 )
 
-func RecordBody(ctx iris.Context) {
-	ctx.RecordRequestBody(true)
-	ctx.Next()
-}
+type Middleware func(http.Handler) http.Handler
 
-func WithConfig(config *Config) iris.Handler {
-	return func(ctx iris.Context) {
-		ctx.Values().Set("config", config)
-		ctx.Next()
+type ContextAdder func(ctx context.Context) context.Context
+
+func WithContext(a ContextAdder) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := a(r.Context())
+			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 
-func GetConfig(ctx iris.Context) *Config {
-	return ctx.Values().Get("config").(*Config)
+func WithConfig(config *Config) Middleware {
+	return WithContext(func(ctx context.Context) context.Context {
+		return context.WithValue(ctx, "config", config)
+	})
 }
 
-func WithDbSession(session *DatabaseSession) iris.Handler {
-	return func(ctx iris.Context) {
-		ctx.Values().Set("db_session", session)
-		ctx.Next()
-	}
+func GetConfig(ctx context.Context) *Config {
+	config, _ := ctx.Value("config").(*Config)
+	return config
 }
 
-func GetDbSession(ctx iris.Context) *DatabaseSession {
-	return ctx.Values().Get("db_session").(*DatabaseSession)
+func WithDbSession(session *DatabaseSession) Middleware {
+	return WithContext(func(ctx context.Context) context.Context {
+		return context.WithValue(ctx, "db_session", session)
+	})
 }
 
-func ParseBody(ctx iris.Context) {
-	if ctx.Method() != "GET" {
-		body, err := ctx.GetBody()
-		if err != nil {
-			ctx.StopWithError(iris.StatusBadRequest, err)
-			return
-		}
-
-		var parsed iris.Map
-		if err := json.Unmarshal(body, &parsed); err != nil {
-			ctx.StopWithError(iris.StatusBadRequest, err)
-			return
-		}
-
-		ctx.Values().Set("jsonbody", parsed)
-	}
-	ctx.Next()
+func GetDbSession(ctx context.Context) *DatabaseSession {
+	return ctx.Value("db_session").(*DatabaseSession)
 }
