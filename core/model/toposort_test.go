@@ -1,13 +1,13 @@
-package core
+package model
 
 import (
 	"testing"
 	"time"
 )
 
-func TestSortEmptyManifest(t *testing.T) {
-	var manifest Manifest
-	got, err := toposort(manifest)
+func TestSortEmptyHistory(t *testing.T) {
+	var versions []*Version
+	got, err := toposort(versions)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,17 +18,17 @@ func TestSortEmptyManifest(t *testing.T) {
 
 func TestSortSingleVersion(t *testing.T) {
 	time1, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T10:00:00")
-	manifest := Manifest{
+	versions := []*Version{
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time1,
-			Message: "Aardvark Wikipedia Article",
-			Hash:    "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y",
-			Type:    D_FILE,
-			Parents: nil,
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time1,
+			Message:  "Aardvark Wikipedia Article",
+			Hash:     "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y",
+			PathType: PathTypeFile,
+			Parents:  nil,
 		},
 	}
-	got, err := toposort(manifest)
+	got, err := toposort(versions)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,33 +44,33 @@ func TestSortSimpleLinearManifestByParentage(t *testing.T) {
 
 	time1, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T10:00:00")
 
-	manifest := Manifest{
+	versions := []*Version{
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time1,
-			Message: "Cold War Wikipedia Article",
-			Hash:    hash3,
-			Type:    D_FILE,
-			Parents: []string{hash2},
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time1,
+			Message:  "Cold War Wikipedia Article",
+			Hash:     hash3,
+			PathType: PathTypeFile,
+			Parents:  []string{hash2},
 		},
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time1,
-			Message: "Aardvark Wikipedia Article",
-			Hash:    hash1,
-			Type:    D_FILE,
-			Parents: nil,
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time1,
+			Message:  "Aardvark Wikipedia Article",
+			Hash:     hash1,
+			PathType: PathTypeFile,
+			Parents:  nil,
 		},
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time1,
-			Message: "Africa Wikipedia Article",
-			Hash:    hash2,
-			Type:    D_FILE,
-			Parents: []string{hash1},
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time1,
+			Message:  "Africa Wikipedia Article",
+			Hash:     hash2,
+			PathType: PathTypeFile,
+			Parents:  []string{hash1},
 		},
 	}
-	got, err := toposort(manifest)
+	got, err := toposort(versions)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestSortSimpleLinearManifestByParentage(t *testing.T) {
 		t.Fatalf("expected an exactly 3 versions, found %d", len(got))
 	}
 
-	expected := Manifest{manifest[1], manifest[2], manifest[0]}
+	expected := []*Version{versions[1], versions[2], versions[0]}
 	for i := range got {
 		if !got[i].Equal(expected[i]) {
 			t.Errorf("expected[%d] = %v; %v", i, expected[i], got[i])
@@ -95,33 +95,33 @@ func TestSortSimpleLinearManifestByDate(t *testing.T) {
 	time2, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T11:00:00")
 	time3, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T12:00:00")
 
-	manifest := Manifest{
+	versions := []*Version{
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time3,
-			Message: "Cold War Wikipedia Article",
-			Hash:    hash3,
-			Type:    D_FILE,
-			Parents: nil,
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time3,
+			Message:  "Cold War Wikipedia Article",
+			Hash:     hash3,
+			PathType: PathTypeFile,
+			Parents:  nil,
 		},
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time1,
-			Message: "Aardvark Wikipedia Article",
-			Hash:    hash1,
-			Type:    D_FILE,
-			Parents: nil,
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time1,
+			Message:  "Aardvark Wikipedia Article",
+			Hash:     hash1,
+			PathType: PathTypeFile,
+			Parents:  nil,
 		},
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time2,
-			Message: "Africa Wikipedia Article",
-			Hash:    hash2,
-			Type:    D_FILE,
-			Parents: nil,
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time2,
+			Message:  "Africa Wikipedia Article",
+			Hash:     hash2,
+			PathType: PathTypeFile,
+			Parents:  nil,
 		},
 	}
-	got, err := toposort(manifest)
+	got, err := toposort(versions)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func TestSortSimpleLinearManifestByDate(t *testing.T) {
 		t.Fatalf("expected an exactly 3 versions, found %d", len(got))
 	}
 
-	expected := Manifest{manifest[1], manifest[2], manifest[0]}
+	expected := []*Version{versions[1], versions[2], versions[0]}
 	for i := range got {
 		if !got[i].Equal(expected[i]) {
 			t.Errorf("expected[%d] = %v; %v", i, expected[i], got[i])
@@ -146,33 +146,33 @@ func TestSortDisconnected(t *testing.T) {
 	time2, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T11:00:00")
 	time3, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T12:00:00")
 
-	manifest := Manifest{
+	versions := []*Version{
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time3,
-			Message: "Cold War Wikipedia Article",
-			Hash:    hash3,
-			Type:    D_FILE,
-			Parents: nil,
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time3,
+			Message:  "Cold War Wikipedia Article",
+			Hash:     hash3,
+			PathType: PathTypeFile,
+			Parents:  nil,
 		},
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time1,
-			Message: "Aardvark Wikipedia Article",
-			Hash:    hash1,
-			Type:    D_FILE,
-			Parents: nil,
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time1,
+			Message:  "Aardvark Wikipedia Article",
+			Hash:     hash1,
+			PathType: PathTypeFile,
+			Parents:  nil,
 		},
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time2,
-			Message: "Africa Wikipedia Article",
-			Hash:    hash2,
-			Type:    D_FILE,
-			Parents: []string{hash1},
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time2,
+			Message:  "Africa Wikipedia Article",
+			Hash:     hash2,
+			PathType: PathTypeFile,
+			Parents:  []string{hash1},
 		},
 	}
-	got, err := toposort(manifest)
+	got, err := toposort(versions)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +180,7 @@ func TestSortDisconnected(t *testing.T) {
 		t.Fatalf("expected an exactly 3 versions, found %d", len(got))
 	}
 
-	expected := Manifest{manifest[1], manifest[2], manifest[0]}
+	expected := []*Version{versions[1], versions[2], versions[0]}
 	for i := range got {
 		if !got[i].Equal(expected[i]) {
 			t.Errorf("expected[%d] = %v; %v", i, expected[i], got[i])
@@ -197,33 +197,33 @@ func TestSortMultipleRoots(t *testing.T) {
 	time2, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T11:00:00")
 	time3, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T12:00:00")
 
-	manifest := Manifest{
+	versions := []*Version{
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time3,
-			Message: "Cold War Wikipedia Article",
-			Hash:    hash3,
-			Type:    D_FILE,
-			Parents: []string{hash1, hash2},
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time3,
+			Message:  "Cold War Wikipedia Article",
+			Hash:     hash3,
+			PathType: PathTypeFile,
+			Parents:  []string{hash1, hash2},
 		},
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time2,
-			Message: "Africa Wikipedia Article",
-			Hash:    hash2,
-			Type:    D_FILE,
-			Parents: nil,
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time2,
+			Message:  "Africa Wikipedia Article",
+			Hash:     hash2,
+			PathType: PathTypeFile,
+			Parents:  nil,
 		},
 		{
-			Author:  "Douglas G. Moore <doug@dglmoore.com>",
-			Date:    time1,
-			Message: "Aardvark Wikipedia Article",
-			Hash:    hash1,
-			Type:    D_FILE,
-			Parents: nil,
+			Author:   "Douglas G. Moore <doug@dglmoore.com>",
+			Date:     time1,
+			Message:  "Aardvark Wikipedia Article",
+			Hash:     hash1,
+			PathType: PathTypeFile,
+			Parents:  nil,
 		},
 	}
-	got, err := toposort(manifest)
+	got, err := toposort(versions)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +231,7 @@ func TestSortMultipleRoots(t *testing.T) {
 		t.Fatalf("expected an exactly 3 versions, found %d", len(got))
 	}
 
-	expected := Manifest{manifest[2], manifest[1], manifest[0]}
+	expected := []*Version{versions[2], versions[1], versions[0]}
 	for i := range got {
 		if !got[i].Equal(expected[i]) {
 			t.Errorf("expected[%d] = %v; %v", i, expected[i], got[i])

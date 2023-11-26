@@ -17,6 +17,11 @@ func (r *datasetResolver) Organization(ctx context.Context, obj *model.Dataset) 
 	return core.GetOrganization(ctx, r.config, r.db, &input)
 }
 
+// Manifest is the resolver for the manifest field.
+func (r *datasetResolver) Manifest(ctx context.Context, obj *model.Dataset) (*model.Manifest, error) {
+	return core.GetManifest(ctx, r.config, obj)
+}
+
 // CreateOrganization is the resolver for the createOrganization field.
 func (r *mutationResolver) CreateOrganization(ctx context.Context, input model.NewOrganization) (*model.Organization, error) {
 	return core.CreateOrganization(ctx, r.config, r.db, &input)

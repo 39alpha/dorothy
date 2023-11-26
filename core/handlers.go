@@ -104,3 +104,17 @@ func GetDataset(ctx context.Context, config *Config, db *DatabaseSession, input 
 	}
 	return &dataset, nil
 }
+
+func GetManifest(ctx context.Context, config *Config, input *model.Dataset) (*model.Manifest, error) {
+	client, err := NewIpfs(config)
+	if err != nil {
+		return nil, err
+	}
+
+	manifest, err := client.GetManifest(ctx, input.OrganizationID, input.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return manifest, nil
+}

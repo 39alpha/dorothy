@@ -2,6 +2,8 @@
 #
 # https://gqlgen.com/getting-started/
 
+scalar Time
+
 type Organization {
   id: String!
   name: String!
@@ -26,6 +28,25 @@ type Dataset {
   contact: String!
   description: String!
   organization: Organization!
+  manifest: Manifest!
+}
+
+type Manifest {
+  versions: [Version!]!
+}
+
+type Version {
+  author: String!
+  date: Time!
+  message: String!
+  hash: String!
+  pathType: PathType!
+  parents: [String!]!
+}
+
+enum PathType {
+  DIRECTORY
+  FILE
 }
 
 input NewDataset {

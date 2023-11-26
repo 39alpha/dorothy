@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/core/model"
 )
 
 func Fetch() error {
@@ -32,10 +32,10 @@ func Fetch() error {
 		return err
 	}
 
-	var manifest core.Manifest
+	var manifest model.Manifest
 	if err := json.Unmarshal(body, &manifest); err != nil {
 		return err
 	}
 
-	return core.WriteManifestFile(manifestpath, manifest)
+	return model.WriteManifestFile(manifestpath, &manifest)
 }

@@ -4,26 +4,26 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/core/model"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
 func Checkout(hash, dest string) error {
-	manifest, err := core.ReadManifestFile(manifestpath)
+	manifest, err := model.ReadManifestFile(manifestpath)
 	if err != nil {
 		return fmt.Errorf("failed to read manifest")
 	}
 
-	for _, entry := range manifest {
-		if entry.Hash == hash {
+	for _, version := range manifest.Versions {
+		if version.Hash == hash {
 			return checkout(hash, dest)
 		}
 	}
 
-	var matches []core.Version
-	for _, entry := range manifest {
-		if strings.HasPrefix(entry.Hash, hash) {
-			matches = append(matches, entry)
+	var matches []*model.Version
+	for _, version := range manifest.Versions {
+		if strings.HasPrefix(version.Hash, hash) {
+			matches = append(matches, version)
 		}
 	}
 

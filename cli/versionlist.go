@@ -3,7 +3,7 @@ package cli
 import (
 	"strings"
 
-	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/core/model"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -26,7 +26,7 @@ var (
 )
 
 type version struct {
-	version *core.Version
+	version *model.Version
 	chosen  bool
 }
 
@@ -53,7 +53,7 @@ func (v *version) toggle() {
 	v.chosen = !v.chosen
 }
 
-type model struct {
+type viewModel struct {
 	list     list.Model
 	keys     *listKeyMap
 	choices  []list.Item
@@ -141,16 +141,16 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	return d
 }
 
-func newModel(title string, manifest core.Manifest, required bool) model {
+func newModel(title string, manifest *model.Manifest, required bool) viewModel {
 	var (
 		listKeys     = newListKeyMap()
 		delegateKeys = newDelegateKeyMap()
 	)
 
 	var versions []list.Item
-	for i := len(manifest) - 1; i >= 0; i-- {
+	for i := len(manifest.Versions) - 1; i >= 0; i-- {
 		versions = append(versions, &version{
-			version: &manifest[i],
+			version: manifest.Versions[i],
 			chosen:  false,
 		})
 	}
@@ -180,14 +180,14 @@ func newModel(title string, manifest core.Manifest, required bool) model {
 		}
 		return ranks
 	}
-	return model{versionList, listKeys, versions, required}
+	return viewModel{versionList, listKeys, versions, required}
 }
 
-func (m model) Init() tea.Cmd {
+func (m viewModel) Init() tea.Cmd {
 	return tea.EnterAltScreen
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m viewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -224,11 +224,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m viewModel) View() string {
 	return appStyle.Render(m.list.View())
 }
 
-func (m model) HasChosen() bool {
+func (m viewModel) HasChosen() bool {
 	for _, item := range m.choices {
 		version := item.(*version)
 		if version.chosen {
@@ -238,7 +238,7 @@ func (m model) HasChosen() bool {
 	return false
 }
 
-func chooseVersions(title string, manifest core.Manifest, required bool) ([]string, error) {
+func chooseVersions(title string, manifest *model.Manifest, required bool) ([]string, error) {
 	p := tea.NewProgram(
 		newModel(
 			title,
@@ -252,7 +252,7 @@ func chooseVersions(title string, manifest core.Manifest, required bool) ([]stri
 	}
 
 	var parents []string
-	for _, item := range m.(model).choices {
+	for _, item := range m.(viewModel).choices {
 		version := item.(*version)
 		if version.chosen {
 			parents = append(parents, version.version.Hash)

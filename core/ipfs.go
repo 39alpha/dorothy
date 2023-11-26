@@ -17,13 +17,13 @@ const (
 )
 
 type DorothyPath struct {
-	IpfsDir string   `json:"-"`
-	WebDir  string   `json:"path"`
-	Name    string   `json:"name"`
-	Type    PathType `json:"-"`
+	IpfsDir string         `json:"-"`
+	WebDir  string         `json:"path"`
+	Name    string         `json:"name"`
+	Type    model.PathType `json:"-"`
 }
 
-func NewDorothyPath(ptype PathType, name string, parts ...string) DorothyPath {
+func NewDorothyPath(ptype model.PathType, name string, parts ...string) DorothyPath {
 	return DorothyPath{
 		IpfsDir: filepath.Join(FS_ROOT, filepath.Join(parts...)),
 		WebDir:  filepath.Join(WEB_ROOT, filepath.Join(parts...)),
@@ -53,7 +53,7 @@ func NewIpfs(config *Config) (*Ipfs, error) {
 }
 
 func (s Ipfs) CreateOrganization(ctx context.Context, org *model.Organization) (DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, org.ID)
+	path := NewDorothyPath(model.PathTypeDirectory, org.ID)
 
 	return path, s.FilesMkdir(ctx, path.ToIpfsPath(), func(r *ipfs.RequestBuilder) error {
 		r.Option("parents", true)
@@ -62,7 +62,7 @@ func (s Ipfs) CreateOrganization(ctx context.Context, org *model.Organization) (
 }
 
 func (s Ipfs) CreateDataset(ctx context.Context, dataset *model.Dataset) (DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, dataset.ID, dataset.OrganizationID)
+	path := NewDorothyPath(model.PathTypeDirectory, dataset.ID, dataset.OrganizationID)
 	if err := s.FilesMkdir(ctx, path.ToIpfsPath()); err != nil {
 		return path, err
 	}
@@ -72,11 +72,12 @@ func (s Ipfs) CreateDataset(ctx context.Context, dataset *model.Dataset) (Doroth
 }
 
 func (s Ipfs) CreateManifest(ctx context.Context, organization, dataset string) (DorothyPath, error) {
-	return s.saveManifest(ctx, organization, dataset, []Version{})
+	manifest := model.Manifest{Versions: []*model.Version{}}
+	return s.saveManifest(ctx, organization, dataset, &manifest)
 }
 
-func (s Ipfs) saveManifest(ctx context.Context, organization, dataset string, manifest Manifest) (DorothyPath, error) {
-	path := NewDorothyPath(D_FILE, "manifest.json", organization, dataset)
+func (s Ipfs) saveManifest(ctx context.Context, organization, dataset string, manifest *model.Manifest) (DorothyPath, error) {
+	path := NewDorothyPath(model.PathTypeFile, "manifest.json", organization, dataset)
 
 	buffer := new(bytes.Buffer)
 
@@ -98,7 +99,7 @@ func (s Ipfs) saveManifest(ctx context.Context, organization, dataset string, ma
 }
 
 func (s Ipfs) GetDataset(ctx context.Context, organization, dataset string) (*DorothyPath, error) {
-	path := NewDorothyPath(D_DIR, filepath.Join(organization, dataset))
+	path := NewDorothyPath(model.PathTypeDirectory, filepath.Join(organization, dataset))
 	_, err := s.FilesStat(ctx, path.ToIpfsPath())
 	if err != nil {
 		return nil, err
@@ -107,29 +108,29 @@ func (s Ipfs) GetDataset(ctx context.Context, organization, dataset string) (*Do
 	return &path, err
 }
 
-func (s Ipfs) GetManifest(ctx context.Context, organization, dataset string) (Manifest, error) {
-	path := NewDorothyPath(D_FILE, "manifest.json", organization, dataset)
+func (s Ipfs) GetManifest(ctx context.Context, organization, dataset string) (*model.Manifest, error) {
+	path := NewDorothyPath(model.PathTypeFile, "manifest.json", organization, dataset)
 	r, err := s.FilesRead(ctx, path.ToIpfsPath())
 	if err != nil {
 		return nil, err
 	}
 
-	var manifest Manifest
+	var manifest model.Manifest
 	decoder := json.NewDecoder(r)
 	if err := decoder.Decode(&manifest); err != nil {
 		return nil, err
 	}
 
-	return manifest, err
+	return &manifest, err
 }
 
-func (s Ipfs) Commit(ctx context.Context, organization, dataset string, new Manifest) (Manifest, error) {
+func (s Ipfs) Commit(ctx context.Context, organization, dataset string, new *model.Manifest) (*model.Manifest, error) {
 	old, err := s.GetManifest(ctx, organization, dataset)
 	if err != nil {
 		return nil, err
 	}
 
-	delta, err := Diff(old, new)
+	delta, err := old.Diff(new)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +151,7 @@ func (s Ipfs) Commit(ctx context.Context, organization, dataset string, new Mani
 		}
 	}
 
-	merged, _, err := Merge(old, new)
+	merged, _, err := old.Merge(new)
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +160,8 @@ func (s Ipfs) Commit(ctx context.Context, organization, dataset string, new Mani
 	return merged, err
 }
 
-func (s Ipfs) AddCommit(ctx context.Context, organization, dataset string, version Version) (DorothyPath, error) {
-	path := NewDorothyPath(version.Type, version.Hash, organization, dataset)
+func (s Ipfs) AddCommit(ctx context.Context, organization, dataset string, version *model.Version) (DorothyPath, error) {
+	path := NewDorothyPath(version.PathType, version.Hash, organization, dataset)
 
 	ipfspath := "/ipfs/" + version.Hash
 

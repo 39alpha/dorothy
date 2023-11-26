@@ -10,6 +10,7 @@ type Dataset struct {
 	Description    string       `json:"description"`
 	OrganizationID string       `json:"organizationId"`
 	Organization   Organization `json:"organization"`
+	Manifest       *Manifest    `json:"manifest" gorm:"-"`
 }
 
 type NewDataset struct {

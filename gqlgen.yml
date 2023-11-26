@@ -85,6 +85,9 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+  Time:
+    model:
+      - github.com/99designs/gqlgen/graphql.Time
   Organization:
     fields:
       datasets:
@@ -92,4 +95,6 @@ models:
   Dataset:
     fields:
       organization:
+        resolver: true
+      manifest:
         resolver: true

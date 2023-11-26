@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/core/model"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
@@ -31,7 +31,7 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 		}
 	}
 
-	manifest, err := core.ReadManifestFile(manifestpath)
+	manifest, err := model.ReadManifestFile(manifestpath)
 	if err != nil {
 		return fmt.Errorf("failed to read manifest")
 	}
@@ -44,19 +44,19 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 	}
 
 	var hash string
-	var pathtype core.PathType
+	var pathtype model.PathType
 
 	client := ipfs.NewLocalShell()
 	if stat, err := os.Stat(path); err != nil {
 		return fmt.Errorf("cannot access dataset %q: %v", path, err)
 	} else if stat.IsDir() {
-		pathtype = core.D_DIR
+		pathtype = model.PathTypeDirectory
 		hash, err = client.AddDir(path, ipfs.Pin(!nopin), ipfs.Progress(true))
 		if err != nil {
 			return fmt.Errorf("failed to add dataset %q: %v", path, err)
 		}
 	} else {
-		pathtype = core.D_FILE
+		pathtype = model.PathTypeFile
 		handle, err := os.Open(path)
 		defer handle.Close()
 		if err != nil {
@@ -69,17 +69,21 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 		}
 	}
 
-	version := core.Version{
-		Author:  config.User.String(),
-		Date:    time.Now(),
-		Message: message,
-		Hash:    hash,
-		Type:    pathtype,
-		Parents: parents,
+	version := &model.Version{
+		Author:   config.User.String(),
+		Date:     time.Now(),
+		Message:  message,
+		Hash:     hash,
+		PathType: pathtype,
+		Parents:  parents,
 	}
 
-	var conflicts []core.Conflict
-	manifest, conflicts, err = core.Merge(manifest, []core.Version{version})
+	var conflicts []model.Conflict
+	manifest, conflicts, err = manifest.Merge(
+		&model.Manifest{
+			Versions: []*model.Version{version},
+		},
+	)
 	if len(conflicts) != 0 {
 		s := strings.Builder{}
 		s.WriteString("Version conflicts with one ore more previous versions:\n\n")
@@ -91,7 +95,7 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 		return err
 	}
 
-	return core.WriteManifestFile(manifestpath, manifest)
+	return model.WriteManifestFile(manifestpath, manifest)
 }
 
 func FromEditor(config *Config, filename string) (string, error) {
@@ -130,8 +134,8 @@ func FromEditor(config *Config, filename string) (string, error) {
 	return string(body), nil
 }
 
-func checkParentage(manifest core.Manifest, parents []string, pick bool) ([]string, bool, error) {
-	if len(manifest) != 0 && (pick || len(parents) == 0) {
+func checkParentage(manifest *model.Manifest, parents []string, pick bool) ([]string, bool, error) {
+	if len(manifest.Versions) != 0 && (pick || len(parents) == 0) {
 		var picked []string
 		for {
 			var err error
@@ -159,7 +163,7 @@ func checkParentage(manifest core.Manifest, parents []string, pick bool) ([]stri
 	var unknown []string
 	for _, parent := range parents {
 		seen := false
-		for _, version := range manifest {
+		for _, version := range manifest.Versions {
 			if version.Hash == parent {
 				seen = true
 				break
