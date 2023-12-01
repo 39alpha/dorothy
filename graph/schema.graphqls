@@ -44,6 +44,12 @@ type Version {
   parents: [String!]!
 }
 
+type User {
+  email: String!
+  name: String!
+  orcid: String
+}
+
 enum PathType {
   DIRECTORY
   FILE
@@ -65,11 +71,24 @@ input GetDataset {
   organizationId: String!
 }
 
+input GetUser {
+  email: String!
+}
+
+input NewUser {
+  email: String!
+  password: String!
+  name: String!
+  orcid: String
+}
+
 type Query {
   organizations: [Organization!]!
   organization(input: GetOrganization): Organization!
   datasets(input: GetDatasets): [Dataset!]!
   dataset(input: GetDataset): Dataset!
+  users: [User!]!
+  user(input: GetUser): User!
 }
 
 type Mutation {

@@ -39,6 +39,7 @@ func (s *DatabaseSession) Initialize() error {
 	s.AutoMigrate(
 		&model.Organization{},
 		&model.Dataset{},
+		&model.User{},
 	)
 
 	return nil

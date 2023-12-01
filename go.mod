@@ -13,9 +13,11 @@ require (
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-chi/cors v1.2.1
+	github.com/go-chi/httprate v0.7.4
 	github.com/ipfs/go-ipfs-api v0.4.0
 	github.com/spf13/cobra v1.6.1
 	github.com/vektah/gqlparser/v2 v2.5.10
+	golang.org/x/crypto v0.14.0
 	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.25.5
 	v.io/x/lib v0.1.14
@@ -26,6 +28,7 @@ require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
@@ -77,7 +80,6 @@ require (
 	github.com/urfave/cli/v2 v2.25.5 // indirect
 	github.com/whyrusleeping/tar-utils v0.0.0-20180509141711-8c6c8ba81d5c // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect

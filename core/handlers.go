@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/39alpha/dorothy/core/model"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateOrganization(ctx context.Context, config *Config, db *DatabaseSession, input *model.NewOrganization) (*model.Organization, error) {
@@ -117,4 +118,42 @@ func GetManifest(ctx context.Context, config *Config, input *model.Dataset) (*mo
 	}
 
 	return manifest, nil
+}
+
+func GetUsers(ctx context.Context, config *Config, db *DatabaseSession) ([]*model.User, error) {
+	var users []*model.User
+	result := db.Select("email", "name", "orcid").Find(&users)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return users, nil
+}
+
+func GetUser(ctx context.Context, config *Config, db *DatabaseSession, input *model.GetUser) (*model.User, error) {
+	var user model.User
+	result := db.
+		Where(&model.User{Email: input.Email}).
+		Find(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
+func CreateUser(ctx context.Context, config *Config, db *DatabaseSession, input *model.NewUser) (*model.User, error) {
+	password_hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), 16)
+	if err != nil {
+		return nil, err
+	}
+	user := &model.User{
+		Email:        input.Email,
+		PasswordHash: string(password_hash),
+		Name:         input.Name,
+		Orcid:        input.Orcid,
+	}
+	if result := db.Create(user); result.Error != nil {
+		return nil, result.Error
+	}
+	user.PasswordHash = ""
+	return user, nil
 }

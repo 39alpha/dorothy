@@ -58,6 +58,16 @@ func (r *queryResolver) Dataset(ctx context.Context, input *model.GetDataset) (*
 	return core.GetDataset(ctx, r.config, r.db, input)
 }
 
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	return core.GetUsers(ctx, r.config, r.db)
+}
+
+// User is the resolver for the user field.
+func (r *queryResolver) User(ctx context.Context, input *model.GetUser) (*model.User, error) {
+	return core.GetUser(ctx, r.config, r.db, input)
+}
+
 // Dataset returns DatasetResolver implementation.
 func (r *Resolver) Dataset() DatasetResolver { return &datasetResolver{r} }
 
