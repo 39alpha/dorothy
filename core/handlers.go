@@ -1,8 +1,11 @@
 package core
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/39alpha/dorothy/core/model"
 	"golang.org/x/crypto/bcrypt"
@@ -175,4 +178,41 @@ func ValidateCredentials(db *DatabaseSession, email, password string) error {
 		return fmt.Errorf("invalid email or password")
 	}
 	return nil
+}
+
+func Registration(config *Config, db *DatabaseSession) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		var new_user model.NewUser
+		if err := decoder.Decode(&new_user); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("illformed request"))
+			return
+		}
+
+		_, err := CreateUser(r.Context(), config, db, &new_user)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("user already exists"))
+			return
+		}
+
+		var user model.User
+		result := db.Find(&user)
+		if result.Error != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("an unexpected error occured"))
+			return
+		}
+
+		var buf bytes.Buffer
+		encoder := json.NewEncoder(&buf)
+		if err := encoder.Encode(&user); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("an unexpected error occured"))
+			return
+		}
+
+		w.Write(buf.Bytes())
+	}
 }

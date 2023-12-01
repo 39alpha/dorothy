@@ -1,11 +1,9 @@
 package graph
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,7 +11,6 @@ import (
 	"time"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/core/model"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -85,7 +82,7 @@ func NewServer(config *core.Config) (*Server, error) {
 	router.Use(cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
-		AllowedMethods:   []string{"GET", "POST", "PUT"},
+		AllowedMethods:   []string{"POST"},
 	}).Handler)
 
 	s := oauth.NewBearerServer(
@@ -106,40 +103,7 @@ func NewServer(config *core.Config) (*Server, error) {
 		// DGM: The rate limit here should probably be a system setting
 		r.Use(httprate.LimitByIP(5, 1*time.Minute))
 		r.Use(middleware.AllowContentType("application/json"))
-		r.Post("/", func(w http.ResponseWriter, r *http.Request) {
-			decoder := json.NewDecoder(r.Body)
-			var new_user model.NewUser
-			if err := decoder.Decode(&new_user); err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("illformed request"))
-				return
-			}
-
-			_, err := core.CreateUser(r.Context(), config, session, &new_user)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("user already exists"))
-				return
-			}
-
-			var user model.User
-			result := session.Find(&user)
-			if result.Error != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("an unexpected error occured"))
-				return
-			}
-
-			var buf bytes.Buffer
-			encoder := json.NewEncoder(&buf)
-			if err := encoder.Encode(&user); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("an unexpected error occured"))
-				return
-			}
-
-			w.Write(buf.Bytes())
-		})
+		r.Post("/", core.Registration(config, session))
 	})
 
 	dorothy := &Server{router, config}
