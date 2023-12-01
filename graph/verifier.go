@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/39alpha/dorothy/core"
@@ -17,7 +18,7 @@ func (v *UserVerifier) ValidateUser(username, password, scope string, r *http.Re
 }
 
 func (*UserVerifier) ValidateClient(clientID, clientSecret, scope string, r *http.Request) error {
-	return nil
+	return fmt.Errorf("client credentials are not accepted")
 }
 
 func (*UserVerifier) AddClaims(tokenType oauth.TokenType, credential, tokenID, scope string, r *http.Request) (map[string]string, error) {
