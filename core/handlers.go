@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/39alpha/dorothy/core/model"
 	"golang.org/x/crypto/bcrypt"
@@ -141,19 +142,37 @@ func GetUser(ctx context.Context, config *Config, db *DatabaseSession, input *mo
 }
 
 func CreateUser(ctx context.Context, config *Config, db *DatabaseSession, input *model.NewUser) (*model.User, error) {
-	password_hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), 16)
+	password_hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), 8)
 	if err != nil {
 		return nil, err
 	}
+
 	user := &model.User{
 		Email:        input.Email,
-		PasswordHash: string(password_hash),
+		PasswordHash: password_hash,
 		Name:         input.Name,
 		Orcid:        input.Orcid,
 	}
 	if result := db.Create(user); result.Error != nil {
 		return nil, result.Error
 	}
-	user.PasswordHash = ""
+	user.PasswordHash = nil
 	return user, nil
+}
+
+func ValidateCredentials(db *DatabaseSession, email, password string) error {
+	user := &model.User{
+		Email: email,
+	}
+
+	result := db.Select("PasswordHash").Where(user).Find(&user)
+	if result.Error != nil || user.PasswordHash == nil {
+		return fmt.Errorf("invalid email or password")
+	}
+
+	err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(password))
+	if err != nil {
+		return fmt.Errorf("invalid email or password")
+	}
+	return nil
 }
