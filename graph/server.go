@@ -7,17 +7,18 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/core/model"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/httprate"
-	"github.com/go-chi/oauth"
+	"github.com/go-chi/jwtauth/v5"
 	ipfs "github.com/ipfs/go-ipfs-api"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
 type Server struct {
@@ -25,33 +26,17 @@ type Server struct {
 	config *core.Config
 }
 
-type OAuthSettings struct {
-	secret string
-	ttl    time.Duration
-}
-
-func loadOAuthSettings() (*OAuthSettings, error) {
-	ttl_string := os.Getenv("DOROTHY_OAUTH_TTL")
-	if ttl_string == "" {
-		ttl_string = "300"
-	}
-	ttl, err := strconv.Atoi(ttl_string)
-	if err != nil {
-		return nil, fmt.Errorf("DOROTHY_OAUTH_TTL is not a valid integer")
-	}
-
+func makeJWTAuth() (*jwtauth.JWTAuth, error) {
 	secret := os.Getenv("DOROTHY_OAUTH_SECRET")
 	if secret == "" {
+		var err error
 		secret, err = generateSecret()
 		if err != nil {
 			return nil, fmt.Errorf("DOROTHY_SERVER_SECRET environment variable empty and failed to generate secret")
 		}
 	}
 
-	return &OAuthSettings{
-		secret: secret,
-		ttl:    time.Second * time.Duration(ttl),
-	}, nil
+	return jwtauth.New("HS256", []byte(secret), nil), nil
 }
 
 func generateSecret() (string, error) {
@@ -64,8 +49,41 @@ func generateSecret() (string, error) {
 	return base64.StdEncoding.EncodeToString(key), nil
 }
 
+func Authenticator(tokenAuth *jwtauth.JWTAuth, db *core.DatabaseSession) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		hfn := func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			token, claims, err := jwtauth.FromContext(ctx)
+
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return
+			}
+
+			if token != nil && jwt.Validate(token, tokenAuth.ValidateOptions()...) == nil {
+				if email, ok := claims["email"]; ok {
+					var user model.User
+					result := db.
+						Select("id", "email", "name", "orcid").
+						Where("email = ?", email).
+						First(&user)
+					if result.Error != nil {
+						http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+						return
+					}
+					ctx = context.WithValue(ctx, "auth_user", user)
+				}
+			}
+
+			// Token is authenticated, pass it through
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+		return http.HandlerFunc(hfn)
+	}
+}
+
 func NewServer(config *core.Config) (*Server, error) {
-	oauth_settings, err := loadOAuthSettings()
+	tokenAuth, err := makeJWTAuth()
 	if err != nil {
 		return nil, err
 	}
@@ -85,31 +103,25 @@ func NewServer(config *core.Config) (*Server, error) {
 		AllowedMethods:   []string{"POST"},
 	}).Handler)
 
-	s := oauth.NewBearerServer(
-		// DGM: These details should be system settings (ish)
-		oauth_settings.secret,
-		oauth_settings.ttl,
-		&UserVerifier{db: session},
-		nil,
-	)
-
 	c := Config{Resolvers: &Resolver{config: config, db: session}}
-	router.Route("/", func(r chi.Router) {
-		r.Use(oauth.Authorize(oauth_settings.secret, nil))
+	router.Group(func(r chi.Router) {
+		r.Use(jwtauth.Verifier(tokenAuth))
+		r.Use(Authenticator(tokenAuth, session))
+
 		r.Handle("/query", handler.NewDefaultServer(NewExecutableSchema(c)))
 	})
-	router.Post("/token", s.UserCredentials)
-	router.Route("/register", func(r chi.Router) {
+	router.Group(func(r chi.Router) {
 		// DGM: The rate limit here should probably be a system setting
 		r.Use(httprate.LimitByIP(5, 1*time.Minute))
 		r.Use(middleware.AllowContentType("application/json"))
-		r.Post("/", core.Registration(config, session))
+
+		r.Post("/login", core.Login(tokenAuth, config, session))
+		r.Post("/register", core.Registration(config, session))
 	})
 
 	dorothy := &Server{router, config}
-	err = dorothy.initialize()
 
-	return dorothy, err
+	return dorothy, dorothy.initialize()
 }
 
 func (d *Server) initialize() error {

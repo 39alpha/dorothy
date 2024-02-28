@@ -21,3 +21,8 @@ type NewUser struct {
 	Name     string  `json:"name"`
 	Orcid    *string `json:"orcid,omitempty"`
 }
+
+type UserLogin struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
