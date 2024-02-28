@@ -21,12 +21,12 @@ type Manifest struct {
 }
 
 type Version struct {
-	Author  string    `json:"author"`
-	Date    time.Time `json:"date"`
-	Message string    `json:"message"`
-	Hash    string    `json:"hash"`
-	PathType    PathType  `json:"path_type"`
-	Parents []string  `json:"parents"`
+	Author   string    `json:"author"`
+	Date     time.Time `json:"date"`
+	Message  string    `json:"message"`
+	Hash     string    `json:"hash"`
+	PathType PathType  `json:"path_type"`
+	Parents  []string  `json:"parents"`
 }
 
 type PathType string
@@ -287,7 +287,7 @@ func toposort(versions []*Version) ([]*Version, error) {
 	N := len(sorted)
 	versions = make([]*Version, N)
 	for i := N - 1; i >= 0; i-- {
-		versions[N - 1 - i] = *sorted[i].(**Version)
+		versions[N-1-i] = *sorted[i].(**Version)
 	}
 
 	return versions, nil
