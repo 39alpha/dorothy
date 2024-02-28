@@ -94,7 +94,7 @@ func ListDatasets(ctx context.Context, config *Config, db *DatabaseSession, inpu
 	var datasets []*model.Dataset
 	result := db.
 		Where(&model.Dataset{OrganizationID: input.OrganizationID}).
-		Find(&datasets)
+		First(&datasets)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -126,7 +126,7 @@ func GetManifest(ctx context.Context, config *Config, input *model.Dataset) (*mo
 
 func GetUsers(ctx context.Context, config *Config, db *DatabaseSession) ([]*model.User, error) {
 	var users []*model.User
-	result := db.Select("email", "name", "orcid").Find(&users)
+	result := db.Select("id", "email", "name", "orcid").Find(&users)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -136,8 +136,9 @@ func GetUsers(ctx context.Context, config *Config, db *DatabaseSession) ([]*mode
 func GetUser(ctx context.Context, config *Config, db *DatabaseSession, input *model.GetUser) (*model.User, error) {
 	var user model.User
 	result := db.
+		Select("id", "email", "name", "orcid").
 		Where(&model.User{Email: input.Email}).
-		Find(&user)
+		First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -159,7 +160,12 @@ func CreateUser(ctx context.Context, config *Config, db *DatabaseSession, input 
 	if result := db.Create(user); result.Error != nil {
 		return nil, result.Error
 	}
-	user.PasswordHash = nil
+
+	user = &model.User{Email: input.Email}
+	if result := db.Where(&user).First(&user); result.Error != nil {
+		return nil, result.Error
+	}
+
 	return user, nil
 }
 
@@ -197,8 +203,11 @@ func Registration(config *Config, db *DatabaseSession) http.HandlerFunc {
 			return
 		}
 
-		var user model.User
-		result := db.Find(&user)
+		var user = model.User{
+			Email: new_user.Email,
+		}
+
+		result := db.Select("id", "email", "name", "orcid").Where(&user).First(&user)
 		if result.Error != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("an unexpected error occured"))
