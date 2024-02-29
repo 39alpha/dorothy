@@ -32,8 +32,8 @@ func TestCreateOrganization(t *testing.T) {
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
-	id := "team0"
-	path, err := client.CreateOrganization(ctx, &model.Organization{ID: id})
+	slug := "team0"
+	path, err := client.CreateOrganization(ctx, &model.Organization{Slug: slug})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,8 +44,8 @@ func TestCreateOrganization(t *testing.T) {
 	if path.WebDir != "/" {
 		t.Errorf("expected %q file type, got %q", "/", path.WebDir)
 	}
-	if path.Name != id {
-		t.Errorf("expected name %q, got %q", id, path.Name)
+	if path.Name != slug {
+		t.Errorf("expected name %q, got %q", slug, path.Name)
 	}
 	if path.Type != model.PathTypeDirectory {
 		t.Errorf("expected %q file type, got %q", model.PathTypeDirectory, path.Type)
@@ -59,9 +59,9 @@ func TestCreateDatasetAlreadyExists(t *testing.T) {
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
-	organizationId := "team0"
-	id := "CSS0"
-	_, err := client.CreateDataset(ctx, &model.Dataset{ID: id, OrganizationID: organizationId})
+	organizationSlug := "team0"
+	datasetSlug := "css0"
+	_, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}})
 	if err == nil {
 		t.Errorf("expected an error, got nil")
 	}
@@ -70,28 +70,28 @@ func TestCreateDatasetAlreadyExists(t *testing.T) {
 func TestCreateDataset(t *testing.T) {
 	ctx := context.TODO()
 
-	organizationId := "team0"
-	id := "CSS0"
+	organizationSlug := "team0"
+	datasetSlug := "css0"
 
 	defer func() {
-		err := client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationId, id))
+		err := client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
 		if err != nil {
 			panic(err)
 		}
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
-	if _, err := client.CreateOrganization(ctx, &model.Organization{ID: organizationId}); err != nil {
+	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
 		t.Fatal(err)
 	}
 
-	path, err := client.CreateDataset(ctx, &model.Dataset{ID: id, OrganizationID: organizationId})
+	path, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ipfsDir := "/dorothy/" + organizationId
-	webDir := "/" + organizationId
+	ipfsDir := "/dorothy/" + organizationSlug
+	webDir := "/" + organizationSlug
 
 	if path.IpfsDir != ipfsDir {
 		t.Errorf("expected name %q, got %q", ipfsDir, path.IpfsDir)
@@ -99,8 +99,8 @@ func TestCreateDataset(t *testing.T) {
 	if path.WebDir != webDir {
 		t.Errorf("expected %q file type, got %q", webDir, path.WebDir)
 	}
-	if path.Name != id {
-		t.Errorf("expected name %q, got %q", id, path.Name)
+	if path.Name != datasetSlug {
+		t.Errorf("expected name %q, got %q", datasetSlug, path.Name)
 	}
 	if path.Type != model.PathTypeDirectory {
 		t.Errorf("expected %q file type, got %q", model.PathTypeDirectory, path.Type)
@@ -110,23 +110,23 @@ func TestCreateDataset(t *testing.T) {
 func TestCreateDatasetCreatesEmptyManifest(t *testing.T) {
 	ctx := context.TODO()
 
-	organizationId := "team0"
-	id := "CSS0"
+	organizationSlug := "team0"
+	datasetSlug := "CSS0"
 
 	defer func() {
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationId, id))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
-	if _, err := client.CreateOrganization(ctx, &model.Organization{ID: organizationId}); err != nil {
+	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CreateDataset(ctx, &model.Dataset{ID: id, OrganizationID: organizationId}); err != nil {
+	if _, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}}); err != nil {
 		t.Fatal(err)
 	}
 
-	manifest, err := client.GetManifest(ctx, organizationId, id)
+	manifest, err := client.GetManifest(ctx, organizationSlug, datasetSlug)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,21 +139,21 @@ func TestCreateDatasetCreatesEmptyManifest(t *testing.T) {
 func TestCommit(t *testing.T) {
 	ctx := context.TODO()
 
-	organizationId := "team0"
-	id := "CSS0"
+	organizationSlug := "team0"
+	datasetSlug := "CSS0"
 	hash := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 
 	defer func() {
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash, organizationId, id))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationId, id))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash, organizationSlug, datasetSlug))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
-	if _, err := client.CreateOrganization(ctx, &model.Organization{ID: organizationId}); err != nil {
+	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CreateDataset(ctx, &model.Dataset{ID: id, OrganizationID: organizationId}); err != nil {
+	if _, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -170,7 +170,7 @@ func TestCommit(t *testing.T) {
 		},
 	}
 
-	returned, err := client.Commit(ctx, organizationId, id, manifest)
+	returned, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func TestCommit(t *testing.T) {
 		}
 	}
 
-	saved, err := client.GetManifest(ctx, organizationId, id)
+	saved, err := client.GetManifest(ctx, organizationSlug, datasetSlug)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,23 +204,23 @@ func TestCommit(t *testing.T) {
 func TestMultipleCommits(t *testing.T) {
 	ctx := context.TODO()
 
-	organizationId := "team0"
-	id := "CSS0"
+	organizationSlug := "team0"
+	datasetSlug := "CSS0"
 	hash1 := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 	hash2 := "bafybeicysbsujtlq2d7ygbab47lywcb7vehx64zwv4etis6hom45iorjwm"
 
 	defer func() {
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash1, organizationId, id))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash2, organizationId, id))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationId, id))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash1, organizationSlug, datasetSlug))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash2, organizationSlug, datasetSlug))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
-	if _, err := client.CreateOrganization(ctx, &model.Organization{ID: organizationId}); err != nil {
+	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CreateDataset(ctx, &model.Dataset{ID: id, OrganizationID: organizationId}); err != nil {
+	if _, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -248,11 +248,11 @@ func TestMultipleCommits(t *testing.T) {
 		}),
 	}
 
-	if _, err := client.Commit(ctx, organizationId, id, manifest1); err != nil {
+	if _, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest1); err != nil {
 		t.Fatal(err)
 	}
 
-	returned, err := client.Commit(ctx, organizationId, id, manifest2)
+	returned, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +267,7 @@ func TestMultipleCommits(t *testing.T) {
 		}
 	}
 
-	saved, err := client.GetManifest(ctx, organizationId, id)
+	saved, err := client.GetManifest(ctx, organizationSlug, datasetSlug)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,25 +286,25 @@ func TestMultipleCommits(t *testing.T) {
 func TestConflictingCommits(t *testing.T) {
 	ctx := context.TODO()
 
-	organizationId := "team0"
-	id := "CSS0"
+	organizationSlug := "team0"
+	datasetSlug := "CSS0"
 	hash1 := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 	hash2 := "bafybeicysbsujtlq2d7ygbab47lywcb7vehx64zwv4etis6hom45iorjwm"
 	hash3 := "bafybeifvnc6qllx2cuwcrkf5fxuocg7jraesroxeuzd3ru7aexnayjnjgu"
 
 	defer func() {
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash1, organizationId, id))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash2, organizationId, id))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash3, organizationId, id))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationId, id))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash1, organizationSlug, datasetSlug))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash2, organizationSlug, datasetSlug))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash3, organizationSlug, datasetSlug))
+		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
 		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
-	if _, err := client.CreateOrganization(ctx, &model.Organization{ID: organizationId}); err != nil {
+	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := client.CreateDataset(ctx, &model.Dataset{ID: id, OrganizationID: organizationId}); err != nil {
+	if _, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -342,11 +342,11 @@ func TestConflictingCommits(t *testing.T) {
 	manifest1 := &model.Manifest{Versions: []*model.Version{versions[0], versions[2]}}
 	manifest2 := &model.Manifest{Versions: []*model.Version{versions[0], versions[1]}}
 
-	if _, err := client.Commit(ctx, organizationId, id, manifest1); err != nil {
+	if _, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest1); err != nil {
 		t.Fatal(err)
 	}
 
-	returned, err := client.Commit(ctx, organizationId, id, manifest2)
+	returned, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,7 +361,7 @@ func TestConflictingCommits(t *testing.T) {
 		}
 	}
 
-	saved, err := client.GetManifest(ctx, organizationId, id)
+	saved, err := client.GetManifest(ctx, organizationSlug, datasetSlug)
 	if err != nil {
 		t.Fatal(err)
 	}

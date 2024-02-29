@@ -1,23 +1,34 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Dataset struct {
-	gorm.Model
-	ID             string       `json:"id" gorm:"primaryKey"`
-	Name           string       `json:"name"`
-	Contact        string       `json:"contact"`
-	Description    string       `json:"description"`
-	OrganizationID string       `json:"organizationId"`
-	Organization   Organization `json:"organization"`
-	Manifest       *Manifest    `json:"manifest" gorm:"-"`
+	ID             uint           `json:"id" gorm:"primaryKey"`
+	Slug           string         `json:"slug" gorm:"uniqueIndex"`
+	Name           string         `json:"name"`
+	Contact        string         `json:"contact"`
+	Description    string         `json:"description"`
+	IsPrivate      bool           `json:"private"`
+	OrganizationID uint           `json:"organizationId"`
+	Manifest       *Manifest      `json:"manifest" gorm:"-"`
+	CreatedAt      time.Time      `json:"createdAt"`
+	UpdatedAt      time.Time      `json:"updatedAt"`
+	DeletedAt      gorm.DeletedAt `json:"-" gorm:"index"`
+
+	Organization   *Organization          `json:"organization"`
+	UserPrivileges []UserDatasetPrivilege `json:"userPrivileges"`
 }
 
 type NewDataset struct {
+	Slug           string  `json:"slug"`
 	Name           string  `json:"name"`
 	Contact        string  `json:"contact"`
 	Description    *string `json:"description,omitempty"`
-	OrganizationID string  `json:"organizationId"`
+	OrganizationID uint    `json:"organizationId"`
 }
 
 func (input *NewDataset) ID() string {
@@ -25,10 +36,10 @@ func (input *NewDataset) ID() string {
 }
 
 type GetDatasets struct {
-	OrganizationID string `json:"organizationId"`
+	OrganizationID uint `json:"organizationId"`
 }
 
 type GetDataset struct {
 	GetDatasets
-	ID string `json:"id"`
+	ID uint `json:"id"`
 }

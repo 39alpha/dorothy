@@ -53,7 +53,7 @@ func NewIpfs(config *Config) (*Ipfs, error) {
 }
 
 func (s Ipfs) CreateOrganization(ctx context.Context, org *model.Organization) (DorothyPath, error) {
-	path := NewDorothyPath(model.PathTypeDirectory, org.ID)
+	path := NewDorothyPath(model.PathTypeDirectory, org.Slug)
 
 	return path, s.FilesMkdir(ctx, path.ToIpfsPath(), func(r *ipfs.RequestBuilder) error {
 		r.Option("parents", true)
@@ -62,12 +62,12 @@ func (s Ipfs) CreateOrganization(ctx context.Context, org *model.Organization) (
 }
 
 func (s Ipfs) CreateDataset(ctx context.Context, dataset *model.Dataset) (DorothyPath, error) {
-	path := NewDorothyPath(model.PathTypeDirectory, dataset.ID, dataset.OrganizationID)
+	path := NewDorothyPath(model.PathTypeDirectory, dataset.Slug, dataset.Organization.Slug)
 	if err := s.FilesMkdir(ctx, path.ToIpfsPath()); err != nil {
 		return path, err
 	}
 
-	_, err := s.CreateManifest(ctx, dataset.OrganizationID, dataset.ID)
+	_, err := s.CreateManifest(ctx, dataset.Organization.Slug, dataset.Slug)
 	return path, err
 }
 

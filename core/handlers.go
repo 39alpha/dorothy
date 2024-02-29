@@ -19,7 +19,7 @@ func CreateOrganization(ctx context.Context, config *Config, db *DatabaseSession
 	}
 
 	org := &model.Organization{
-		ID:          input.ID(),
+		Slug:        input.Slug,
 		Name:        input.Name,
 		Contact:     input.Contact,
 		Description: description,
@@ -53,8 +53,14 @@ func ListOrganizations(ctx context.Context, config *Config, db *DatabaseSession)
 
 func GetOrganization(ctx context.Context, config *Config, db *DatabaseSession, input *model.GetOrganization) (*model.Organization, error) {
 	var organization model.Organization
-	result := db.Where(&model.Organization{ID: input.ID}).First(&organization)
-	if result.Error != nil {
+	where := &model.Organization{}
+	if input.ID != nil {
+		where.ID = *input.ID
+	}
+	if input.Slug != nil && len(*input.Slug) > 0 {
+		where.Slug = *input.Slug
+	}
+	if result := db.Where(where).First(&organization); result.Error != nil {
 		return nil, result.Error
 	}
 	return &organization, nil
@@ -67,7 +73,7 @@ func CreateDataset(ctx context.Context, config *Config, db *DatabaseSession, inp
 	}
 
 	dataset := &model.Dataset{
-		ID:             input.ID(),
+		Slug:           input.Slug,
 		Name:           input.Name,
 		Contact:        input.Contact,
 		Description:    description,
@@ -111,13 +117,19 @@ func GetDataset(ctx context.Context, config *Config, db *DatabaseSession, input 
 	return &dataset, nil
 }
 
-func GetManifest(ctx context.Context, config *Config, input *model.Dataset) (*model.Manifest, error) {
+func GetManifest(ctx context.Context, config *Config, db *DatabaseSession, input *model.Dataset) (*model.Manifest, error) {
+	if input.Organization == nil {
+		if result := db.Preload("Organizations").Where(input).First(input); result.Error != nil {
+			return nil, fmt.Errorf("cannot find dataset")
+		}
+	}
+
 	client, err := NewIpfs(config)
 	if err != nil {
 		return nil, err
 	}
 
-	manifest, err := client.GetManifest(ctx, input.OrganizationID, input.ID)
+	manifest, err := client.GetManifest(ctx, input.Organization.Slug, input.Slug)
 	if err != nil {
 		return nil, err
 	}

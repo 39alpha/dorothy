@@ -5,7 +5,8 @@
 scalar Time
 
 type Organization {
-  id: String!
+  id: Int!
+  slug: String!
   name: String!
   contact: String!
   description: String!
@@ -13,17 +14,20 @@ type Organization {
 }
 
 input NewOrganization {
+  slug: String!
   name: String!
   contact: String!
   description: String
 }
 
 input GetOrganization {
-  id: String!
+  id: Int
+  slug: String
 }
 
 type Dataset {
-  id: String!
+  id: Int!
+  slug: String!
   name: String!
   contact: String!
   description: String!

@@ -6,20 +6,26 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/core/model"
 )
 
+// ID is the resolver for the id field.
+func (r *datasetResolver) ID(ctx context.Context, obj *model.Dataset) (int, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
 // Organization is the resolver for the organization field.
 func (r *datasetResolver) Organization(ctx context.Context, obj *model.Dataset) (*model.Organization, error) {
-	input := model.GetOrganization{ID: obj.OrganizationID}
+	input := model.GetOrganization{ID: &obj.OrganizationID}
 	return core.GetOrganization(ctx, r.config, r.db, &input)
 }
 
 // Manifest is the resolver for the manifest field.
 func (r *datasetResolver) Manifest(ctx context.Context, obj *model.Dataset) (*model.Manifest, error) {
-	return core.GetManifest(ctx, r.config, obj)
+	return core.GetManifest(ctx, r.config, r.db, obj)
 }
 
 // CreateOrganization is the resolver for the createOrganization field.
@@ -30,6 +36,11 @@ func (r *mutationResolver) CreateOrganization(ctx context.Context, input model.N
 // CreateDataset is the resolver for the createDataset field.
 func (r *mutationResolver) CreateDataset(ctx context.Context, input model.NewDataset) (*model.Dataset, error) {
 	return core.CreateDataset(ctx, r.config, r.db, &input)
+}
+
+// ID is the resolver for the id field.
+func (r *organizationResolver) ID(ctx context.Context, obj *model.Organization) (int, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
 }
 
 // Datasets is the resolver for the datasets field.
@@ -68,6 +79,31 @@ func (r *queryResolver) User(ctx context.Context, input *model.GetUser) (*model.
 	return core.GetUser(ctx, r.config, r.db, input)
 }
 
+// ID is the resolver for the id field.
+func (r *getDatasetResolver) ID(ctx context.Context, obj *model.GetDataset, data string) error {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
+// OrganizationID is the resolver for the organizationId field.
+func (r *getDatasetResolver) OrganizationID(ctx context.Context, obj *model.GetDataset, data string) error {
+	panic(fmt.Errorf("not implemented: OrganizationID - organizationId"))
+}
+
+// OrganizationID is the resolver for the organizationId field.
+func (r *getDatasetsResolver) OrganizationID(ctx context.Context, obj *model.GetDatasets, data string) error {
+	panic(fmt.Errorf("not implemented: OrganizationID - organizationId"))
+}
+
+// ID is the resolver for the id field.
+func (r *getOrganizationResolver) ID(ctx context.Context, obj *model.GetOrganization, data *int) error {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
+// OrganizationID is the resolver for the organizationId field.
+func (r *newDatasetResolver) OrganizationID(ctx context.Context, obj *model.NewDataset, data string) error {
+	panic(fmt.Errorf("not implemented: OrganizationID - organizationId"))
+}
+
 // Dataset returns DatasetResolver implementation.
 func (r *Resolver) Dataset() DatasetResolver { return &datasetResolver{r} }
 
@@ -80,7 +116,23 @@ func (r *Resolver) Organization() OrganizationResolver { return &organizationRes
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// GetDataset returns GetDatasetResolver implementation.
+func (r *Resolver) GetDataset() GetDatasetResolver { return &getDatasetResolver{r} }
+
+// GetDatasets returns GetDatasetsResolver implementation.
+func (r *Resolver) GetDatasets() GetDatasetsResolver { return &getDatasetsResolver{r} }
+
+// GetOrganization returns GetOrganizationResolver implementation.
+func (r *Resolver) GetOrganization() GetOrganizationResolver { return &getOrganizationResolver{r} }
+
+// NewDataset returns NewDatasetResolver implementation.
+func (r *Resolver) NewDataset() NewDatasetResolver { return &newDatasetResolver{r} }
+
 type datasetResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type organizationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type getDatasetResolver struct{ *Resolver }
+type getDatasetsResolver struct{ *Resolver }
+type getOrganizationResolver struct{ *Resolver }
+type newDatasetResolver struct{ *Resolver }

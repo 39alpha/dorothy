@@ -1,14 +1,25 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type User struct {
-	gorm.Model
+	ID           uint           `json:"id" gorm:"primaryKey"`
+	Email        string         `json:"email" gorm:"uniqueIndex"`
+	PasswordHash []byte         `json:"-"`
+	Name         string         `json:"name"`
+	Orcid        *string        `json:"orcid,omitempty" gorm:"uniqueIndex"`
+	RoleCode     string         `json:"roleCode"`
+	CreatedAt    time.Time      `json:"createdAt"`
+	UpdatedAt    time.Time      `json:"updatedAt"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
 
-	Email        string  `json:"email" gorm:"uniqueIndex"`
-	PasswordHash []byte  `json:"-"`
-	Name         string  `json:"name"`
-	Orcid        *string `json:"orcid,omitempty" gorm:"uniqueIndex"`
+	Role                   *Role                       `json:"role"`
+	OrganizationPrivileges []UserOrganizationPrivilege `json:"organizationPrivileges"`
+	DatasetPrivileges      []UserDatasetPrivilege      `json:"datasetPrivileges"`
 }
 
 type GetUser struct {

@@ -44,6 +44,10 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Organization() OrganizationResolver
 	Query() QueryResolver
+	GetDataset() GetDatasetResolver
+	GetDatasets() GetDatasetsResolver
+	GetOrganization() GetOrganizationResolver
+	NewDataset() NewDatasetResolver
 }
 
 type DirectiveRoot struct {
@@ -57,6 +61,7 @@ type ComplexityRoot struct {
 		Manifest     func(childComplexity int) int
 		Name         func(childComplexity int) int
 		Organization func(childComplexity int) int
+		Slug         func(childComplexity int) int
 	}
 
 	Manifest struct {
@@ -74,6 +79,7 @@ type ComplexityRoot struct {
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Name        func(childComplexity int) int
+		Slug        func(childComplexity int) int
 	}
 
 	Query struct {
@@ -102,6 +108,8 @@ type ComplexityRoot struct {
 }
 
 type DatasetResolver interface {
+	ID(ctx context.Context, obj *model.Dataset) (int, error)
+
 	Organization(ctx context.Context, obj *model.Dataset) (*model.Organization, error)
 	Manifest(ctx context.Context, obj *model.Dataset) (*model.Manifest, error)
 }
@@ -110,6 +118,8 @@ type MutationResolver interface {
 	CreateDataset(ctx context.Context, input model.NewDataset) (*model.Dataset, error)
 }
 type OrganizationResolver interface {
+	ID(ctx context.Context, obj *model.Organization) (int, error)
+
 	Datasets(ctx context.Context, obj *model.Organization) ([]*model.Dataset, error)
 }
 type QueryResolver interface {
@@ -119,6 +129,20 @@ type QueryResolver interface {
 	Dataset(ctx context.Context, input *model.GetDataset) (*model.Dataset, error)
 	Users(ctx context.Context) ([]*model.User, error)
 	User(ctx context.Context, input *model.GetUser) (*model.User, error)
+}
+
+type GetDatasetResolver interface {
+	ID(ctx context.Context, obj *model.GetDataset, data string) error
+	OrganizationID(ctx context.Context, obj *model.GetDataset, data string) error
+}
+type GetDatasetsResolver interface {
+	OrganizationID(ctx context.Context, obj *model.GetDatasets, data string) error
+}
+type GetOrganizationResolver interface {
+	ID(ctx context.Context, obj *model.GetOrganization, data *int) error
+}
+type NewDatasetResolver interface {
+	OrganizationID(ctx context.Context, obj *model.NewDataset, data string) error
 }
 
 type executableSchema struct {
@@ -181,6 +205,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Dataset.Organization(childComplexity), true
+
+	case "Dataset.slug":
+		if e.complexity.Dataset.Slug == nil {
+			break
+		}
+
+		return e.complexity.Dataset.Slug(childComplexity), true
 
 	case "Manifest.versions":
 		if e.complexity.Manifest.Versions == nil {
@@ -247,6 +278,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Organization.Name(childComplexity), true
+
+	case "Organization.slug":
+		if e.complexity.Organization.Slug == nil {
+			break
+		}
+
+		return e.complexity.Organization.Slug(childComplexity), true
 
 	case "Query.dataset":
 		if e.complexity.Query.Dataset == nil {
@@ -661,7 +699,51 @@ func (ec *executionContext) _Dataset_id(ctx context.Context, field graphql.Colle
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return ec.resolvers.Dataset().ID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Dataset_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Dataset",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Dataset_slug(ctx context.Context, field graphql.CollectedField, obj *model.Dataset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Dataset_slug(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Slug, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -678,7 +760,7 @@ func (ec *executionContext) _Dataset_id(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Dataset_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Dataset_slug(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Dataset",
 		Field:      field,
@@ -864,6 +946,8 @@ func (ec *executionContext) fieldContext_Dataset_organization(ctx context.Contex
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Organization_id(ctx, field)
+			case "slug":
+				return ec.fieldContext_Organization_slug(ctx, field)
 			case "name":
 				return ec.fieldContext_Organization_name(ctx, field)
 			case "contact":
@@ -1026,6 +1110,8 @@ func (ec *executionContext) fieldContext_Mutation_createOrganization(ctx context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Organization_id(ctx, field)
+			case "slug":
+				return ec.fieldContext_Organization_slug(ctx, field)
 			case "name":
 				return ec.fieldContext_Organization_name(ctx, field)
 			case "contact":
@@ -1093,6 +1179,8 @@ func (ec *executionContext) fieldContext_Mutation_createDataset(ctx context.Cont
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dataset_id(ctx, field)
+			case "slug":
+				return ec.fieldContext_Dataset_slug(ctx, field)
 			case "name":
 				return ec.fieldContext_Dataset_name(ctx, field)
 			case "contact":
@@ -1135,7 +1223,51 @@ func (ec *executionContext) _Organization_id(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return ec.resolvers.Organization().ID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Organization_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Organization",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Organization_slug(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Organization_slug(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Slug, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1152,7 +1284,7 @@ func (ec *executionContext) _Organization_id(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Organization_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Organization_slug(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Organization",
 		Field:      field,
@@ -1338,6 +1470,8 @@ func (ec *executionContext) fieldContext_Organization_datasets(ctx context.Conte
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dataset_id(ctx, field)
+			case "slug":
+				return ec.fieldContext_Dataset_slug(ctx, field)
 			case "name":
 				return ec.fieldContext_Dataset_name(ctx, field)
 			case "contact":
@@ -1396,6 +1530,8 @@ func (ec *executionContext) fieldContext_Query_organizations(ctx context.Context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Organization_id(ctx, field)
+			case "slug":
+				return ec.fieldContext_Organization_slug(ctx, field)
 			case "name":
 				return ec.fieldContext_Organization_name(ctx, field)
 			case "contact":
@@ -1452,6 +1588,8 @@ func (ec *executionContext) fieldContext_Query_organization(ctx context.Context,
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Organization_id(ctx, field)
+			case "slug":
+				return ec.fieldContext_Organization_slug(ctx, field)
 			case "name":
 				return ec.fieldContext_Organization_name(ctx, field)
 			case "contact":
@@ -1519,6 +1657,8 @@ func (ec *executionContext) fieldContext_Query_datasets(ctx context.Context, fie
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dataset_id(ctx, field)
+			case "slug":
+				return ec.fieldContext_Dataset_slug(ctx, field)
 			case "name":
 				return ec.fieldContext_Dataset_name(ctx, field)
 			case "contact":
@@ -1588,6 +1728,8 @@ func (ec *executionContext) fieldContext_Query_dataset(ctx context.Context, fiel
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Dataset_id(ctx, field)
+			case "slug":
+				return ec.fieldContext_Dataset_slug(ctx, field)
 			case "name":
 				return ec.fieldContext_Dataset_name(ctx, field)
 			case "contact":
@@ -4046,14 +4188,18 @@ func (ec *executionContext) unmarshalInputGetDataset(ctx context.Context, obj in
 			if err != nil {
 				return it, err
 			}
-			it.ID = data
+			if err = ec.resolvers.GetDataset().ID(ctx, &it, data); err != nil {
+				return it, err
+			}
 		case "organizationId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("organizationId"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.OrganizationID = data
+			if err = ec.resolvers.GetDataset().OrganizationID(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4080,7 +4226,9 @@ func (ec *executionContext) unmarshalInputGetDatasets(ctx context.Context, obj i
 			if err != nil {
 				return it, err
 			}
-			it.OrganizationID = data
+			if err = ec.resolvers.GetDatasets().OrganizationID(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4094,7 +4242,7 @@ func (ec *executionContext) unmarshalInputGetOrganization(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id"}
+	fieldsInOrder := [...]string{"id", "slug"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4103,11 +4251,20 @@ func (ec *executionContext) unmarshalInputGetOrganization(ctx context.Context, o
 		switch k {
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ID = data
+			if err = ec.resolvers.GetOrganization().ID(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "slug":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("slug"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Slug = data
 		}
 	}
 
@@ -4182,7 +4339,9 @@ func (ec *executionContext) unmarshalInputNewDataset(ctx context.Context, obj in
 			if err != nil {
 				return it, err
 			}
-			it.OrganizationID = data
+			if err = ec.resolvers.NewDataset().OrganizationID(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4196,13 +4355,20 @@ func (ec *executionContext) unmarshalInputNewOrganization(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "contact", "description"}
+	fieldsInOrder := [...]string{"slug", "name", "contact", "description"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "slug":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("slug"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Slug = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -4298,7 +4464,43 @@ func (ec *executionContext) _Dataset(ctx context.Context, sel ast.SelectionSet, 
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Dataset")
 		case "id":
-			out.Values[i] = ec._Dataset_id(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Dataset_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "slug":
+			out.Values[i] = ec._Dataset_slug(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
@@ -4519,7 +4721,43 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Organization")
 		case "id":
-			out.Values[i] = ec._Organization_id(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Organization_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "slug":
+			out.Values[i] = ec._Organization_slug(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
@@ -5288,6 +5526,21 @@ func (ec *executionContext) marshalNDataset2ᚖgithubᚗcomᚋ39alphaᚋdorothy�
 	return ec._Dataset(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNManifest2githubᚗcomᚋ39alphaᚋdorothyᚋcoreᚋmodelᚐManifest(ctx context.Context, sel ast.SelectionSet, v model.Manifest) graphql.Marshaler {
 	return ec._Manifest(ctx, sel, &v)
 }
@@ -5863,6 +6116,22 @@ func (ec *executionContext) unmarshalOGetUser2ᚖgithubᚗcomᚋ39alphaᚋdoroth
 	}
 	res, err := ec.unmarshalInputGetUser(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
