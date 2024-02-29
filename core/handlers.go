@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/39alpha/dorothy/core/model"
-	"github.com/go-chi/jwtauth/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -239,52 +238,52 @@ func validateCredentials(db *DatabaseSession, email, password string) error {
 	return nil
 }
 
-func Login(tokenAuth *jwtauth.JWTAuth, config *Config, db *DatabaseSession) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		decoder := json.NewDecoder(r.Body)
-		var login model.UserLogin
-		if err := decoder.Decode(&login); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("illformed request"))
-			return
-		}
+// func Login(tokenAuth *jwtauth.JWTAuth, config *Config, db *DatabaseSession) http.HandlerFunc {
+//     return func(w http.ResponseWriter, r *http.Request) {
+//         decoder := json.NewDecoder(r.Body)
+//         var login model.UserLogin
+//         if err := decoder.Decode(&login); err != nil {
+//             w.WriteHeader(http.StatusBadRequest)
+//             w.Write([]byte("illformed request"))
+//             return
+//         }
 
-		if err := validateCredentials(db, login.Email, login.Password); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("invalid email or password"))
-			return
-		}
+//         if err := validateCredentials(db, login.Email, login.Password); err != nil {
+//             w.WriteHeader(http.StatusUnauthorized)
+//             w.Write([]byte("invalid email or password"))
+//             return
+//         }
 
-		user := &model.User{Email: login.Email}
-		result := db.Select("id", "email", "name", "orcid").Where(user).First(user)
-		if result.Error != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("an unexpected error occured"))
-			return
-		}
+//         user := &model.User{Email: login.Email}
+//         result := db.Select("id", "email", "name", "orcid").Where(user).First(user)
+//         if result.Error != nil {
+//             w.WriteHeader(http.StatusInternalServerError)
+//             w.Write([]byte("an unexpected error occured"))
+//             return
+//         }
 
-		_, tokenString, err := tokenAuth.Encode(map[string]interface{}{
-			"id":    user.ID,
-			"email": user.Email,
-			"name":  user.Name,
-			"orcid": user.Orcid,
-		})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("an unexpected error occured"))
-			return
-		}
+//         _, tokenString, err := tokenAuth.Encode(map[string]interface{}{
+//             "id":    user.ID,
+//             "email": user.Email,
+//             "name":  user.Name,
+//             "orcid": user.Orcid,
+//         })
+//         if err != nil {
+//             w.WriteHeader(http.StatusInternalServerError)
+//             w.Write([]byte("an unexpected error occured"))
+//             return
+//         }
 
-		response := map[string]string{
-			"token": tokenString,
-		}
-		var buf bytes.Buffer
-		encoder := json.NewEncoder(&buf)
-		if err := encoder.Encode(&response); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("an unexpected error occured"))
-			return
-		}
-		w.Write(buf.Bytes())
-	}
-}
+//         response := map[string]string{
+//             "token": tokenString,
+//         }
+//         var buf bytes.Buffer
+//         encoder := json.NewEncoder(&buf)
+//         if err := encoder.Encode(&response); err != nil {
+//             w.WriteHeader(http.StatusInternalServerError)
+//             w.Write([]byte("an unexpected error occured"))
+//             return
+//         }
+//         w.Write(buf.Bytes())
+//     }
+// }
