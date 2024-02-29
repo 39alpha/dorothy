@@ -2,7 +2,6 @@ package core
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/39alpha/dorothy/core/model"
 	"gorm.io/driver/sqlite"
@@ -18,7 +17,7 @@ type DatabaseSession struct {
 }
 
 func NewDatabaseSession(config *Config) (*DatabaseSession, error) {
-	path := filepath.Join(DorothyRoot(), "dorothy.db?_foreign_keys=on")
+	path := config.Database.Path + "?_foreign_keys=on"
 	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -50,7 +49,7 @@ func (s *DatabaseSession) Initialize() error {
 		{Code: "admin", Description: "The all-powerful entity"},
 		{Code: "user", Description: "A standard user"},
 	}
-	if result := session.Create(&roles); result.Error != nil {
+	if result := s.Create(&roles); result.Error != nil {
 		return result.Error
 	}
 
@@ -59,7 +58,9 @@ func (s *DatabaseSession) Initialize() error {
 		{Code: "write", Description: "Write access"},
 		{Code: "admin", Description: "Administrative access"},
 	}
-	if result := session.Create(&privileges); result.Error != nil {
+	if result := s.Create(&privileges); result.Error != nil {
 		return result.Error
 	}
+
+	return nil
 }
