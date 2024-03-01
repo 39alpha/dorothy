@@ -1,0 +1,38 @@
+<div class="body">
+	<h1>Create and Organization</h1>
+	
+	<form method="POST">
+		<div>
+			<label for="slug">Slug</label>
+			<input class="disabled" id="slug" name="slug" type="text" readonly />
+		</div>
+
+		<div>
+			<label for="name">Name</label>
+            <input id="name" name="name" type="text" placeholder="Organization Name" />
+        </div>
+
+        <div>
+            <label for="contact">Contact Email</label>
+            <input name="contact" type="email" placeholder="Contact Email"/>
+        </div>
+
+        <div>
+            <label for="description">Description</label>
+            <textarea name="description" rows="4" placeholder="Organization Description"></textarea>
+        </div>
+
+        <button type="submit">Create Organization</button>
+	</form>
+</div>
+
+<script>
+const slugify = () => {
+	const name = $("#name").val();
+	$("#slug").val(name.trim().toLowerCase().replace(/[^0-9a-z\_\- ]/g, '').replace(/\s+/g, '-'))
+}
+
+$(document).ready(() => {
+	$("#name").keyup(slugify);
+});
+</script>

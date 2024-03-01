@@ -124,11 +124,36 @@ form {
     div {
         display: flex;
         flex-direction: column;
+        
+        &.field--inline {
+        	position: relative;
+        	display: block;
+        	
+        	input {
+        		position: absolute;
+        		bottom: 15%;
+        		margin-left: $spacing-unit;
+        	}
+        }
+    }
+    
+    input[type="checkbox"] {
+    	height: calc(0.75 * $spacing-unit);
+    	width: calc(0.75 * $spacing-unit);
     }
 
     button {
         width: calc(12 * $spacing-unit);
     }
+}
+
+.hidden {
+	display: none;
+}
+
+.disabled {
+	background: $grey-color-10;
+	pointer-events: none;
 }
 
 .success {

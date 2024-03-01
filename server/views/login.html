@@ -10,6 +10,9 @@
 			<label for="password">Password</label>
 			<input name="password" type="password" autocomplete="current-password" placeholder="Enter Password" />
 		</div>
+		{{ with .Redirect }}
+		<input class="hidden" name="redirect" type="text" value="{{ . }}" readonly />
+		{{ end }}
 		<button type="submit">Login</button>
 	</form>
 </div>

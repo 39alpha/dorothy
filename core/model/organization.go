@@ -25,7 +25,6 @@ type NewOrganization struct {
 	Name        string  `json:"name"`
 	Contact     string  `json:"contact"`
 	Description *string `json:"description,omitempty"`
-	IsPrivate   bool    `json:"private"`
 }
 
 type GetOrganization struct {

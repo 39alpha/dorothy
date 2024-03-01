@@ -1,0 +1,29 @@
+{{ if .Organization }}
+{{ $avatar := "https://gateway.39alpharesearch.org/ipfs/QmZJEpyUESuu45zf9JaRZUvnKomg2y5cSkHLC2u1rjcL3Z" }}
+<div class="body">
+    <h1>{{ .Name }} Datasets</h1>
+    <div class="body_content">
+    {{ if .Datasets }}
+        {{ range .Organization.Datasets }}
+            <div class="dataset">
+            	{{ if .Avatar }}
+                <img class="dataset_avatar" src="{{ .Avatar }}" alt="{{ .Name }} avatar" />
+                {{ else }}
+                <img class="dataset_avatar" src="{{ $avatar }}" alt="{{ .Name }} avatar" />
+                {{ end }}
+                <div class="dataset_details">
+                    <div class="dataset_header">
+                        <a href="{{ .Slug }}">{{ .Name }}/{{ .Name }}</a>
+                    </div>
+                    <div class="dataset_description">
+                        <p>{.Description ?? 'A glorious dataset as yet undescribed'}</p>
+                    </div>
+                </div>
+            </div>
+        {{ end }}
+    {{ else }}
+        <p>This organization has no {{ if not .IsLoggedIn }}public{{end}} datasets yet.</p>
+    {{ end }}
+    </div>
+</div>
+{{ end }}

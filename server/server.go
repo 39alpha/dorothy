@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"embed"
-	"maps"
 	"net/http"
 
 	"github.com/39alpha/dorothy/core"
@@ -11,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/template/html/v2"
 
 	ipfs "github.com/ipfs/go-ipfs-api"
@@ -21,15 +21,6 @@ var viewsfs embed.FS
 
 //go:embed static
 var staticfs embed.FS
-
-var global fiber.Map
-
-func merge(other fiber.Map) fiber.Map {
-	result := fiber.Map{}
-	maps.Copy(result, global)
-	maps.Copy(result, other)
-	return result
-}
 
 type Server struct {
 	*fiber.App
@@ -42,10 +33,6 @@ func NewServer(config *core.Config) (*Server, error) {
 		return nil, err
 	}
 
-	global = fiber.Map{
-		"Title": "Dorothy",
-	}
-
 	session, err := core.NewDatabaseSession(config)
 	if err != nil {
 		return nil, err
@@ -55,7 +42,7 @@ func NewServer(config *core.Config) (*Server, error) {
 	engine := html.NewFileSystem(http.FS(viewsfs), ".html")
 
 	app := fiber.New(fiber.Config{
-		Prefork:       true,
+		Prefork:       false,
 		CaseSensitive: false,
 		StrictRouting: false,
 		ServerHeader:  "Dorothy",
@@ -67,25 +54,40 @@ func NewServer(config *core.Config) (*Server, error) {
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
-
-	app.Use(auth.Verifier(jwtAuth))
-	app.Use(auth.Authenticator(jwtAuth, session))
-
+	
 	app.Use("/static", filesystem.New(filesystem.Config{
 		Root:       http.FS(staticfs),
 		PathPrefix: "/static",
 		Browse:     true,
 	}))
+	app.Use(favicon.New(favicon.Config{
+		FileSystem: http.FS(staticfs),
+		File: "/static/favicon.ico",
+	}))
+	
+	app.Use(func(c *fiber.Ctx) error {
+		c.Locals("State", fiber.Map{
+			"Title": "Dorothy",
+		})
+		return c.Next()
+	})
+	app.Use(auth.Verifier(jwtAuth))
+	app.Use(auth.Authenticator(jwtAuth, session))
+	app.Use(GetOrganizations(session))
 
 	app.Get("/", Index)
 
 	app.Get("/register", RegistrationForm)
 	app.Post("/register", Registration(session))
-
 	app.Get("/login", LoginForm)
 	app.Post("/login", Login(jwtAuth, session))
-
 	app.Get("/logout", Logout)
+	
+	app.Get("/organization/create", CreateOrganizationForm)
+	app.Post("/organization/create", CreateOrganization(session))
+	
+	organization := app.Group("/:organization", GetOrganization(session))
+	organization.Get("/", Organization)
 
 	dorothy := &Server{app, config}
 

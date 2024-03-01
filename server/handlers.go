@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"time"
+	"maps"
 
 	"github.com/39alpha/dorothy/server/auth"
 	"github.com/39alpha/dorothy/core"
@@ -10,14 +11,38 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+func bind(c *fiber.Ctx, local fiber.Map) fiber.Map {
+	bind := fiber.Map{}
+	
+	state, ok := c.Locals("State").(fiber.Map)
+	if !ok || state != nil {
+		maps.Copy(bind, state)
+	}
+	maps.Copy(bind, local)
+	
+	return bind
+}
+
+func addState(c *fiber.Ctx, key string, value interface{}) {
+    state, ok := c.Locals("State").(fiber.Map)
+    if !ok || state == nil {
+        state = fiber.Map{
+            key: value,
+        }
+    } else {
+        state[key] = value
+    }
+    c.Locals("State", state)
+}
+
 func Index(c *fiber.Ctx) error {
-	return c.Render("views/index", merge(fiber.Map{
+	return c.Render("views/index", bind(c, fiber.Map{
 		"IsLoggedIn": c.Locals("AuthUser") != nil,
 	}), "views/layouts/main")
 }
 
 func RegistrationForm(c *fiber.Ctx) error {
-	return c.Render("views/register", merge(fiber.Map{
+	return c.Render("views/register", bind(c, fiber.Map{
 		"IsLoggedIn": c.Locals("AuthUser") != nil,
 	}), "views/layouts/main")
 }
@@ -38,13 +63,24 @@ func Registration(db *core.DatabaseSession) fiber.Handler {
 }
 
 func LoginForm(c *fiber.Ctx) error {
-	return c.Render("views/login", merge(fiber.Map{
+	bindings := bind(c, fiber.Map{
 		"IsLoggedIn": c.Locals("AuthUser") != nil,
-	}), "views/layouts/main")
+	})
+	
+	if c.Query("Redirect") != "" {
+		bindings["Redirect"] = c.Query("Redirect")
+	}
+
+	return c.Render("views/login", bindings, "views/layouts/main")
 }
 
 func Login(jwtAuth *auth.Auth, db *core.DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		var fields struct {
+			Redirect string
+		}
+		c.BodyParser(&fields)
+
 		var login model.UserLogin
 		if err := c.BodyParser(&login); err != nil {
 			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
@@ -71,11 +107,101 @@ func Login(jwtAuth *auth.Auth, db *core.DatabaseSession) fiber.Handler {
 			Expires: time.Now().Add(1 * time.Minute),
 		})
 
-		return c.RedirectToRoute("", nil)
+		if fields.Redirect == "" {
+			return c.Redirect("/")
+		} else {
+			return c.Redirect(fields.Redirect)
+		}
 	}
 }
 
 func Logout(c *fiber.Ctx) error {
 	c.ClearCookie("jwt")
 	return c.RedirectBack("")
+}
+
+func GetOrganizations(db *core.DatabaseSession) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		organizations := []*model.Organization{}
+		err := db.Preload("Datasets", "datasets.is_private = 0").Find(&organizations).Error
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("internal server error")
+		}
+		
+		addState(c, "Organizations", organizations)
+	
+		return c.Next()
+	}
+}
+
+func CreateOrganizationForm(c *fiber.Ctx) error {
+    authUser := c.Locals("AuthUser")
+    if authUser == nil {
+        return c.Redirect("/login?Redirect=/organization/create")
+    } else {
+        return c.Render("views/create-organization", bind(c, fiber.Map{
+            "IsLoggedIn": c.Locals("AuthUser") != nil,
+        }), "views/layouts/main")
+    }
+}
+
+func CreateOrganization(db *core.DatabaseSession) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authUser, ok := c.Locals("AuthUser").(*model.User)
+
+		if !ok || authUser == nil {
+			return c.Status(fiber.StatusUnauthorized).Redirect("/")
+		}
+
+		var neworg model.NewOrganization
+		if err := c.BodyParser(&neworg); err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
+		}
+
+		org := &model.Organization{
+			Slug: neworg.Slug,
+			Name: neworg.Name,
+			Contact: neworg.Contact,
+		}
+		if neworg.Description != nil {
+			org.Description = *neworg.Description
+		}
+		if err := db.Save(org).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).Redirect("/")
+		}
+			
+		db.Save(&model.UserOrganizationPrivilege{
+			User: authUser,
+			Organization: org,
+			PrivilegeCode: "admin",
+		})
+
+		return c.Redirect("/" + org.Slug)
+	}
+}
+
+func GetOrganization(db *core.DatabaseSession) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		slug := c.Params("organization")
+		if slug == "" {
+			return c.Redirect("/")
+		}
+		
+		org := model.Organization{
+			Slug: slug,
+		}
+		if err := db.Where(&org).First(&org).Error; err != nil {
+			return c.Status(fiber.StatusNotFound).Redirect("/")
+		}
+
+		addState(c, "Organization", &org)
+		
+		return c.Next();
+	}
+}
+
+func Organization(c *fiber.Ctx) error {
+	return c.Render("views/organization", bind(c, fiber.Map{
+		"IsLoggedIn": c.Locals("AuthUser") != nil,
+	}), "views/layouts/main")
 }
