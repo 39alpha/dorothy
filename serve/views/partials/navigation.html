@@ -20,8 +20,12 @@
             </div>
             {{ end }}
             <div class="nav-right">
+            	{{ if not .IsLoggedIn }}
             	<li class="active"><a class="page-link" href="/login">Login</a></li>
             	<li class="active"><a class="page-link" href="/register">Register</a></li>
+            	{{ else }}
+            	<li class="active"><a class="page-link" href="/logout">Logout</a></li>
+            	{{ end }}
             </div>
         </ul>
     </div>

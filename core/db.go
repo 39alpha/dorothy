@@ -1,9 +1,11 @@
 package core
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/39alpha/dorothy/core/model"
+    "golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -55,4 +57,39 @@ func (s *DatabaseSession) Initialize() error {
 	}
 
 	return nil
+}
+
+func (s *DatabaseSession) CreateUser(newuser *model.NewUser, rolecode string) error {
+    password_hash, err := bcrypt.GenerateFromPassword([]byte(newuser.Password), 8)
+    if err != nil {
+        return fmt.Errorf("failed to create user");
+    }
+ 
+    user := &model.User{
+        Email:        newuser.Email,
+        PasswordHash: password_hash,
+        Name:         newuser.Name,
+        Orcid:        newuser.Orcid,
+        RoleCode:     rolecode,
+    }
+
+    return s.Create(user).Error
+}
+
+func (s *DatabaseSession) ValidateCredentials(email, password string) error {
+    user := model.User{
+        Email: email,
+    }
+
+    err := s.Select("PasswordHash").Where(&user).First(&user).Error
+    if err != nil || user.PasswordHash == nil {
+        return fmt.Errorf("invalid email or password")
+    }
+
+    err = bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(password))
+    if err != nil {
+        return fmt.Errorf("invalid email or password")
+    }
+ 
+    return nil
 }

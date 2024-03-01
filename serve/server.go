@@ -1,16 +1,21 @@
 package serve
 
 import (
+	"encoding/base64"
 	"context"
 	"net/http"
 	"embed"
+	"crypto/rand"
 	"maps"
+	"os"
+	"fmt"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/template/html/v2"
+	"github.com/go-chi/jwtauth/v5"
 
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
@@ -35,7 +40,35 @@ type Server struct {
 	config *core.Config
 }
 
+func generateSecret() (string, error) {
+    key := make([]byte, 32)
+
+    if _, err := rand.Read(key); err != nil {
+        return "", err
+    }
+
+    return base64.StdEncoding.EncodeToString(key), nil
+}
+
+func makeJWTAuth() (*jwtauth.JWTAuth, error) {
+    secret := os.Getenv("DOROTHY_OAUTH_SECRET")
+    if secret == "" {
+		var err error
+        secret, err = generateSecret()
+        if err != nil {
+            return nil, fmt.Errorf("DOROTHY_SERVER_SECRET environment variable empty and failed to generate secret")
+        }
+    }
+
+	return jwtauth.New("HS256", []byte(secret), nil), nil
+}
+
 func NewServer(config *core.Config) (*Server, error) {
+	jwtAuth, err := makeJWTAuth()
+	if err != nil {
+		return nil, err
+	}
+
 	global = fiber.Map{
 		"Title": "Dorothy",
 	}
@@ -61,6 +94,9 @@ func NewServer(config *core.Config) (*Server, error) {
     	AllowOrigins: "*",
     	AllowHeaders:  "Origin, Content-Type, Accept",
 	}))
+	
+	app.Use(Verifier(jwtAuth))
+	app.Use(Authenticator(jwtAuth, session))
 
 	app.Use("/static", filesystem.New(filesystem.Config{
         Root: http.FS(staticfs),
@@ -68,13 +104,15 @@ func NewServer(config *core.Config) (*Server, error) {
         Browse: true,
     }))
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.Render("views/index", fiber.Map{
-			"Items": []fiber.Map{
-				{ "Href": "/", "Title": "Home" },
-			},
-		}, "views/layouts/main")
-	})
+	app.Get("/", Index)
+
+	app.Get("/register", RegistrationForm)
+	app.Post("/register", Registration(session))
+	
+	app.Get("/login", LoginForm)
+	app.Post("/login", Login(jwtAuth, session))
+	
+	app.Get("/logout", Logout)
 
 	dorothy := &Server{app, config}
 

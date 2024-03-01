@@ -1,0 +1,50 @@
+<div class="body">
+	<h1>Register</h1>
+	
+	<form method="POST">
+		<div>
+			<label for="name">Name</label>
+			<input name="name" type="text" placeholder="Enter Name" required />
+		</div>
+		<div>
+			<label for="email">Email</label>
+			<input name="email" type="email" autocomplete="email" placeholder="Enter Email" required />
+		</div>
+		<div>
+			<label for="password">New Password</label>
+			<input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter Password" required />
+		</div>
+		<div>
+			<label for="confirm-password">Confirm New Password</label>
+			<input id="confirmPassword" name="confirm-password" type="password" autocomplete="new-password" placeholder="Confirm Password" onChange="checkPasswordConfirmation()"/>
+			<div id="passwordCheck" class="hidden"></div>
+		</div>
+		<div>
+			<label for="orcid">ORCiD (optional)</label>
+			<input name="orcid" type="text" placeholder="0000-0000-0000-0000" />
+		</div>
+		
+		<button type="submit">Register</button>
+	</form>
+</div>
+
+<script>
+const checkPasswordConfirmation = function() {
+    const password = $("#password").val();
+    const confirmPassword = $("#confirmPassword").val();
+
+	const flash = $("#passwordCheck");
+	flash.removeClass("error");
+	flash.removeClass("success");
+    if (password != confirmPassword) {
+    	flash.addClass("error").html("Passwords do not match!");
+    } else {
+    	flash.addClass("success").html("Passwords match.");
+    }
+    flash.removeClass("hidden")
+}
+
+$(document).ready(function () {
+    $("#confirmPassword").keyup(checkPasswordConfirmation);
+});
+</script>

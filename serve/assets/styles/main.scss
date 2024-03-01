@@ -115,6 +115,34 @@ button {
     }
 }
 
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    gap: calc($spacing-unit/2);
+
+    div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    button {
+        width: calc(12 * $spacing-unit);
+    }
+}
+
+.success {
+	color: #228b22;
+}
+
+.warning {
+	color: #ffb700;
+}
+
+.error {
+	color: #bb0000;
+}
+
 .sidebar {
     flex: 1 0 25%;
     max-width: 25%;
