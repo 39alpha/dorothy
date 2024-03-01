@@ -11,7 +11,7 @@ type User struct {
 	Email        string         `json:"email" gorm:"uniqueIndex"`
 	PasswordHash []byte         `json:"-"`
 	Name         string         `json:"name"`
-	Orcid        *string        `json:"orcid,omitempty" gorm:"uniqueIndex"`
+	Orcid        *string        `json:"orcid,omitempty" gorm:"index"`
 	RoleCode     string         `json:"roleCode"`
 	CreatedAt    time.Time      `json:"createdAt"`
 	UpdatedAt    time.Time      `json:"updatedAt"`
