@@ -26,9 +26,10 @@ type Dataset struct {
 type NewDataset struct {
 	Slug           string  `json:"slug"`
 	Name           string  `json:"name"`
+	OrganizationID uint    `json:"organizationId"`
 	Contact        string  `json:"contact"`
 	Description    *string `json:"description,omitempty"`
-	OrganizationID uint    `json:"organizationId"`
+	IsPrivate      bool    `json:"isPrivate"`
 }
 
 func (input *NewDataset) ID() string {

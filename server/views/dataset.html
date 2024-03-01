@@ -1,0 +1,12 @@
+<div class="body">
+	<h1><a href="/{{ .Organization.Slug }}">{{ .Organization.Name }}</a> {{ .Dataset.Name }}</h1>
+	{{ if .Dataset.Manifest }}
+		<ul class="manifest">
+			{{ range .Dataset.Manifest }}
+			{{ template "views/partials/version" . }}
+			{{ end }}
+		</ul>
+	{{ else }}
+		<p>No versions have been uploaded quite yet!</p>
+	{{ end }}
+</div>

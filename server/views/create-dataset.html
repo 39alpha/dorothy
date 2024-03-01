@@ -1,0 +1,44 @@
+<div class="body">
+    <h1>Create an Dataset for {{ .Organization.Name }}</h1>
+
+    <form method="POST">
+    	<input class="hidden" name="organizationId" type="number" value="{{ .Organization.ID }}" readonly />
+        <div>
+            <label for="slug">Slug</label>
+            <input class="disabled" id="slug" name="slug" type="text" readonly />
+        </div>
+
+        <div>
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" placeholder="Dataset Name" />
+        </div>
+
+        <div>
+            <label for="contact">Contact Email</label>
+            <input name="contact" type="email" placeholder="Contact Email"/>
+        </div>
+
+        <div>
+            <label for="description">Description</label>
+            <textarea name="description" rows="4" placeholder="Dataset Description"></textarea>
+        </div>
+
+        <div class="field--inline">
+            <label for="isPrivate">Private?</label>
+            <input name="isPrivate" type="checkbox" value="true" />
+        </div>
+
+        <button type="submit">Create Dataset</button>
+    </form>
+</div>
+
+<script>
+const slugify = () => {
+    const name = $("#name").val();
+    $("#slug").val(name.trim().toLowerCase().replace(/[^0-9a-z\_\- ]/g, '').replace(/\s+/g, '-'))
+}
+
+$(document).ready(() => {
+    $("#name").keyup(slugify);
+});
+</script>

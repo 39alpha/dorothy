@@ -88,6 +88,11 @@ func NewServer(config *core.Config) (*Server, error) {
 	
 	organization := app.Group("/:organization", GetOrganization(session))
 	organization.Get("/", Organization)
+	organization.Get("/dataset/create", CreateDatasetForm)
+	organization.Post("/dataset/create", CreateDataset(session))
+	
+	dataset := organization.Group("/:dataset", GetDataset(session))
+	dataset.Get("/", Dataset)
 
 	dorothy := &Server{app, config}
 
