@@ -1,17 +1,17 @@
 package core
 
 import (
-	"path/filepath"
 	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
 )
 
 type Config struct {
-	Filename string     `toml:"-"`
-	Ipfs     IpfsConfig `toml:"ipfs"`
+	Filename string         `toml:"-"`
+	Ipfs     IpfsConfig     `toml:"ipfs"`
 	Database DatabaseConfig `toml:"database"`
 }
 

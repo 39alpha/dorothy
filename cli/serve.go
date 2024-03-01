@@ -19,13 +19,13 @@ func Serve(configpath string, port int, genconf bool) error {
 			return fmt.Errorf("Error: invalid configuration file %q\n  %v\n", configpath, err)
 		}
 
-        app, err := serve.NewServer(config)
-        if err != nil {
-            return fmt.Errorf("Error: failed to start Dorothy\n  %v\n", err)
-        }
+		app, err := serve.NewServer(config)
+		if err != nil {
+			return fmt.Errorf("Error: failed to start Dorothy\n  %v\n", err)
+		}
 
 		return app.Listen(fmt.Sprintf(":%d", port))
-		
+
 		return nil
 	}
 

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/39alpha/dorothy/cli"
-	"github.com/spf13/cobra"
 	"github.com/adrg/xdg"
+	"github.com/spf13/cobra"
 )
 
 var serveCmd = &cobra.Command{

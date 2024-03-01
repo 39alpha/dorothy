@@ -13,7 +13,7 @@ func setup(t *testing.T) {
 	var err error
 
 	session, err = NewDatabaseSession(&Config{
-		Database: DatabaseConfig {
+		Database: DatabaseConfig{
 			Path: ":memory:",
 		},
 	})
