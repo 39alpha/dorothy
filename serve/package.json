@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "sass": "^1.71.1"
+  },
+  "scripts": {
+    "sass:dev": "sass --embed-source-map assets/styles/main.scss:static/styles/main.css",
+    "sass:prod": "sass --no-source-map --style compressed assets/styles/main.scss:static/styles/main.css"
+  }
+}

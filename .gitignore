@@ -29,3 +29,6 @@ good-hashes
 # Generated Files
 .dorothy
 manifest.json
+
+node_modules
+serve/static/styles

@@ -1,0 +1,335 @@
+@import 'variables';
+
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+hr,
+dl,
+dd,
+ol,
+ul,
+figure {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font: $base-font-weight #{$base-font-size}/#{$base-line-height} $base-font-family;
+    color: $text-color;
+    background-color: $background-color;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-feature-settings: 'kern' 1;
+    -moz-font-feature-settings: 'kern' 1;
+    -o-font-feature-settings: 'kern' 1;
+    font-feature-settings: 'kern' 1;
+    font-kerning: normal;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+a {
+    color: $brand-color;
+    text-decoration: none;
+
+    &:hover {
+        color: $brand-color;
+        text-decoration: underline;
+    }
+
+    .social-media-list &:hover {
+        text-decoration: none;
+
+        .username {
+            text-decoration: underline;
+        }
+    }
+}
+
+h1,
+h2,
+h3 {
+    text-align: center;
+}
+
+.content {
+    @include wrapper($content-width);
+}
+
+header {
+    min-height: calc($spacing-unit * 1.865);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    margin-top: $spacing-unit;
+    margin-bottom: $spacing-unit;
+
+    h2 {
+        color: $grey-color-50;
+    }
+}
+
+main {
+    display: block;
+
+    &>div {
+        display: flex;
+    }
+
+    h1 {
+        text-align: left;
+        font-size: calc(1.5 * $base-font-size);
+        margin-bottom: calc($spacing-unit / 2);
+    }
+}
+
+button,
+input,
+textarea {
+    font: $base-font-weight #{$base-font-size}/#{$base-line-height} $base-font-family;
+    border: 1px solid black;
+    border-radius: 3px;
+    padding: calc($spacing-unit / 4) calc($spacing-unit / 2);
+}
+
+label {
+    display: inline-block;
+    font-weight: bold;
+}
+
+button {
+    color: $brand-color;
+    background: $grey-color-10;
+    font-weight: bold;
+
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.sidebar {
+    flex: 1 0 25%;
+    max-width: 25%;
+    min-width: min-content;
+    padding-left: $spacing-unit;
+    padding-right: $spacing-unit;
+    border-right: 1px solid $grey-color-40;
+
+    &_controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: $spacing-unit;
+
+        details {
+            margin-right: $spacing-unit;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+
+            &:hover {
+                cursor: pointer;
+            }
+
+            summary {
+                padding: calc($spacing-unit / 4) calc($spacing-unit / 2);
+                font-weight: bold;
+            }
+
+            details-menu {
+                background-color: $background-color;
+                position: absolute;
+                border: 1px solid $grey-color-80;
+                border-radius: 10px;
+                box-shadow: 0 0 10px $grey-color-50;
+
+                ul {
+                    li {
+                        padding: calc($spacing-unit / 4) calc($spacing-unit / 2);
+                    }
+
+                    li:not(:last-child) {
+                        border-bottom: 1px solid $grey-color-40;
+                    }
+                }
+            }
+        }
+
+        .button {
+            margin-left: $spacing-unit;
+            padding-left: calc($spacing-unit / 2);
+            padding-right: calc($spacing-unit / 2);
+        }
+    }
+
+    ul {
+        list-style-type: none;
+        margin: 0;
+    }
+}
+
+.body {
+    margin-bottom: $spacing-unit;
+    padding: 0 $spacing-unit;
+
+    p {
+        text-align: justify;
+        line-height: calc($base-line-height / 1);
+        margin-bottom: calc($spacing-unit / 2);
+    }
+
+    p:last-child {
+        margin-bottom: 0px;
+    }
+}
+
+.button {
+    background: $grey-color-10;
+    font-weight: bold;
+    border: 1px solid black;
+    border-radius: 3px;
+    padding: calc($spacing-unit / 4) calc($spacing-unit / 2);
+
+    &:hover {
+        text-decoration: none;
+    }
+}
+
+.icon {
+    color: $text-color;
+    display: inline-block;
+    width: $spacing-unit;
+
+    &.disabled {
+        i {
+            display: none;
+        }
+    }
+}
+
+.site-nav {
+    font-size: $large-font-size;
+    font-weight: bold;
+    float: right;
+
+    .nav-trigger {
+        display: none;
+    }
+
+    .menu-icon {
+        display: none;
+    }
+
+    .trigger {
+        margin: 0 $spacing-unit;
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: flex-start;
+            
+            li {
+            	display: inline-block;
+                margin-left: 0.5 * $spacing-unit;
+                margin-right: 0.5 * $spacing-unit;
+            }
+
+            .nav-right {
+                position: absolute;
+                bottom: 0%;
+                right: $spacing-unit;
+            }
+        }
+    }
+
+    .page-link {
+        line-height: $base-line-height;
+
+        &:hover {
+            color: $brand-color;
+        }
+    }
+
+    @include media-query($on-palm) {
+        position: absolute;
+        top: 9px;
+        right: calc($spacing-unit / 2);
+        background-color: $background-color;
+        text-align: left;
+        z-index: 500;
+
+        label[for="nav-trigger"] {
+            display: block;
+            float: right;
+            width: 36px;
+            height: 36px;
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        .menu-icon {
+            display: block;
+            float: right;
+            width: 36px;
+            height: 26px;
+            line-height: 0;
+            padding-top: 10px;
+            text-align: center;
+
+            > svg {
+                fill: $grey-color-80;
+            }
+        }
+
+        input ~ .trigger {
+            clear: both;
+            display: none;
+        }
+
+        input:checked ~ .trigger {
+            display: block;
+            padding-bottom: 5px;
+        }
+
+        .page-link {
+            padding: 5px 10px;
+
+            &:not(:last-child) {
+                margin-right: 0;
+            }
+            margin-left: 20px;
+        }
+
+        .trigger {
+            ul {
+                list-style: none;
+                display: block;
+                
+                li {
+                    display: list-item;
+                    margin-left: 0;
+                    margin-right: 0;
+                }
+                
+                .nav-right {
+                    position: relative;
+                    bottom: 0;
+                    right: 0;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,32 @@
+@mixin media-query($device) {
+    @media screen and (max-width: $device) {
+        @content;
+    }
+}
+
+@mixin relative-font-size($ratio) {
+    font-size: calc($base-font-size * $ratio);
+}
+
+@mixin wrapper($width) {
+    max-width: -webkit-calc(#{$width} - (#{$spacing-unit} * 2));
+    max-width: calc(#{$width} - (#{$spacing-unit} * 2));
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: $spacing-unit;
+    padding-left: $spacing-unit;
+    @extend %clearfix;
+
+    @include media-query($on-laptop) {
+        max-width: -webkit-calc(#{$width} - (#{$spacing-unit}));
+        max-width: calc(#{$width} - (#{$spacing-unit}));
+        padding-right: calc($spacing-unit / 2);
+        padding-left: calc($spacing-unit / 2);
+    }
+}
+
+%clearfix:after {
+    content: '';
+    display: table;
+    clear: both;
+}
