@@ -1,5 +1,5 @@
-SCSS := $(wildcard serve/assets/styles/*.scss)
-CSS := static/styles/main.css
+SCSS := $(wildcard server/assets/styles/*.scss)
+CSS := server/static/styles/main.css
 
 all: $(CSS)
 	go build
@@ -7,13 +7,13 @@ all: $(CSS)
 run: $(CSS)
 	go run . serve -c ./config.toml
 
-static/styles/main.css: $(SCSS)
-	make -C serve
+$(CSS): $(SCSS)
+	make -C server
 
 test:
 	go test ./...
-	make -C serve test
+	make -C server test
 
 clean:
 	rm -r dorothy
-	make -C serve clean
+	make -C server clean

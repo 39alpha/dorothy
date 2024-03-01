@@ -31,4 +31,4 @@ good-hashes
 manifest.json
 
 node_modules
-serve/static/styles
+server/static/styles

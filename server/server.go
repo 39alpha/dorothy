@@ -1,17 +1,13 @@
-package serve
+package server
 
 import (
 	"context"
-	"crypto/rand"
 	"embed"
-	"encoding/base64"
-	"fmt"
 	"maps"
 	"net/http"
-	"os"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/go-chi/jwtauth/v5"
+	"github.com/39alpha/dorothy/server/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
@@ -40,31 +36,8 @@ type Server struct {
 	config *core.Config
 }
 
-func generateSecret() (string, error) {
-	key := make([]byte, 32)
-
-	if _, err := rand.Read(key); err != nil {
-		return "", err
-	}
-
-	return base64.StdEncoding.EncodeToString(key), nil
-}
-
-func makeJWTAuth() (*jwtauth.JWTAuth, error) {
-	secret := os.Getenv("DOROTHY_OAUTH_SECRET")
-	if secret == "" {
-		var err error
-		secret, err = generateSecret()
-		if err != nil {
-			return nil, fmt.Errorf("DOROTHY_SERVER_SECRET environment variable empty and failed to generate secret")
-		}
-	}
-
-	return jwtauth.New("HS256", []byte(secret), nil), nil
-}
-
 func NewServer(config *core.Config) (*Server, error) {
-	jwtAuth, err := makeJWTAuth()
+	jwtAuth, err := auth.NewAuth()
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +68,8 @@ func NewServer(config *core.Config) (*Server, error) {
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
 
-	app.Use(Verifier(jwtAuth))
-	app.Use(Authenticator(jwtAuth, session))
+	app.Use(auth.Verifier(jwtAuth))
+	app.Use(auth.Authenticator(jwtAuth, session))
 
 	app.Use("/static", filesystem.New(filesystem.Config{
 		Root:       http.FS(staticfs),

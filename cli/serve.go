@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/serve"
+	"github.com/39alpha/dorothy/server"
 )
 
 func Serve(configpath string, port int, genconf bool) error {
@@ -19,7 +19,7 @@ func Serve(configpath string, port int, genconf bool) error {
 			return fmt.Errorf("Error: invalid configuration file %q\n  %v\n", configpath, err)
 		}
 
-		app, err := serve.NewServer(config)
+		app, err := server.NewServer(config)
 		if err != nil {
 			return fmt.Errorf("Error: failed to start Dorothy\n  %v\n", err)
 		}
