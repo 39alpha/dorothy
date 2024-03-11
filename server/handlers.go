@@ -105,7 +105,7 @@ func Login(jwtAuth *auth.Auth, db *core.DatabaseSession) fiber.Handler {
 		c.Cookie(&fiber.Cookie{
 			Name:    "jwt",
 			Value:   token,
-			Expires: time.Now().Add(1 * time.Minute),
+			Expires: time.Now().Add(72 * time.Hour),
 		})
 
 		if fields.Redirect == "" {
