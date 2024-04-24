@@ -9,8 +9,8 @@ import (
 	"github.com/39alpha/dorothy/server/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/template/html/v2"
 
 	ipfs "github.com/ipfs/go-ipfs-api"
@@ -54,7 +54,7 @@ func NewServer(config *core.Config) (*Server, error) {
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
-	
+
 	app.Use("/static", filesystem.New(filesystem.Config{
 		Root:       http.FS(staticfs),
 		PathPrefix: "/static",
@@ -62,9 +62,9 @@ func NewServer(config *core.Config) (*Server, error) {
 	}))
 	app.Use(favicon.New(favicon.Config{
 		FileSystem: http.FS(staticfs),
-		File: "/static/favicon.ico",
+		File:       "/static/favicon.ico",
 	}))
-	
+
 	app.Use(func(c *fiber.Ctx) error {
 		c.Locals("State", fiber.Map{
 			"Title": "Dorothy",
@@ -82,15 +82,15 @@ func NewServer(config *core.Config) (*Server, error) {
 	app.Get("/login", LoginForm)
 	app.Post("/login", Login(jwtAuth, session))
 	app.Get("/logout", Logout)
-	
+
 	app.Get("/organization/create", CreateOrganizationForm)
 	app.Post("/organization/create", CreateOrganization(session))
-	
+
 	organization := app.Group("/:organization", GetOrganization(session))
 	organization.Get("/", Organization)
 	organization.Get("/dataset/create", CreateDatasetForm)
 	organization.Post("/dataset/create", CreateDataset(session))
-	
+
 	dataset := organization.Group("/:dataset", GetDataset(session))
 	dataset.Get("/", Dataset)
 

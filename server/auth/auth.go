@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"os"
-	"fmt"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
+	"os"
 	"time"
-	"context"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/core/model"
@@ -44,18 +44,18 @@ func generateSecret() (string, error) {
 }
 
 func (auth *Auth) MakeToken(user *model.User) (string, error) {
-    claims := map[string]interface{}{
-        "id":    user.ID,
-        "email": user.Email,
-        "name":  user.Name,
-        "orcid": user.Orcid,
-    }
-    jwtauth.SetIssuedNow(claims)
-    jwtauth.SetExpiryIn(claims, 72*time.Hour)
+	claims := map[string]interface{}{
+		"id":    user.ID,
+		"email": user.Email,
+		"name":  user.Name,
+		"orcid": user.Orcid,
+	}
+	jwtauth.SetIssuedNow(claims)
+	jwtauth.SetExpiryIn(claims, 72*time.Hour)
 
-    _, token, err := auth.Encode(claims)
-    
-    return token, err
+	_, token, err := auth.Encode(claims)
+
+	return token, err
 }
 
 func Verifier(auth *Auth) fiber.Handler {
