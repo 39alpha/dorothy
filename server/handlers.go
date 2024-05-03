@@ -55,7 +55,7 @@ func Registration(db *core.DatabaseSession) fiber.Handler {
 			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
 		}
 
-		if err := db.CreateUser(&new_user, "user"); err != nil {
+		if err := db.CreateUser(&new_user); err != nil {
 			return c.Status(fiber.StatusInternalServerError).RedirectBack("register")
 		}
 

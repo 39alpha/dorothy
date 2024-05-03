@@ -59,7 +59,20 @@ func (s *DatabaseSession) Initialize() error {
 	return nil
 }
 
-func (s *DatabaseSession) CreateUser(newuser *model.NewUser, rolecode string) error {
+func (s *DatabaseSession) CreateUser(newuser *model.NewUser) error {
+	var result struct {
+		Count int
+	}
+	err := s.Raw("SELECT COUNT(*) AS count FROM users").First(&result).Error
+	if err != nil {
+		return fmt.Errorf("failed to get user count")
+	}
+
+	rolecode := "user"
+	if result.Count == 0 {
+		rolecode = "admin"
+	}
+
 	password_hash, err := bcrypt.GenerateFromPassword([]byte(newuser.Password), 8)
 	if err != nil {
 		return fmt.Errorf("failed to create user")
