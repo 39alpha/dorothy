@@ -98,10 +98,17 @@ func Authenticator(auth *Auth, db *core.DatabaseSession) fiber.Handler {
 		if token != nil && jwt.Validate(token, auth.ValidateOptions()...) == nil {
 			if email, ok := claims["email"]; ok {
 				var user *model.User
-				err := db.Select("id", "email", "name", "orcid").First(&user, "email = ?", email).Error
+				err := db.Preload("Role").
+					Preload("OrganizationPrivileges.Organization").
+					Preload("DatasetPrivileges.Dataset.Organization").
+					First(&user, "email = ?", email).Error
+
 				if err != nil {
-					return c.Status(fiber.StatusInternalServerError).SendString("internal server error")
+					return c.Status(fiber.StatusInternalServerError).
+						SendString("internal server error")
 				}
+
+				user.PasswordHash = nil
 				c.Locals("AuthUser", user)
 			}
 		}

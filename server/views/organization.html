@@ -1,29 +1,32 @@
-{{ if .Organization }}
+{{ $org := .Organization }}
 {{ $avatar := "https://gateway.39alpharesearch.org/ipfs/QmZJEpyUESuu45zf9JaRZUvnKomg2y5cSkHLC2u1rjcL3Z" }}
-<div class="body">
-    <h1>{{ .Name }} Datasets</h1>
-    <div class="body_content">
-    {{ if .Datasets }}
-        {{ range .Organization.Datasets }}
-            <div class="dataset">
-            	{{ if .Avatar }}
-                <img class="dataset_avatar" src="{{ .Avatar }}" alt="{{ .Name }} avatar" />
-                {{ else }}
-                <img class="dataset_avatar" src="{{ $avatar }}" alt="{{ .Name }} avatar" />
-                {{ end }}
-                <div class="dataset_details">
-                    <div class="dataset_header">
-                        <a href="{{ .Slug }}">{{ .Name }}/{{ .Name }}</a>
-                    </div>
-                    <div class="dataset_description">
-                        <p>{.Description ?? 'A glorious dataset as yet undescribed'}</p>
-                    </div>
-                </div>
-            </div>
-        {{ end }}
-    {{ else }}
-        <p>This organization has no {{ if not .IsLoggedIn }}public{{end}} datasets yet.</p>
-    {{ end }}
-    </div>
+<h1>{{ $org.Name }} Datasets</h1>
+{{ if .AuthUser }}
+<div>
+    <span class="icon">
+        <i class="fa fa-square-plus"></i>
+    </span>
+    <a href="/{{ $org.Slug }}/dataset/create">Create Dataset</a>
 </div>
+{{ end }}
+{{ range $org.Datasets }}
+    <div class="dataset">
+        <img class="dataset_avatar" src="{{ $avatar }}" alt="{{ .Name }} avatar" />
+        <div class="dataset_details">
+            <div class="dataset_header">
+                <a href="{{ $org.Slug }}/{{ .Slug }}">{{ $org.Name }}/{{ .Name }}</a>
+            </div>
+            <div class="dataset_description">
+                <p>
+                {{ with .Description }}
+                    {{ . }}
+                {{ else }}
+                    A glorious dataset as yet undescribed
+                {{ end }}
+                </p>
+            </div>
+        </div>
+    </div>
+{{ else }}
+    <p>This organization has no {{ if not .AuthUser }}public{{end}} datasets yet.</p>
 {{ end }}

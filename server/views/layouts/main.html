@@ -3,14 +3,13 @@
     {{ template "views/partials/head" . }}
     <body>
     	<div class="content">
-            {{ template "views/partials/header" . }}
-            <main>
-                <div>
-            		{{ template "views/partials/sidebar" . }}
-                    {{embed}}
-                </div>
-            </main>
-            {{ template "views/partials/footer" . }}
+        {{ template "views/partials/header" . }}
+        <main>
+          <div>
+            {{embed}}
+          </div>
+        </main>
+        {{ template "views/partials/footer" . }}
     	</div>
     </body>
 </html>
