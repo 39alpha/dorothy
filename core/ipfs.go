@@ -2,43 +2,12 @@ package core
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 
 	"github.com/39alpha/dorothy/core/model"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
-
-const (
-	FS_ROOT  string = "/dorothy"
-	WEB_ROOT        = "/"
-)
-
-type DorothyPath struct {
-	IpfsDir string         `json:"-"`
-	WebDir  string         `json:"path"`
-	Name    string         `json:"name"`
-	Type    model.PathType `json:"-"`
-}
-
-func NewDorothyPath(ptype model.PathType, name string, parts ...string) DorothyPath {
-	return DorothyPath{
-		IpfsDir: filepath.Join(FS_ROOT, filepath.Join(parts...)),
-		WebDir:  filepath.Join(WEB_ROOT, filepath.Join(parts...)),
-		Name:    name,
-		Type:    ptype,
-	}
-}
-
-func (p DorothyPath) ToIpfsPath() string {
-	return filepath.Join(p.IpfsDir, p.Name)
-}
-
-func (p DorothyPath) ToWebPath() string {
-	return filepath.Join(p.WebDir, p.Name)
-}
 
 type Ipfs struct {
 	*ipfs.Shell
@@ -52,65 +21,29 @@ func NewIpfs(config *Config) (*Ipfs, error) {
 	return nil, fmt.Errorf("cannot connect to IPFS")
 }
 
-func (s Ipfs) CreateOrganization(ctx context.Context, org *model.Organization) (DorothyPath, error) {
-	path := NewDorothyPath(model.PathTypeDirectory, org.Slug)
-
-	return path, s.FilesMkdir(ctx, path.ToIpfsPath(), func(r *ipfs.RequestBuilder) error {
-		r.Option("parents", true)
-		return nil
-	})
+func (s Ipfs) CreateEmptyManifest() (*model.Manifest, error) {
+	return s.SaveManifest(&model.Manifest{Versions: []*model.Version{}})
 }
 
-func (s Ipfs) CreateDataset(ctx context.Context, dataset *model.Dataset) (DorothyPath, error) {
-	path := NewDorothyPath(model.PathTypeDirectory, dataset.Slug, dataset.Organization.Slug)
-	if err := s.FilesMkdir(ctx, path.ToIpfsPath()); err != nil {
-		return path, err
-	}
-
-	_, err := s.CreateManifest(ctx, dataset.Organization.Slug, dataset.Slug)
-	return path, err
-}
-
-func (s Ipfs) CreateManifest(ctx context.Context, organization, dataset string) (DorothyPath, error) {
-	manifest := model.Manifest{Versions: []*model.Version{}}
-	return s.saveManifest(ctx, organization, dataset, &manifest)
-}
-
-func (s Ipfs) saveManifest(ctx context.Context, organization, dataset string, manifest *model.Manifest) (DorothyPath, error) {
-	path := NewDorothyPath(model.PathTypeFile, "manifest.json", organization, dataset)
-
+func (s Ipfs) SaveManifest(manifest *model.Manifest) (*model.Manifest, error) {
 	buffer := new(bytes.Buffer)
 
 	encoder := json.NewEncoder(buffer)
 	if err := encoder.Encode(manifest); err != nil {
-		return path, err
-	}
-
-	if err := s.RemovePath(ctx, path); err != nil {
-		return path, err
+		return nil, err
 	}
 
 	hash, err := s.Add(buffer, ipfs.Pin(true))
 	if err != nil {
-		return path, err
-	}
-
-	return path, s.FilesCp(ctx, "/ipfs/"+hash, path.ToIpfsPath())
-}
-
-func (s Ipfs) GetDataset(ctx context.Context, organization, dataset string) (*DorothyPath, error) {
-	path := NewDorothyPath(model.PathTypeDirectory, filepath.Join(organization, dataset))
-	_, err := s.FilesStat(ctx, path.ToIpfsPath())
-	if err != nil {
 		return nil, err
 	}
-	path.Name = dataset
-	return &path, err
+
+	manifest.Hash = hash
+	return manifest, nil
 }
 
-func (s Ipfs) GetManifest(ctx context.Context, organization, dataset string) (*model.Manifest, error) {
-	path := NewDorothyPath(model.PathTypeFile, "manifest.json", organization, dataset)
-	r, err := s.FilesRead(ctx, path.ToIpfsPath())
+func (s Ipfs) GetManifest(hash string) (*model.Manifest, error) {
+	r, err := s.Cat(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -121,11 +54,13 @@ func (s Ipfs) GetManifest(ctx context.Context, organization, dataset string) (*m
 		return nil, err
 	}
 
+	manifest.Hash = hash
+
 	return &manifest, err
 }
 
-func (s Ipfs) Commit(ctx context.Context, organization, dataset string, new *model.Manifest) (*model.Manifest, error) {
-	old, err := s.GetManifest(ctx, organization, dataset)
+func (s Ipfs) MergeAndCommit(old, new *model.Manifest) (*model.Manifest, error) {
+	merged, _, err := old.Merge(new)
 	if err != nil {
 		return nil, err
 	}
@@ -135,50 +70,31 @@ func (s Ipfs) Commit(ctx context.Context, organization, dataset string, new *mod
 		return nil, err
 	}
 
-	var errors []error
-	var paths []DorothyPath
 	for _, version := range delta {
-		path, err := s.AddCommit(ctx, organization, dataset, version)
-		if err != nil {
-			errors = append(errors, err)
-			continue
-		}
-		paths = append(paths, path)
-	}
-	if len(errors) > 0 {
-		for _, path := range paths {
-			s.RemovePath(ctx, path)
-		}
+		s.CommitVersion(version)
 	}
 
-	merged, _, err := old.Merge(new)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = s.saveManifest(ctx, organization, dataset, merged)
-	return merged, err
+	return s.SaveManifest(merged)
 }
 
-func (s Ipfs) AddCommit(ctx context.Context, organization, dataset string, version *model.Version) (DorothyPath, error) {
-	path := NewDorothyPath(version.PathType, version.Hash, organization, dataset)
-
-	ipfspath := "/ipfs/" + version.Hash
-
-	if err := s.Pin(ipfspath); err != nil {
-		return path, err
-	}
-
-	return path, s.FilesCp(ctx, "/ipfs/"+version.Hash, path.ToIpfsPath())
+func (s Ipfs) Commit(manifest *model.Manifest) (*model.Manifest, error) {
+	return s.MergeAndCommit(&model.Manifest{}, manifest)
 }
 
-func (s Ipfs) RemovePath(ctx context.Context, path DorothyPath) error {
-	stat, err := s.FilesStat(ctx, path.ToIpfsPath())
-	if stat != nil && err == nil {
-		if err = s.Unpin(stat.Hash); err != nil {
-			return fmt.Errorf("failed to unpin file")
+func (s Ipfs) Uncommit(manifest *model.Manifest, recursive bool) error {
+	if recursive {
+		for _, version := range manifest.Versions {
+			s.RemoveVersion(version)
 		}
 	}
 
-	return s.FilesRm(ctx, path.ToIpfsPath(), true)
+	return s.Unpin(manifest.Hash)
+}
+
+func (s Ipfs) CommitVersion(version *model.Version) (string, error) {
+	return version.Hash, s.Pin(version.Hash)
+}
+
+func (s Ipfs) RemoveVersion(version *model.Version) error {
+	return s.Unpin(version.Hash)
 }

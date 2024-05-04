@@ -1,7 +1,6 @@
 package core
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -25,110 +24,46 @@ func init() {
 	}
 }
 
-func TestCreateOrganization(t *testing.T) {
-	ctx := context.TODO()
-
+func TestCreateEmptyManifest(t *testing.T) {
+	manifest, err := client.CreateEmptyManifest()
 	defer func() {
-		client.FilesRm(ctx, FS_ROOT, true)
-	}()
-
-	slug := "team0"
-	path, err := client.CreateOrganization(ctx, &model.Organization{Slug: slug})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if path.IpfsDir != "/dorothy" {
-		t.Errorf("expected name %q, got %q", "/dorothy", path.IpfsDir)
-	}
-	if path.WebDir != "/" {
-		t.Errorf("expected %q file type, got %q", "/", path.WebDir)
-	}
-	if path.Name != slug {
-		t.Errorf("expected name %q, got %q", slug, path.Name)
-	}
-	if path.Type != model.PathTypeDirectory {
-		t.Errorf("expected %q file type, got %q", model.PathTypeDirectory, path.Type)
-	}
-}
-
-func TestCreateDatasetAlreadyExists(t *testing.T) {
-	ctx := context.TODO()
-
-	defer func() {
-		client.FilesRm(ctx, FS_ROOT, true)
-	}()
-
-	organizationSlug := "team0"
-	datasetSlug := "css0"
-	_, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}})
-	if err == nil {
-		t.Errorf("expected an error, got nil")
-	}
-}
-
-func TestCreateDataset(t *testing.T) {
-	ctx := context.TODO()
-
-	organizationSlug := "team0"
-	datasetSlug := "css0"
-
-	defer func() {
-		err := client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
-		if err != nil {
-			panic(err)
+		if err := client.Uncommit(manifest, true); err != nil {
+			t.Fatal(err)
 		}
-		client.FilesRm(ctx, FS_ROOT, true)
 	}()
 
-	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
-		t.Fatal(err)
-	}
-
-	path, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ipfsDir := "/dorothy/" + organizationSlug
-	webDir := "/" + organizationSlug
+	if manifest.Hash == "" {
+		t.Errorf("expected non-empty hash")
+	}
 
-	if path.IpfsDir != ipfsDir {
-		t.Errorf("expected name %q, got %q", ipfsDir, path.IpfsDir)
-	}
-	if path.WebDir != webDir {
-		t.Errorf("expected %q file type, got %q", webDir, path.WebDir)
-	}
-	if path.Name != datasetSlug {
-		t.Errorf("expected name %q, got %q", datasetSlug, path.Name)
-	}
-	if path.Type != model.PathTypeDirectory {
-		t.Errorf("expected %q file type, got %q", model.PathTypeDirectory, path.Type)
+	if len(manifest.Versions) != 0 {
+		t.Errorf("expected empty manifest, got len(manifest) = %d", len(manifest.Versions))
 	}
 }
 
-func TestCreateDatasetCreatesEmptyManifest(t *testing.T) {
-	ctx := context.TODO()
-
-	organizationSlug := "team0"
-	datasetSlug := "CSS0"
-
+func TestGetManifest(t *testing.T) {
+	manifest, err := client.CreateEmptyManifest()
 	defer func() {
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
-		client.FilesRm(ctx, FS_ROOT, true)
+		if err := client.Uncommit(manifest, true); err != nil {
+			t.Fatal(err)
+		}
 	}()
 
-	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}}); err != nil {
-		t.Fatal(err)
-	}
-
-	manifest, err := client.GetManifest(ctx, organizationSlug, datasetSlug)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	fetched, err := client.GetManifest(manifest.Hash)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if manifest.Hash != fetched.Hash {
+		t.Errorf("expected hash %q, got %q", manifest.Hash, fetched.Hash)
 	}
 
 	if len(manifest.Versions) != 0 {
@@ -137,25 +72,7 @@ func TestCreateDatasetCreatesEmptyManifest(t *testing.T) {
 }
 
 func TestCommit(t *testing.T) {
-	ctx := context.TODO()
-
-	organizationSlug := "team0"
-	datasetSlug := "CSS0"
 	hash := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
-
-	defer func() {
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash, organizationSlug, datasetSlug))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
-		client.FilesRm(ctx, FS_ROOT, true)
-	}()
-
-	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}}); err != nil {
-		t.Fatal(err)
-	}
 
 	manifest := &model.Manifest{
 		Versions: []*model.Version{
@@ -170,10 +87,15 @@ func TestCommit(t *testing.T) {
 		},
 	}
 
-	returned, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest)
+	returned, err := client.Commit(manifest)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		if err := client.Uncommit(returned, true); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	if len(returned.Versions) != 1 {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(returned.Versions))
@@ -185,7 +107,7 @@ func TestCommit(t *testing.T) {
 		}
 	}
 
-	saved, err := client.GetManifest(ctx, organizationSlug, datasetSlug)
+	saved, err := client.GetManifest(returned.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,27 +124,8 @@ func TestCommit(t *testing.T) {
 }
 
 func TestMultipleCommits(t *testing.T) {
-	ctx := context.TODO()
-
-	organizationSlug := "team0"
-	datasetSlug := "CSS0"
 	hash1 := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 	hash2 := "bafybeicysbsujtlq2d7ygbab47lywcb7vehx64zwv4etis6hom45iorjwm"
-
-	defer func() {
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash1, organizationSlug, datasetSlug))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash2, organizationSlug, datasetSlug))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
-		client.FilesRm(ctx, FS_ROOT, true)
-	}()
-
-	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}}); err != nil {
-		t.Fatal(err)
-	}
 
 	manifest1 := &model.Manifest{
 		Versions: []*model.Version{
@@ -248,14 +151,25 @@ func TestMultipleCommits(t *testing.T) {
 		}),
 	}
 
-	if _, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest1); err != nil {
-		t.Fatal(err)
-	}
-
-	returned, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest2)
+	first, err := client.Commit(manifest1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		if err := client.Uncommit(first, true); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	returned, err := client.Commit(manifest2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := client.Uncommit(returned, true); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	if len(returned.Versions) != 2 {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(returned.Versions))
@@ -267,7 +181,7 @@ func TestMultipleCommits(t *testing.T) {
 		}
 	}
 
-	saved, err := client.GetManifest(ctx, organizationSlug, datasetSlug)
+	saved, err := client.GetManifest(returned.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -284,29 +198,9 @@ func TestMultipleCommits(t *testing.T) {
 }
 
 func TestConflictingCommits(t *testing.T) {
-	ctx := context.TODO()
-
-	organizationSlug := "team0"
-	datasetSlug := "CSS0"
 	hash1 := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 	hash2 := "bafybeicysbsujtlq2d7ygbab47lywcb7vehx64zwv4etis6hom45iorjwm"
 	hash3 := "bafybeifvnc6qllx2cuwcrkf5fxuocg7jraesroxeuzd3ru7aexnayjnjgu"
-
-	defer func() {
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash1, organizationSlug, datasetSlug))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash2, organizationSlug, datasetSlug))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, hash3, organizationSlug, datasetSlug))
-		client.RemovePath(ctx, NewDorothyPath(model.PathTypeFile, "manifest.json", organizationSlug, datasetSlug))
-		client.FilesRm(ctx, FS_ROOT, true)
-	}()
-
-	if _, err := client.CreateOrganization(ctx, &model.Organization{Slug: organizationSlug}); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := client.CreateDataset(ctx, &model.Dataset{Slug: datasetSlug, Organization: &model.Organization{Slug: organizationSlug}}); err != nil {
-		t.Fatal(err)
-	}
 
 	time1, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T10:00:00")
 	time2, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T11:00:00")
@@ -342,17 +236,28 @@ func TestConflictingCommits(t *testing.T) {
 	manifest1 := &model.Manifest{Versions: []*model.Version{versions[0], versions[2]}}
 	manifest2 := &model.Manifest{Versions: []*model.Version{versions[0], versions[1]}}
 
-	if _, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest1); err != nil {
-		t.Fatal(err)
-	}
-
-	returned, err := client.Commit(ctx, organizationSlug, datasetSlug, manifest2)
+	first, err := client.Commit(manifest1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		if err := client.Uncommit(first, true); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	returned, err := client.MergeAndCommit(manifest1, manifest2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := client.Uncommit(returned, true); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	if len(returned.Versions) != 3 {
-		t.Fatalf("expected %d entries in manifest, got %d", 1, len(returned.Versions))
+		t.Fatalf("expected %d entries in manifest, got %d", 3, len(returned.Versions))
 	}
 
 	for i, version := range versions {
@@ -361,7 +266,7 @@ func TestConflictingCommits(t *testing.T) {
 		}
 	}
 
-	saved, err := client.GetManifest(ctx, organizationSlug, datasetSlug)
+	saved, err := client.GetManifest(returned.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}

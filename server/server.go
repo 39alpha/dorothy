@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"embed"
 	"net/http"
 
@@ -12,8 +11,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/template/html/v2"
-
-	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
 //go:embed views
@@ -100,15 +97,8 @@ func NewServer(config *core.Config) (*Server, error) {
 }
 
 func (d *Server) initialize() error {
-	client, err := core.NewIpfs(d.config)
-	if err != nil {
-		return err
-	}
-
-	return client.FilesMkdir(context.TODO(), core.FS_ROOT, func(r *ipfs.RequestBuilder) error {
-		r.Option("parents", true)
-		return nil
-	})
+	_, err := core.NewIpfs(d.config)
+	return err
 }
 
 func (d *Server) Listen(addr string) error {
