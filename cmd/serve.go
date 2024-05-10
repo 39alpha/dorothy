@@ -12,11 +12,6 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "start a Dorothy web server",
 	Run: func(cmd *cobra.Command, args []string) {
-		genconf, err := cmd.Flags().GetBool("genconf")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		}
 		port, err := cmd.Flags().GetInt("port")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -27,7 +22,7 @@ var serveCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}
-		if err := cli.Serve(configpath, port, genconf); err != nil {
+		if err := cli.Serve(configpath, port); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}
@@ -36,7 +31,6 @@ var serveCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
-	serveCmd.Flags().BoolP("genconf", "g", false, "generate a default configuraiton file")
 	serveCmd.Flags().IntP("port", "p", 4248, "port on which to listen")
 	serveCmd.Flags().StringP(
 		"config",

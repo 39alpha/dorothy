@@ -121,17 +121,6 @@ func (config *Config) Encode(w io.Writer) error {
 	return encoder.Encode(config)
 }
 
-func GenerateConfig(w io.Writer) error {
-	config := Config{
-		Filename: "",
-		Ipfs: &IpfsConfig{
-			Host: "127.0.0.1",
-			Port: 5001,
-		},
-		Database: &DatabaseConfig{
-			Path: filepath.Join(xdg.DataHome, "dorothy.db"),
-		},
 	}
 
-	return config.WriteConfig(w)
 }
