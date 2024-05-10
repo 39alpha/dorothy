@@ -45,5 +45,5 @@ func Push() error {
 		return fmt.Errorf("invalid manifest received from the server: %v", err)
 	}
 
-	return core.WriteManifestFile(MANIFEST_PATH, &manifest)
+	return manifest.WriteFile(MANIFEST_PATH)
 }

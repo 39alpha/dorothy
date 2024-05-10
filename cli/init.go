@@ -20,7 +20,7 @@ func Init() error {
 		return fmt.Errorf("failed to write configuration")
 	}
 
-	if err := core.WriteManifestFile(MANIFEST_PATH, &core.Manifest{}); err != nil {
+	if err := (&core.Manifest{}).WriteFile(MANIFEST_PATH); err != nil {
 		return fmt.Errorf("failed to open manifest")
 	}
 

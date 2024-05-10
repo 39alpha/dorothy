@@ -95,7 +95,7 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 		return err
 	}
 
-	return core.WriteManifestFile(MANIFEST_PATH, manifest)
+	return manifest.WriteFile(MANIFEST_PATH)
 }
 
 func FromEditor(config *core.Config, filename string) (string, error) {

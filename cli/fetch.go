@@ -34,5 +34,5 @@ func Fetch() error {
 		return err
 	}
 
-	return core.WriteManifestFile(MANIFEST_PATH, &manifest)
+	return manifest.WriteFile(MANIFEST_PATH)
 }

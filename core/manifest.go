@@ -117,17 +117,17 @@ func ReadManifest(r io.Reader) (*Manifest, error) {
 	return &manifest, decoder.Decode(&manifest)
 }
 
-func WriteManifestFile(filename string, manifest *Manifest) error {
+func (manifest *Manifest) WriteFile(filename string) error {
 	handle, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0755)
 	defer handle.Close()
 	if err != nil {
 		return err
 	}
 
-	return WriteManifest(handle, manifest)
+	return manifest.Encode(handle)
 }
 
-func WriteManifest(w io.Writer, manifest *Manifest) error {
+func (manifest *Manifest) Encode(w io.Writer) error {
 	encoder := json.NewEncoder(w)
 	return encoder.Encode(manifest)
 }
