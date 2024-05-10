@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -13,7 +14,6 @@ import (
 )
 
 type Config struct {
-	Filename     string          `toml:"-"`
 	User         *UserConfig     `toml:"user,omitempty"`
 	Editor       string          `toml:"editor,omitempty"`
 	RemoteString string          `toml:"remote,omitempty"`
@@ -84,26 +84,35 @@ func (u *UserConfig) String() string {
 	return s
 }
 
-func ReadConfigFile(filename string) (*Config, error) {
-	config := Config{
-		Filename: filename,
-	}
-
-	_, err := toml.DecodeFile(filename, &config)
+func (config *Config) ReadFile(filename string) error {
+	_, err := toml.DecodeFile(filename, config)
 	if err != nil {
+		return err
+	}
+	config.Remote, err = NewRemote(config.RemoteString)
+	return err
+}
+
+func ReadConfigFile(filename string) (*Config, error) {
+	var config Config
+	if err := config.ReadFile(filename); err != nil {
 		return nil, err
 	}
-
-	config.Remote, err = NewRemote(config.RemoteString)
-
 	return &config, nil
+}
+
+func (config *Config) Read(r io.Reader) error {
+	decoder := toml.NewDecoder(r)
+	_, err := decoder.Decode(config)
+	return err
 }
 
 func ReadConfig(r io.Reader) (*Config, error) {
 	var config Config
-	decoder := toml.NewDecoder(r)
-	_, err := decoder.Decode(&config)
-	return &config, err
+	if err := config.Read(r); err != nil {
+		return nil, err
+	}
+	return &config, nil
 }
 
 func (config *Config) WriteFile(filename string) error {
@@ -121,6 +130,25 @@ func (config *Config) Encode(w io.Writer) error {
 	return encoder.Encode(config)
 }
 
+func LoadConfig(filename string, noinherit bool) (*Config, error) {
+	var config Config
+
+	var paths []string
+	if !noinherit {
+		paths = []string{
+			filepath.Join(xdg.ConfigHome, "dorothy", "config.toml"),
+			filepath.Join(".dorothy", "config.toml"),
+		}
 	}
 
+	if filename != "" {
+		paths = append(paths, filename)
+	}
+
+	for _, configpath := range paths {
+		if err := config.ReadFile(configpath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return nil, err
+		}
+	}
+	return &config, nil
 }
