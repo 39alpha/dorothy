@@ -20,7 +20,7 @@ func SetUserName(name string) error {
 		config.User.Name = name
 	}
 
-	return config.WriteConfigFile(CONFIG_PATH)
+	return config.WriteFile(CONFIG_PATH)
 }
 
 func SetUserEmail(email string) error {
@@ -37,7 +37,7 @@ func SetUserEmail(email string) error {
 		config.User.Email = email
 	}
 
-	return config.WriteConfigFile(CONFIG_PATH)
+	return config.WriteFile(CONFIG_PATH)
 }
 
 func SetRemote(remote string) error {
@@ -53,7 +53,7 @@ func SetRemote(remote string) error {
 
 	config.RemoteString = r.String()
 
-	return config.WriteConfigFile(CONFIG_PATH)
+	return config.WriteFile(CONFIG_PATH)
 }
 
 func SetEditor(editor string) error {
@@ -64,5 +64,5 @@ func SetEditor(editor string) error {
 
 	config.Editor = editor
 
-	return config.WriteConfigFile(CONFIG_PATH)
+	return config.WriteFile(CONFIG_PATH)
 }

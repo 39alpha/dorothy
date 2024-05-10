@@ -106,17 +106,17 @@ func ReadConfig(r io.Reader) (*Config, error) {
 	return &config, err
 }
 
-func (config *Config) WriteConfigFile(filename string) error {
+func (config *Config) WriteFile(filename string) error {
 	handle, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0755)
 	defer handle.Close()
 	if err != nil {
 		return err
 	}
 
-	return config.WriteConfig(handle)
+	return config.Encode(handle)
 }
 
-func (config *Config) WriteConfig(w io.Writer) error {
+func (config *Config) Encode(w io.Writer) error {
 	encoder := toml.NewEncoder(w)
 	return encoder.Encode(config)
 }

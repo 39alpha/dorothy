@@ -16,7 +16,7 @@ func Init() error {
 		}
 	}
 
-	if err := (&core.Config{}).WriteConfigFile(CONFIG_PATH); err != nil {
+	if err := (&core.Config{}).WriteFile(CONFIG_PATH); err != nil {
 		return fmt.Errorf("failed to write configuration")
 	}
 
