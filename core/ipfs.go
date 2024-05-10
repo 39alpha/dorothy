@@ -12,12 +12,23 @@ type Ipfs struct {
 	*ipfs.Shell
 }
 
-func NewIpfs(config *Config) (*Ipfs, error) {
-	shell := ipfs.NewShell(config.Ipfs.Url())
+func NewIpfs(config *IpfsConfig) (*Ipfs, error) {
+	var shell *ipfs.Shell
+
+	if config == nil {
+		shell = ipfs.NewLocalShell()
+	} else {
+		shell = ipfs.NewShell(config.Url())
+	}
+
 	if shell != nil && shell.IsUp() {
 		return &Ipfs{shell}, nil
 	}
 	return nil, fmt.Errorf("cannot connect to IPFS")
+}
+
+func NewLocalIpfs() (*Ipfs, error) {
+	return NewIpfs(nil)
 }
 
 func (s Ipfs) CreateEmptyManifest() (*Manifest, error) {

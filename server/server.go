@@ -96,7 +96,7 @@ func NewServer(config *core.Config) (*Server, error) {
 }
 
 func (d *Server) initialize() error {
-	_, err := core.NewIpfs(d.config)
+	_, err := core.NewIpfs(d.config.Ipfs)
 	return err
 }
 
