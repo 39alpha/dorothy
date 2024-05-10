@@ -6,23 +6,21 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/core/model"
 )
 
 func Fetch() error {
-	config, err := ReadConfigFile(configpath)
+	config, err := core.ReadConfigFile(CONFIG_PATH)
 	if err != nil {
 		return fmt.Errorf("failed to read configuration: %v", err)
-	} else if config.Remote == "" {
+	} else if config.RemoteString == "" {
 		return fmt.Errorf("no remote set")
+	} else if config.Remote == nil {
+		return fmt.Errorf("ill-formed remote")
 	}
 
-	r, err := ParseRemote(config.Remote)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.Get(r.Url())
+	resp, err := http.Get(config.Remote.Url())
 	if err != nil {
 		return err
 	}
@@ -37,5 +35,5 @@ func Fetch() error {
 		return err
 	}
 
-	return model.WriteManifestFile(manifestpath, &manifest)
+	return model.WriteManifestFile(MANIFEST_PATH, &manifest)
 }

@@ -14,7 +14,7 @@ func Serve(configpath string, port int, genconf bool) error {
 			return fmt.Errorf("failed to generate a config\n  %v", err)
 		}
 	} else {
-		config, err := core.ReadConfig(configpath)
+		config, err := core.ReadConfigFile(configpath)
 		if err != nil {
 			return fmt.Errorf("Error: invalid configuration file %q\n  %v\n", configpath, err)
 		}
@@ -25,8 +25,6 @@ func Serve(configpath string, port int, genconf bool) error {
 		}
 
 		return app.Listen(fmt.Sprintf(":%d", port))
-
-		return nil
 	}
 
 	return nil

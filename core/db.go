@@ -19,7 +19,13 @@ type DatabaseSession struct {
 }
 
 func NewDatabaseSession(config *Config) (*DatabaseSession, error) {
-	path := config.Database.Path + "?_foreign_keys=on&cache=shared"
+	if config.Server == nil {
+		return nil, fmt.Errorf("no server configuration provided")
+	} else if config.Server.Database == nil {
+		return nil, fmt.Errorf("no server database configuration provided")
+	}
+
+	path := config.Server.Database.Path + "?_foreign_keys=on&cache=shared"
 	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
 		return nil, err

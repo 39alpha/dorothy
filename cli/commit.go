@@ -12,12 +12,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/core/model"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
 func CommitData(path, message string, nopin bool, parents []string, pick bool) (err error) {
-	config, err := ReadConfigFile(configpath)
+	config, err := core.ReadConfigFile(CONFIG_PATH)
 	if err != nil {
 		return fmt.Errorf("failed to read configuration")
 	} else if config.User == nil || config.User.Name == "" || config.User.Email == "" {
@@ -31,7 +32,7 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 		}
 	}
 
-	manifest, err := model.ReadManifestFile(manifestpath)
+	manifest, err := model.ReadManifestFile(MANIFEST_PATH)
 	if err != nil {
 		return fmt.Errorf("failed to read manifest")
 	}
@@ -95,10 +96,10 @@ func CommitData(path, message string, nopin bool, parents []string, pick bool) (
 		return err
 	}
 
-	return model.WriteManifestFile(manifestpath, manifest)
+	return model.WriteManifestFile(MANIFEST_PATH, manifest)
 }
 
-func FromEditor(config *Config, filename string) (string, error) {
+func FromEditor(config *core.Config, filename string) (string, error) {
 	editor := config.Editor
 	if editor == "" {
 		var ok bool

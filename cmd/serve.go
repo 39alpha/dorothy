@@ -3,10 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/39alpha/dorothy/cli"
-	"github.com/adrg/xdg"
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +41,7 @@ func init() {
 	serveCmd.Flags().StringP(
 		"config",
 		"c",
-		filepath.Join(xdg.ConfigHome, "dorothy", "config.toml"),
+		cli.CONFIG_PATH,
 		"path to configuration file",
 	)
 }

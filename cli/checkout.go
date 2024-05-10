@@ -9,7 +9,7 @@ import (
 )
 
 func Checkout(hash, dest string) error {
-	manifest, err := model.ReadManifestFile(manifestpath)
+	manifest, err := model.ReadManifestFile(MANIFEST_PATH)
 	if err != nil {
 		return fmt.Errorf("failed to read manifest")
 	}

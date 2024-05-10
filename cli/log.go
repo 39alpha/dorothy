@@ -9,7 +9,7 @@ import (
 )
 
 func Log() error {
-	manifest, err := model.ReadManifestFile(manifestpath)
+	manifest, err := model.ReadManifestFile(MANIFEST_PATH)
 	if err != nil {
 		return err
 	}
