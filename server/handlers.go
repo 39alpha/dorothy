@@ -5,9 +5,7 @@ import (
 	"maps"
 	"time"
 
-	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/core/model"
-	"github.com/39alpha/dorothy/server/auth"
+	"github.com/39alpha/dorothy/server/model"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -48,7 +46,7 @@ func RegistrationForm(c *fiber.Ctx) error {
 	}), "views/layouts/main")
 }
 
-func Registration(db *core.DatabaseSession) fiber.Handler {
+func Registration(db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var new_user model.NewUser
 		if err := c.BodyParser(&new_user); err != nil {
@@ -79,7 +77,7 @@ func LoginForm(c *fiber.Ctx) error {
 	return c.Render("views/login", bindings, "views/layouts/main")
 }
 
-func Login(jwtAuth *auth.Auth, db *core.DatabaseSession) fiber.Handler {
+func Login(jwtAuth *Auth, db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var fields struct {
 			Redirect string
@@ -125,7 +123,7 @@ func Logout(c *fiber.Ctx) error {
 	return c.Redirect("/")
 }
 
-func GetOrganizations(db *core.DatabaseSession) fiber.Handler {
+func GetOrganizations(db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		orgs := []model.Organization{}
 		if err := db.Preload("Datasets.Organization").Find(&orgs).Error; err != nil {
@@ -186,7 +184,7 @@ func CreateOrganizationForm(c *fiber.Ctx) error {
 	}
 }
 
-func CreateOrganization(db *core.DatabaseSession) fiber.Handler {
+func CreateOrganization(db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authUser, ok := c.Locals("AuthUser").(*model.User)
 
@@ -222,7 +220,7 @@ func CreateOrganization(db *core.DatabaseSession) fiber.Handler {
 	}
 }
 
-func GetOrganization(db *core.DatabaseSession) fiber.Handler {
+func GetOrganization(db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		slug := c.Params("organization")
 		if slug == "" {
@@ -285,7 +283,7 @@ func CreateDatasetForm(c *fiber.Ctx) error {
 	}
 }
 
-func CreateDataset(db *core.DatabaseSession) fiber.Handler {
+func CreateDataset(db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authUser, ok := c.Locals("AuthUser").(*model.User)
 		if !ok || authUser == nil {
@@ -330,7 +328,7 @@ func CreateDataset(db *core.DatabaseSession) fiber.Handler {
 	}
 }
 
-func GetDataset(db *core.DatabaseSession) fiber.Handler {
+func GetDataset(db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		org, ok := c.Locals("Organization").(*model.Organization)
 		if !ok || org == nil {
@@ -366,6 +364,7 @@ func GetDataset(db *core.DatabaseSession) fiber.Handler {
 		return c.Next()
 	}
 }
+
 func Dataset(c *fiber.Ctx) error {
 	return c.Render("views/dataset", bind(c, fiber.Map{
 		"AuthUser": c.Locals("AuthUser"),

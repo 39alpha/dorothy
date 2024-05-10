@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/core/model"
 )
 
 func Push() error {
@@ -41,10 +40,10 @@ func Push() error {
 		return fmt.Errorf("push failed: %s", content)
 	}
 
-	var manifest model.Manifest
+	var manifest core.Manifest
 	if err := json.Unmarshal(content, &manifest); err != nil {
 		return fmt.Errorf("invalid manifest received from the server: %v", err)
 	}
 
-	return model.WriteManifestFile(MANIFEST_PATH, &manifest)
+	return core.WriteManifestFile(MANIFEST_PATH, &manifest)
 }

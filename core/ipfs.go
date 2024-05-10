@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/39alpha/dorothy/core/model"
 	ipfs "github.com/ipfs/go-ipfs-api"
 )
 
@@ -21,11 +20,11 @@ func NewIpfs(config *Config) (*Ipfs, error) {
 	return nil, fmt.Errorf("cannot connect to IPFS")
 }
 
-func (s Ipfs) CreateEmptyManifest() (*model.Manifest, error) {
-	return s.SaveManifest(&model.Manifest{Versions: []*model.Version{}})
+func (s Ipfs) CreateEmptyManifest() (*Manifest, error) {
+	return s.SaveManifest(&Manifest{Versions: []*Version{}})
 }
 
-func (s Ipfs) SaveManifest(manifest *model.Manifest) (*model.Manifest, error) {
+func (s Ipfs) SaveManifest(manifest *Manifest) (*Manifest, error) {
 	buffer := new(bytes.Buffer)
 
 	encoder := json.NewEncoder(buffer)
@@ -42,13 +41,13 @@ func (s Ipfs) SaveManifest(manifest *model.Manifest) (*model.Manifest, error) {
 	return manifest, nil
 }
 
-func (s Ipfs) GetManifest(hash string) (*model.Manifest, error) {
+func (s Ipfs) GetManifest(hash string) (*Manifest, error) {
 	r, err := s.Cat(hash)
 	if err != nil {
 		return nil, err
 	}
 
-	var manifest model.Manifest
+	var manifest Manifest
 	decoder := json.NewDecoder(r)
 	if err := decoder.Decode(&manifest); err != nil {
 		return nil, err
@@ -59,7 +58,7 @@ func (s Ipfs) GetManifest(hash string) (*model.Manifest, error) {
 	return &manifest, err
 }
 
-func (s Ipfs) MergeAndCommit(old, new *model.Manifest) (*model.Manifest, error) {
+func (s Ipfs) MergeAndCommit(old, new *Manifest) (*Manifest, error) {
 	merged, _, err := old.Merge(new)
 	if err != nil {
 		return nil, err
@@ -77,11 +76,11 @@ func (s Ipfs) MergeAndCommit(old, new *model.Manifest) (*model.Manifest, error) 
 	return s.SaveManifest(merged)
 }
 
-func (s Ipfs) Commit(manifest *model.Manifest) (*model.Manifest, error) {
-	return s.MergeAndCommit(&model.Manifest{}, manifest)
+func (s Ipfs) Commit(manifest *Manifest) (*Manifest, error) {
+	return s.MergeAndCommit(&Manifest{}, manifest)
 }
 
-func (s Ipfs) Uncommit(manifest *model.Manifest, recursive bool) error {
+func (s Ipfs) Uncommit(manifest *Manifest, recursive bool) error {
 	if recursive {
 		for _, version := range manifest.Versions {
 			s.RemoveVersion(version)
@@ -91,10 +90,10 @@ func (s Ipfs) Uncommit(manifest *model.Manifest, recursive bool) error {
 	return s.Unpin(manifest.Hash)
 }
 
-func (s Ipfs) CommitVersion(version *model.Version) (string, error) {
+func (s Ipfs) CommitVersion(version *Version) (string, error) {
 	return version.Hash, s.Pin(version.Hash)
 }
 
-func (s Ipfs) RemoveVersion(version *model.Version) error {
+func (s Ipfs) RemoveVersion(version *Version) error {
 	return s.Unpin(version.Hash)
 }

@@ -5,11 +5,11 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/39alpha/dorothy/core/model"
+	"github.com/39alpha/dorothy/core"
 )
 
 func Log() error {
-	manifest, err := model.ReadManifestFile(MANIFEST_PATH)
+	manifest, err := core.ReadManifestFile(MANIFEST_PATH)
 	if err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func Log() error {
 	return nil
 }
 
-func printCommit(version *model.Version, showParents bool) {
+func printCommit(version *core.Version, showParents bool) {
 	s := strings.Builder{}
 	t := tabwriter.NewWriter(&s, 0, 4, 2, ' ', 0)
 	fmt.Fprintf(t, "%s\t%s\n", "Hash:", version.Hash)

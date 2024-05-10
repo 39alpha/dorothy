@@ -1,10 +1,11 @@
-package core
+package server
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/39alpha/dorothy/core/model"
+	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/server/model"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -18,7 +19,7 @@ type DatabaseSession struct {
 	*gorm.DB
 }
 
-func NewDatabaseSession(config *Config) (*DatabaseSession, error) {
+func NewDatabaseSession(config *core.Config) (*DatabaseSession, error) {
 	if config.Server == nil {
 		return nil, fmt.Errorf("no server configuration provided")
 	} else if config.Server.Database == nil {

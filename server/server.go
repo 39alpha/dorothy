@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/server/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
@@ -25,12 +24,12 @@ type Server struct {
 }
 
 func NewServer(config *core.Config) (*Server, error) {
-	jwtAuth, err := auth.NewAuth()
+	jwtAuth, err := NewAuth()
 	if err != nil {
 		return nil, err
 	}
 
-	session, err := core.NewDatabaseSession(config)
+	session, err := NewDatabaseSession(config)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +67,8 @@ func NewServer(config *core.Config) (*Server, error) {
 		})
 		return c.Next()
 	})
-	app.Use(auth.Verifier(jwtAuth))
-	app.Use(auth.Authenticator(jwtAuth, session))
+	app.Use(Verifier(jwtAuth))
+	app.Use(Authenticator(jwtAuth, session))
 	app.Use(GetOrganizations(session))
 
 	app.Get("/", Index)

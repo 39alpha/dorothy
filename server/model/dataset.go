@@ -3,6 +3,7 @@ package model
 import (
 	"time"
 
+	"github.com/39alpha/dorothy/core"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +15,7 @@ type Dataset struct {
 	Description    string         `json:"description"`
 	IsPrivate      bool           `json:"private"`
 	OrganizationID uint           `json:"organizationId"`
-	Manifest       *Manifest      `json:"manifest" gorm:"-"`
+	Manifest       *core.Manifest `json:"manifest" gorm:"-"`
 	CreatedAt      time.Time      `json:"createdAt"`
 	UpdatedAt      time.Time      `json:"updatedAt"`
 	DeletedAt      gorm.DeletedAt `json:"-" gorm:"index"`

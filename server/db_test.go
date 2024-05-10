@@ -1,9 +1,10 @@
-package core
+package server
 
 import (
 	"testing"
 
-	"github.com/39alpha/dorothy/core/model"
+	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/server/model"
 	"gorm.io/gorm/clause"
 )
 
@@ -12,9 +13,11 @@ var session *DatabaseSession
 func setup(t *testing.T) {
 	var err error
 
-	session, err = NewDatabaseSession(&Config{
-		Database: DatabaseConfig{
-			Path: ":memory:",
+	session, err = NewDatabaseSession(&core.Config{
+		Server: &core.ServerConfig{
+			Database: &core.DatabaseConfig{
+				Path: ":memory:",
+			},
 		},
 	})
 	if err != nil {

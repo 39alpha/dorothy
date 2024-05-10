@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/core/model"
 )
 
 func Init() error {
@@ -21,7 +20,7 @@ func Init() error {
 		return fmt.Errorf("failed to write configuration")
 	}
 
-	if err := model.WriteManifestFile(MANIFEST_PATH, &model.Manifest{}); err != nil {
+	if err := core.WriteManifestFile(MANIFEST_PATH, &core.Manifest{}); err != nil {
 		return fmt.Errorf("failed to open manifest")
 	}
 

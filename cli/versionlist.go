@@ -3,7 +3,7 @@ package cli
 import (
 	"strings"
 
-	"github.com/39alpha/dorothy/core/model"
+	"github.com/39alpha/dorothy/core"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -26,7 +26,7 @@ var (
 )
 
 type version struct {
-	version *model.Version
+	version *core.Version
 	chosen  bool
 }
 
@@ -141,7 +141,7 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	return d
 }
 
-func newModel(title string, manifest *model.Manifest, required bool) viewModel {
+func newModel(title string, manifest *core.Manifest, required bool) viewModel {
 	var (
 		listKeys     = newListKeyMap()
 		delegateKeys = newDelegateKeyMap()
@@ -238,7 +238,7 @@ func (m viewModel) HasChosen() bool {
 	return false
 }
 
-func chooseVersions(title string, manifest *model.Manifest, required bool) ([]string, error) {
+func chooseVersions(title string, manifest *core.Manifest, required bool) ([]string, error) {
 	p := tea.NewProgram(
 		newModel(
 			title,
