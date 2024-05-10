@@ -13,18 +13,13 @@ import (
 )
 
 type Config struct {
-	Filename     string        `toml:"-"`
-	User         *UserConfig   `toml:"user,omitempty"`
-	Editor       string        `toml:"editor,omitempty"`
-	RemoteString string        `toml:"remote,omitempty"`
-	Ipfs         *IpfsConfig   `toml:"ipfs,omitempty"`
-	Server       *ServerConfig `toml:"server,omitempty"`
-	Remote       *Remote       `toml:"-"`
-}
-
-type ServerConfig struct {
-	Ipfs     *IpfsConfig     `toml:"ipfs,omitempty"`
-	Database *DatabaseConfig `toml:"database,omitempty"`
+	Filename     string          `toml:"-"`
+	User         *UserConfig     `toml:"user,omitempty"`
+	Editor       string          `toml:"editor,omitempty"`
+	RemoteString string          `toml:"remote,omitempty"`
+	Ipfs         *IpfsConfig     `toml:"ipfs,omitempty"`
+	Database     *DatabaseConfig `toml:"database,omitempty"`
+	Remote       *Remote         `toml:"-"`
 }
 
 type Remote struct {
@@ -133,10 +128,8 @@ func GenerateConfig(w io.Writer) error {
 			Host: "127.0.0.1",
 			Port: 5001,
 		},
-		Server: &ServerConfig{
-			Database: &DatabaseConfig{
-				Path: filepath.Join(xdg.DataHome, "dorothy.db"),
-			},
+		Database: &DatabaseConfig{
+			Path: filepath.Join(xdg.DataHome, "dorothy.db"),
 		},
 	}
 
