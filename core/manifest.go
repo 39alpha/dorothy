@@ -102,7 +102,7 @@ func (v *Version) Less(o *Version) bool {
 }
 
 func ReadManifestFile(filename string) (*Manifest, error) {
-	handle, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0755)
+	handle, err := os.OpenFile(filename, os.O_RDONLY, 0755)
 	defer handle.Close()
 	if err != nil {
 		return nil, err
@@ -184,6 +184,27 @@ func (old *Manifest) Merge(new *Manifest) (*Manifest, []Conflict, error) {
 	}
 
 	return &Manifest{Versions: sorted}, nil, nil
+}
+
+func (manifest *Manifest) IsEmpty() bool {
+	return manifest == nil || len(manifest.Versions) == 0
+}
+
+func (manifest *Manifest) UnknownCommits(commits []string) []string {
+	var unknown []string
+	for _, parent := range commits {
+		seen := false
+		for _, version := range manifest.Versions {
+			if version.Hash == parent {
+				seen = true
+				break
+			}
+		}
+		if !seen {
+			unknown = append(unknown, parent)
+		}
+	}
+	return unknown
 }
 
 type Conflict struct {

@@ -2,6 +2,7 @@ package server
 
 import (
 	"embed"
+	"fmt"
 	"net/http"
 
 	"github.com/39alpha/dorothy/core"
@@ -20,16 +21,32 @@ var staticfs embed.FS
 
 type Server struct {
 	*fiber.App
-	config *core.Config
+	*core.Dorothy
 }
 
-func NewServer(config *core.Config) (*Server, error) {
+func NewServer() (*Server, error) {
+	dorothy, err := core.NewDorothy()
+	if err != nil {
+		return nil, err
+	}
+	return NewServerFromDorothy(dorothy)
+}
+
+func NewServerFromConfigFile(filename string, noinherit bool) (*Server, error) {
+	dorothy, err := core.NewDorothyFromConfigFile(filename, noinherit)
+	if err != nil {
+		return nil, err
+	}
+	return NewServerFromDorothy(dorothy)
+}
+
+func NewServerFromDorothy(dorothy *core.Dorothy) (*Server, error) {
 	jwtAuth, err := NewAuth()
 	if err != nil {
 		return nil, err
 	}
 
-	session, err := NewDatabaseSession(config)
+	session, err := NewDatabaseSession(dorothy.Config.Database)
 	if err != nil {
 		return nil, err
 	}
@@ -90,16 +107,13 @@ func NewServer(config *core.Config) (*Server, error) {
 	dataset := organization.Group("/:dataset", GetDataset(session))
 	dataset.Get("/", Dataset)
 
-	dorothy := &Server{app, config}
-
-	return dorothy, dorothy.initialize()
+	return &Server{app, dorothy}, nil
 }
 
-func (d *Server) initialize() error {
-	_, err := core.NewIpfs(d.config.Ipfs)
-	return err
+func (d *Server) Listen(host string, port int) error {
+	return d.App.Listen(fmt.Sprintf("%s:%d", host, port))
 }
 
-func (d *Server) Listen(addr string) error {
-	return d.App.Listen(addr)
+func (d *Server) ListenOnPort(port int) error {
+	return d.Listen("", port)
 }

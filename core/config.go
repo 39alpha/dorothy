@@ -130,25 +130,31 @@ func (config *Config) Encode(w io.Writer) error {
 	return encoder.Encode(config)
 }
 
-func LoadConfig(filename string, noinherit bool) (*Config, error) {
+func LoadConfig() (*Config, error) {
+	paths := []string{
+		filepath.Join(xdg.ConfigHome, "dorothy", "config.toml"),
+		filepath.Join(".dorothy", "config.toml"),
+	}
+
 	var config Config
-
-	var paths []string
-	if !noinherit {
-		paths = []string{
-			filepath.Join(xdg.ConfigHome, "dorothy", "config.toml"),
-			filepath.Join(".dorothy", "config.toml"),
-		}
-	}
-
-	if filename != "" {
-		paths = append(paths, filename)
-	}
-
 	for _, configpath := range paths {
 		if err := config.ReadFile(configpath); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return nil, err
 		}
 	}
 	return &config, nil
+}
+
+func LoadConfigFromFile(filename string, noinherit bool) (*Config, error) {
+	if noinherit {
+		return ReadConfigFile(filename)
+	} else {
+		if config, err := LoadConfig(); err != nil {
+			return nil, err
+		} else if err := config.ReadFile(filename); err != nil {
+			return nil, err
+		} else {
+			return config, nil
+		}
+	}
 }
