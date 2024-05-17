@@ -15,6 +15,7 @@ type Dataset struct {
 	Description    string         `json:"description"`
 	IsPrivate      bool           `json:"private"`
 	OrganizationID uint           `json:"organizationId"`
+	ManifestHash   string         `json:"manifestHash"`
 	Manifest       *core.Manifest `json:"manifest" gorm:"-"`
 	CreatedAt      time.Time      `json:"createdAt"`
 	UpdatedAt      time.Time      `json:"updatedAt"`

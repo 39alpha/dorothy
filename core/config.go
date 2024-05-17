@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
@@ -23,6 +24,7 @@ type Config struct {
 }
 
 type Remote struct {
+	Scheme       string
 	Host         string
 	Organization string
 	Dataset      string
@@ -33,12 +35,17 @@ func NewRemote(remote string) (*Remote, error) {
 		return nil, nil
 	}
 
-	r := &Remote{}
+	if !strings.HasPrefix(remote, "https://") && !strings.HasPrefix(remote, "http://") {
+		return nil, fmt.Errorf("remote %q does not have http(s) scheme", remote)
+	}
 
 	u, err := url.Parse(remote)
 	if err != nil {
-		return r, err
+		return nil, err
 	}
+
+	r := &Remote{}
+	r.Scheme = u.Scheme
 	r.Host = u.Host
 	r.Organization, r.Dataset = filepath.Split(u.Path)
 	r.Organization = path.Clean(r.Organization)
@@ -48,11 +55,16 @@ func NewRemote(remote string) (*Remote, error) {
 }
 
 func (r Remote) String() string {
-	return "dorothy://" + r.Host + "/" + r.Organization + "/" + r.Dataset
+	url := url.URL{
+		Scheme: r.Scheme,
+		Host:   r.Host,
+		Path:   filepath.Join(r.Organization, r.Dataset),
+	}
+	return url.String()
 }
 
 func (r Remote) Url() string {
-	return "http://" + r.Host + "/" + r.Organization + "/" + r.Dataset
+	return r.String()
 }
 
 type UserConfig struct {
@@ -142,6 +154,7 @@ func LoadConfig() (*Config, error) {
 			return nil, err
 		}
 	}
+
 	return &config, nil
 }
 

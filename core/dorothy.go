@@ -72,6 +72,14 @@ func (d *Dorothy) WriteManifestTo(filepath string) error {
 func (d *Dorothy) InitializeDirectory(cwd string) error {
 	dorothy_dir := filepath.Join(cwd, ".dorothy")
 
+	if d.Manifest == nil {
+		var err error
+		d.Manifest, err = d.Ipfs.CreateEmptyManifest()
+		if err != nil {
+			return err
+		}
+	}
+
 	if err := os.MkdirAll(dorothy_dir, 0755); err != nil {
 		if os.IsExist(err) {
 			return fmt.Errorf("dorothy already initialized")
@@ -80,11 +88,13 @@ func (d *Dorothy) InitializeDirectory(cwd string) error {
 		}
 	}
 
-	if err := d.WriteConfig(); err != nil {
+	config_path := filepath.Join(dorothy_dir, "config.toml")
+	if err := d.WriteConfigTo(config_path); err != nil {
 		return fmt.Errorf("failed to write configuration")
 	}
 
-	if err := d.WriteManifest(); err != nil {
+	manifest_path := filepath.Join(dorothy_dir, "manifest.json")
+	if err := d.WriteManifestTo(manifest_path); err != nil {
 		return fmt.Errorf("failed to write manifest")
 	}
 
@@ -130,57 +140,88 @@ func (d *Dorothy) SetEditor(editor string) error {
 	return d.WriteConfig()
 }
 
-func (d *Dorothy) Fetch() error {
+func (d *Dorothy) Fetch() ([]Conflict, error) {
 	if d.Config.RemoteString == "" {
-		return fmt.Errorf("no remote set")
+		return nil, fmt.Errorf("no remote set")
 	} else if d.Config.Remote == nil {
-		return fmt.Errorf("ill-formed remote")
+		return nil, fmt.Errorf("ill-formed remote")
 	}
 
-	resp, err := http.Get(d.Config.Remote.Url())
+	req, err := http.NewRequest("GET", d.Config.Remote.Url(), nil)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	req.Header.Add("Accept", "application/json")
+
+	resp, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return nil, err
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := json.Unmarshal(body, d.Manifest); err != nil {
-		return err
+	var manifest Manifest
+	if err := json.Unmarshal(body, &manifest); err != nil {
+		return nil, err
 	}
 
-	return d.WriteManifest()
+	merged, conflicts, err := d.Manifest.Merge(&manifest)
+	if err != nil || len(conflicts) != 0 {
+		return conflicts, err
+	}
+
+	d.Manifest = merged
+	return nil, d.WriteManifest()
 }
 
-func (d *Dorothy) Clone(remote, dest string) error {
+func Clone(remote, dest string) (*Dorothy, error) {
 	if dest == "" {
 		r, err := NewRemote(remote)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		dest = r.Dataset
 	}
 
 	if err := os.MkdirAll(dest, 0755); err != nil {
-		return fmt.Errorf("failed to create the repository directory %q", dest)
+		return nil, fmt.Errorf("failed to create the repository directory %q", dest)
 	}
 
-	if err := d.InitializeDirectory(dest); err != nil {
-		return err
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := os.Chdir(dest); err != nil {
+		return nil, err
+	}
+	defer os.Chdir(pwd)
+
+	d, err := NewDorothy()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := d.InitializeDirectory("."); err != nil {
+		return d, err
 	}
 
 	if err := d.SetRemote(remote); err != nil {
-		return err
+		return d, err
 	}
 
-	if err := d.Fetch(); err != nil {
-		return err
+	conflicts, err := d.Fetch()
+	if len(conflicts) != 0 {
+		return d, fmt.Errorf("clone encountered an unexpected dataset state")
+	} else if err != nil {
+		return d, err
 	}
 
-	return nil
+	return d, nil
 }
 
 func (d *Dorothy) Checkout(hash, dest string) error {
@@ -217,13 +258,17 @@ func (d *Dorothy) Push() error {
 		return fmt.Errorf("ill-formed remote")
 	}
 
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.Encode(d.Manifest)
+
 	handle, err := os.Open(filepath.Join(".dorothy", "manifest.json"))
 	defer handle.Close()
 	if err != nil {
 		return fmt.Errorf("failed to read Manifest")
 	}
 
-	resp, err := http.Post(d.Config.Remote.Url(), "application/json", handle)
+	resp, err := http.Post(d.Config.Remote.Url(), "application/json", &buf)
 	if err != nil {
 		return err
 	}
@@ -348,4 +393,18 @@ func (d *Dorothy) ReadFromEditor(filename string) (string, error) {
 	body = bytes.TrimRight(body, "\n\r")
 
 	return string(body), nil
+}
+
+func (d *Dorothy) Recieve(old, new *Manifest) (*Manifest, []Conflict, error) {
+	merged, conflicts, err := old.Merge(new)
+	if err != nil || len(conflicts) != 0 {
+		return nil, conflicts, err
+	}
+
+	merged, err = d.Ipfs.SaveManifest(merged)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return merged, nil, nil
 }

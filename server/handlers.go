@@ -5,6 +5,7 @@ import (
 	"maps"
 	"time"
 
+	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/server/model"
 	"github.com/gofiber/fiber/v2"
 )
@@ -283,7 +284,7 @@ func CreateDatasetForm(c *fiber.Ctx) error {
 	}
 }
 
-func CreateDataset(db *DatabaseSession) fiber.Handler {
+func (d *Server) CreateDatasetHandler() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authUser, ok := c.Locals("AuthUser").(*model.User)
 		if !ok || authUser == nil {
@@ -295,40 +296,24 @@ func CreateDataset(db *DatabaseSession) fiber.Handler {
 			return c.Status(fiber.StatusNotFound).Redirect("/")
 		}
 
-		var newdata model.NewDataset
-		if err := c.BodyParser(&newdata); err != nil {
+		var dataset model.NewDataset
+		if err := c.BodyParser(&dataset); err != nil {
 			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
 		}
 
-		if org.ID != newdata.OrganizationID {
+		if org.ID != dataset.OrganizationID {
 			return c.Redirect("/"+org.Slug+"/dataset/create", 400)
 		}
 
-		dataset := &model.Dataset{
-			Slug:           newdata.Slug,
-			Name:           newdata.Name,
-			OrganizationID: newdata.OrganizationID,
-			Contact:        newdata.Contact,
-			IsPrivate:      newdata.IsPrivate,
-		}
-		if newdata.Description != nil {
-			dataset.Description = *newdata.Description
-		}
-		if err := db.Save(dataset).Error; err != nil {
+		if err := d.CreateDataset(dataset, authUser); err != nil {
 			return c.Status(fiber.StatusInternalServerError).Redirect("/")
 		}
-
-		db.Save(&model.UserDatasetPrivilege{
-			User:          authUser,
-			Dataset:       dataset,
-			PrivilegeCode: "admin",
-		})
 
 		return c.Redirect("/" + org.Slug + "/" + dataset.Slug)
 	}
 }
 
-func GetDataset(db *DatabaseSession) fiber.Handler {
+func (d *Server) GetDataset() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		org, ok := c.Locals("Organization").(*model.Organization)
 		if !ok || org == nil {
@@ -344,7 +329,7 @@ func GetDataset(db *DatabaseSession) fiber.Handler {
 			Slug:           datasetSlug,
 			OrganizationID: org.ID,
 		}
-		if err := db.Preload("Organization").Where(&dataset).First(&dataset).Error; err != nil {
+		if err := d.session.Preload("Organization").Where(&dataset).First(&dataset).Error; err != nil {
 			return c.Status(fiber.StatusNotFound).Redirect("/")
 		}
 
@@ -359,13 +344,80 @@ func GetDataset(db *DatabaseSession) fiber.Handler {
 			}
 		}
 
+		var err error
+		dataset.Manifest, err = d.Ipfs.GetManifest(dataset.ManifestHash)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "failed to get dataset manifest",
+			})
+		}
+
 		addState(c, "Dataset", &dataset)
 
 		return c.Next()
 	}
 }
 
+func (d *Server) RecieveDataset() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		dataset, ok := c.Locals("Dataset").(*model.Dataset)
+		if !ok || dataset == nil || dataset.Manifest == nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "failed to fetch dataset manifest",
+			})
+		}
+		old := dataset.Manifest
+
+		var new core.Manifest
+		if err := c.BodyParser(&new); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "recieved invalid manifest",
+			})
+		}
+
+		manifest, conflicts, err := d.Recieve(old, &new)
+		if len(conflicts) != 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"conflicts": conflicts,
+				"error":     "merge failed with conflicts",
+			})
+		} else if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": fmt.Sprintf("merge failed: %v", err),
+			})
+		}
+
+		dataset.ManifestHash = manifest.Hash
+		if err := d.session.Save(dataset).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "failed to save manifest",
+			})
+		}
+
+		addState(c, "Dataset", dataset)
+
+		return c.JSON(manifest)
+	}
+}
+
 func Dataset(c *fiber.Ctx) error {
+	if c.Accepts("text/html") != "" {
+		return c.Render("views/dataset", bind(c, fiber.Map{
+			"AuthUser": c.Locals("AuthUser"),
+		}), "views/layouts/main")
+	} else if c.Accepts("application/json") != "" {
+		dataset, ok := c.Locals("Dataset").(*model.Dataset)
+		if !ok || dataset == nil || dataset.Manifest == nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "failed to fetch dataset manifest",
+			})
+		}
+		return c.JSON(dataset.Manifest)
+	} else if c.Accepts("text/plain") != "" {
+		if dataset, ok := c.Locals("Dataset").(*model.Dataset); ok {
+			return c.SendString(dataset.ManifestHash)
+		}
+	}
 	return c.Render("views/dataset", bind(c, fiber.Map{
 		"AuthUser": c.Locals("AuthUser"),
 	}), "views/layouts/main")

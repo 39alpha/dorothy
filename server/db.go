@@ -111,3 +111,33 @@ func (s *DatabaseSession) ValidateCredentials(email, password string) error {
 
 	return nil
 }
+
+func (s *DatabaseSession) CreateDataset(newdata model.NewDataset, manifest *core.Manifest, user *model.User) error {
+	return s.Transaction(func(tx *gorm.DB) error {
+		dataset := &model.Dataset{
+			Slug:           newdata.Slug,
+			Name:           newdata.Name,
+			OrganizationID: newdata.OrganizationID,
+			Contact:        newdata.Contact,
+			IsPrivate:      newdata.IsPrivate,
+			ManifestHash:   manifest.Hash,
+		}
+		if newdata.Description != nil {
+			dataset.Description = *newdata.Description
+		}
+
+		if err := tx.Save(dataset).Error; err != nil {
+			return err
+		}
+
+		if user != nil {
+			return tx.Save(&model.UserDatasetPrivilege{
+				User:          user,
+				Dataset:       dataset,
+				PrivilegeCode: "admin",
+			}).Error
+		}
+
+		return nil
+	})
+}

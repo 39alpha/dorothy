@@ -1,8 +1,8 @@
 <div class="body">
   <h1><a href="/{{ .Organization.Slug }}">{{ .Organization.Name }}</a> {{ .Dataset.Name }}</h1>
-  {{ if .Dataset.Manifest }}
+  {{ if .Dataset.Manifest.Versions }}
   <ul class="manifest">
-    {{ range .Dataset.Manifest }}
+    {{ range .Dataset.Manifest.ReverseVersions }}
     {{ template "views/partials/version" . }}
     {{ end }}
   </ul>

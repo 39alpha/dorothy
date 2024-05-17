@@ -18,8 +18,19 @@ var fetchCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err := d.Fetch(); err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
+		conflicts, err := d.Fetch()
+		if len(conflicts) != 0 {
+			fmt.Fprintf(os.Stderr, "conflicts:\n")
+			for _, conflict := range conflicts {
+				fmt.Fprintf(os.Stderr, "  %s", conflict)
+			}
+		}
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "fetch failed: %v\n", err)
+			os.Exit(1)
+		} else if len(conflicts) != 0 {
+			fmt.Fprintf(os.Stderr, "fetch failed with conflicts\n")
 			os.Exit(1)
 		}
 	},

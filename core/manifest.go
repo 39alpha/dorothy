@@ -312,3 +312,12 @@ func toposort(versions []*Version) ([]*Version, error) {
 
 	return versions, nil
 }
+
+func (m *Manifest) ReverseVersions() []*Version {
+	N := len(m.Versions)
+	var versions []*Version
+	for i, _ := range m.Versions {
+		versions = append(versions, m.Versions[N-i-1])
+	}
+	return versions
+}

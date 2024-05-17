@@ -13,20 +13,14 @@ var cloneCmd = &cobra.Command{
 	Short: "clone a remote dataset",
 	Args:  cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		d, err := core.NewDorothy()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		}
-
 		var dest string
 		if len(args) == 2 {
-			dest = args[2]
+			dest = args[1]
 		} else {
 			dest = ""
 		}
 
-		if err := d.Clone(args[0], dest); err != nil {
+		if _, err := core.Clone(args[0], dest); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}

@@ -1,8 +1,8 @@
-li class="version version--{{if eq .PathType 0 }}dir{{else}}file{{end}}" data-hash="{{ .Hash }}" data-parents="{{ .Parents }}">
+<li class="version version--{{if eq .PathType "DIRECTORY"}}dir{{else}}file{{end}}" data-hash="{{ .Hash }}" data-parents="{{ .Parents }}">
     <div class="version_body">
         <div class="version_row">
             <span class="version_message">
-            	{{ .Description }}
+            	{{ .Message }}
             </span>
         </div>
         <div class="version_row">
@@ -11,7 +11,7 @@ li class="version version--{{if eq .PathType 0 }}dir{{else}}file{{end}}" data-ha
         </div>
         <div class="version_row">
             <span class="version_hash">
-                <a href="http://localhost:8088/ipfs/{hash}">
+                <a href="http://localhost:8080/ipfs/{{.Hash}}">
                     {{ .Hash }}
                 </a>
             </span>
