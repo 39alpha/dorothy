@@ -99,7 +99,7 @@ func (s *DatabaseSession) ValidateCredentials(email, password string) error {
 		Email: email,
 	}
 
-	err := s.Select("PasswordHash").Where(&user).First(&user).Error
+	err := s.Select("PasswordHash").Where("email = ?", user.Email).First(&user).Error
 	if err != nil || user.PasswordHash == nil {
 		return fmt.Errorf("invalid email or password")
 	}
