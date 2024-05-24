@@ -3,22 +3,20 @@ package core
 import (
 	"testing"
 	"time"
-
-	"github.com/39alpha/dorothy/core/model"
 )
 
 var client *Ipfs
 
 func init() {
 	config := &Config{
-		Ipfs: IpfsConfig{
+		Ipfs: &IpfsConfig{
 			Host: "127.0.0.1",
 			Port: 5001,
 		},
 	}
 
 	var err error
-	client, err = NewIpfs(config)
+	client, err = NewIpfs(config.Ipfs)
 	if err != nil {
 		panic(err)
 	}
@@ -74,14 +72,14 @@ func TestGetManifest(t *testing.T) {
 func TestCommit(t *testing.T) {
 	hash := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 
-	manifest := &model.Manifest{
-		Versions: []*model.Version{
+	manifest := &Manifest{
+		Versions: []*Version{
 			{
 				Author:   "Douglas G. Moore <doug@dglmoore.com>",
 				Date:     time.Now(),
 				Message:  "Aardvark Wikipedia Article",
 				Hash:     hash,
-				PathType: model.PathTypeDirectory,
+				PathType: PathTypeDirectory,
 				Parents:  nil,
 			},
 		},
@@ -127,26 +125,26 @@ func TestMultipleCommits(t *testing.T) {
 	hash1 := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 	hash2 := "bafybeicysbsujtlq2d7ygbab47lywcb7vehx64zwv4etis6hom45iorjwm"
 
-	manifest1 := &model.Manifest{
-		Versions: []*model.Version{
+	manifest1 := &Manifest{
+		Versions: []*Version{
 			{
 				Author:   "Douglas G. Moore <doug@dglmoore.com>",
 				Date:     time.Now(),
 				Message:  "Aardvark Wikipedia Article",
 				Hash:     hash1,
-				PathType: model.PathTypeFile,
+				PathType: PathTypeFile,
 				Parents:  nil,
 			},
 		},
 	}
 
-	manifest2 := &model.Manifest{
-		Versions: append(manifest1.Versions, &model.Version{
+	manifest2 := &Manifest{
+		Versions: append(manifest1.Versions, &Version{
 			Author:   "Douglas G. Moore <doug@dglmoore.com>",
 			Date:     time.Now(),
 			Message:  "Africa Wikipedia Article",
 			Hash:     hash2,
-			PathType: model.PathTypeFile,
+			PathType: PathTypeFile,
 			Parents:  nil,
 		}),
 	}
@@ -206,13 +204,13 @@ func TestConflictingCommits(t *testing.T) {
 	time2, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T11:00:00")
 	time3, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T12:00:00")
 
-	versions := []*model.Version{
+	versions := []*Version{
 		{
 			Author:   "Douglas G. Moore <doug@dglmoore.com>",
 			Date:     time1,
 			Message:  "Aardvark Wikipedia Article",
 			Hash:     hash1,
-			PathType: model.PathTypeFile,
+			PathType: PathTypeFile,
 			Parents:  nil,
 		},
 		{
@@ -220,7 +218,7 @@ func TestConflictingCommits(t *testing.T) {
 			Date:     time2,
 			Message:  "Africa Wikipedia Article",
 			Hash:     hash2,
-			PathType: model.PathTypeFile,
+			PathType: PathTypeFile,
 			Parents:  nil,
 		},
 		{
@@ -228,13 +226,13 @@ func TestConflictingCommits(t *testing.T) {
 			Date:     time3,
 			Message:  "Cold War Wikipedia Article",
 			Hash:     hash3,
-			PathType: model.PathTypeFile,
+			PathType: PathTypeFile,
 			Parents:  nil,
 		},
 	}
 
-	manifest1 := &model.Manifest{Versions: []*model.Version{versions[0], versions[2]}}
-	manifest2 := &model.Manifest{Versions: []*model.Version{versions[0], versions[1]}}
+	manifest1 := &Manifest{Versions: []*Version{versions[0], versions[2]}}
+	manifest2 := &Manifest{Versions: []*Version{versions[0], versions[1]}}
 
 	first, err := client.Commit(manifest1)
 	if err != nil {

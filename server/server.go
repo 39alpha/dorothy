@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"net/http"
@@ -126,7 +127,10 @@ func (d *Server) setup() {
 }
 
 func (d *Server) CreateDataset(dataset model.NewDataset, authUser *model.User) error {
-	manifest, err := d.Ipfs.CreateEmptyManifest()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	manifest, err := d.Ipfs.CreateEmptyManifest(ctx)
 	if err != nil {
 		return nil
 	}

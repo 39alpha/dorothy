@@ -12,6 +12,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
+
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 type Config struct {
@@ -73,12 +75,17 @@ type UserConfig struct {
 }
 
 type IpfsConfig struct {
-	Host string `toml:"host"`
-	Port int    `toml:"port"`
+	Local bool   `toml:"local,omitempty"`
+	Host  string `toml:"host,omitempty"`
+	Port  int    `toml:"port,omitempty"`
 }
 
 func (c IpfsConfig) Url() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
+}
+
+func (c IpfsConfig) Multiaddr() (ma.Multiaddr, error) {
+	return ma.NewMultiaddr(c.Url())
 }
 
 type DatabaseConfig struct {

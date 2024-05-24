@@ -2,40 +2,52 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
-	ipfs "github.com/ipfs/go-ipfs-api"
+	"github.com/ipfs/boxo/files"
+	"github.com/ipfs/boxo/path"
+	"github.com/ipfs/kubo/client/rpc"
+	"github.com/ipfs/kubo/core/coreiface/options"
 )
 
 type Ipfs struct {
-	*ipfs.Shell
+	*rpc.HttpApi
 }
 
 func NewIpfs(config *IpfsConfig) (*Ipfs, error) {
-	var shell *ipfs.Shell
+	var api *rpc.HttpApi
+	var err error
 
 	if config == nil {
-		shell = ipfs.NewLocalShell()
+		api, err = rpc.NewLocalApi()
 	} else {
-		shell = ipfs.NewShell(config.Url())
+		addr, err := config.Multiaddr()
+		if err != nil {
+			return nil, err
+		}
+		api, err = rpc.NewApi(addr)
 	}
 
-	if shell != nil && shell.IsUp() {
-		return &Ipfs{shell}, nil
+	if err != nil {
+		return nil, err
+	} else if api == nil {
+		return nil, fmt.Errorf("cannot connect to IPFS")
 	}
-	return nil, fmt.Errorf("cannot connect to IPFS")
+	return &Ipfs{api}, nil
 }
 
 func NewLocalIpfs() (*Ipfs, error) {
 	return NewIpfs(nil)
 }
 
-func (s Ipfs) CreateEmptyManifest() (*Manifest, error) {
-	return s.SaveManifest(&Manifest{Versions: []*Version{}})
+func (s Ipfs) CreateEmptyManifest(ctx context.Context) (*Manifest, error) {
+	return s.SaveManifest(ctx, &Manifest{Versions: []*Version{}})
 }
 
-func (s Ipfs) SaveManifest(manifest *Manifest) (*Manifest, error) {
+func (s Ipfs) SaveManifest(ctx context.Context, manifest *Manifest) (*Manifest, error) {
 	buffer := new(bytes.Buffer)
 
 	encoder := json.NewEncoder(buffer)
@@ -43,68 +55,77 @@ func (s Ipfs) SaveManifest(manifest *Manifest) (*Manifest, error) {
 		return nil, err
 	}
 
-	hash, err := s.Add(buffer, ipfs.Pin(true))
+	path, err := s.Unixfs().Add(
+		ctx,
+		files.NewReaderFile(buffer),
+		options.Unixfs.Pin(true),
+		options.Unixfs.Progress(true),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	manifest.Hash = hash
+	manifest.Hash = path.RootCid().String()
 	return manifest, nil
 }
 
-func (s Ipfs) GetManifest(hash string) (*Manifest, error) {
-	r, err := s.Cat(hash)
+func (s Ipfs) GetManifest(ctx context.Context, hash string) (*Manifest, error) {
+	manifestPath, err := path.NewPath(hash)
+
+	fileNode, err := s.Unixfs().Get(ctx, manifestPath)
 	if err != nil {
 		return nil, err
 	}
 
+	file := files.ToFile(fileNode)
+	if file == nil {
+		return nil, fmt.Errorf("the node directed to by the manifest hash is not a file")
+	}
+
 	var manifest Manifest
-	decoder := json.NewDecoder(r)
+	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&manifest); err != nil {
 		return nil, err
 	}
 
 	manifest.Hash = hash
-
 	return &manifest, err
 }
 
-func (s Ipfs) MergeAndCommit(old, new *Manifest) (*Manifest, error) {
-	merged, _, err := old.Merge(new)
+func (s Ipfs) Get(ctx context.Context, hash, dest string) error {
+	dataPath, err := path.NewPath("/ipfs/" + hash)
+	if err != nil {
+		return err
+	}
+
+	file, err := s.Unixfs().Get(ctx, dataPath)
+	if err != nil {
+		return err
+	}
+
+	return files.WriteTo(file, dest)
+}
+
+func getUnixFileNode(filepath string) (files.Node, error) {
+	stat, err := os.Stat(filepath)
 	if err != nil {
 		return nil, err
 	}
 
-	delta, err := old.Diff(new)
+	return files.NewSerialFile(filepath, true, stat)
+}
+
+func (s Ipfs) Add(ctx context.Context, filepath string, options ...options.UnixfsAddOption) (string, error) {
+	filenode, err := getUnixFileNode(filepath)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	for _, version := range delta {
-		s.CommitVersion(version)
+	cidfile, err := s.Unixfs().Add(ctx, filenode, options...)
+
+	if err != nil {
+		return "", err
 	}
 
-	return s.SaveManifest(merged)
-}
-
-func (s Ipfs) Commit(manifest *Manifest) (*Manifest, error) {
-	return s.MergeAndCommit(&Manifest{}, manifest)
-}
-
-func (s Ipfs) Uncommit(manifest *Manifest, recursive bool) error {
-	if recursive {
-		for _, version := range manifest.Versions {
-			s.RemoveVersion(version)
-		}
-	}
-
-	return s.Unpin(manifest.Hash)
-}
-
-func (s Ipfs) CommitVersion(version *Version) (string, error) {
-	return version.Hash, s.Pin(version.Hash)
-}
-
-func (s Ipfs) RemoveVersion(version *Version) error {
-	return s.Unpin(version.Hash)
+	return cidfile.RootCid().String(), nil
 }

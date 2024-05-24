@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -61,6 +62,9 @@ var commitCmd = &cobra.Command{
 	Short: "commit a dataset",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		message, err := cmd.Flags().GetString("message")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -104,7 +108,7 @@ var commitCmd = &cobra.Command{
 			os.Exit(0)
 		}
 
-		if err := d.Commit(args[0], message, nopin, parents); err != nil {
+		if err := d.Commit(ctx, args[0], message, nopin, parents); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}

@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	ipfs "github.com/ipfs/go-ipfs-api"
+	"github.com/ipfs/kubo/core/coreiface/options"
 )
 
 type Dorothy struct {
@@ -69,12 +70,12 @@ func (d *Dorothy) WriteManifestTo(filepath string) error {
 	return d.Manifest.WriteFile(filepath)
 }
 
-func (d *Dorothy) InitializeDirectory(cwd string) error {
+func (d *Dorothy) InitializeDirectory(ctx context.Context, cwd string) error {
 	dorothy_dir := filepath.Join(cwd, ".dorothy")
 
 	if d.Manifest == nil {
 		var err error
-		d.Manifest, err = d.Ipfs.CreateEmptyManifest()
+		d.Manifest, err = d.Ipfs.CreateEmptyManifest(ctx)
 		if err != nil {
 			return err
 		}
@@ -177,7 +178,7 @@ func (d *Dorothy) Fetch() ([]Conflict, error) {
 	return nil, d.WriteManifest()
 }
 
-func Clone(remote, dest string) (*Dorothy, error) {
+func Clone(ctx context.Context, remote, dest string) (*Dorothy, error) {
 	if dest == "" {
 		r, err := NewRemote(remote)
 		if err != nil {
@@ -206,7 +207,7 @@ func Clone(remote, dest string) (*Dorothy, error) {
 		return nil, err
 	}
 
-	if err := d.InitializeDirectory("."); err != nil {
+	if err := d.InitializeDirectory(ctx, "."); err != nil {
 		return d, err
 	}
 
@@ -224,14 +225,14 @@ func Clone(remote, dest string) (*Dorothy, error) {
 	return d, nil
 }
 
-func (d *Dorothy) Checkout(hash, dest string) error {
+func (d *Dorothy) Checkout(ctx context.Context, hash, dest string) error {
 	if d.Manifest == nil {
 		return fmt.Errorf("no manifest found")
 	}
 
 	for _, version := range d.Manifest.Versions {
 		if version.Hash == hash {
-			return d.Ipfs.Get(hash, dest)
+			return d.Ipfs.Get(ctx, hash, dest)
 		}
 	}
 
@@ -245,7 +246,7 @@ func (d *Dorothy) Checkout(hash, dest string) error {
 	if len(matches) == 0 {
 		return fmt.Errorf("hash %q not found in manifest", hash)
 	} else if len(matches) == 1 {
-		return d.Ipfs.Get(matches[0].Hash, dest)
+		return d.Ipfs.Get(ctx, matches[0].Hash, dest)
 	} else {
 		return fmt.Errorf("hash matches multiple commits; aborting")
 	}
@@ -289,7 +290,7 @@ func (d *Dorothy) Push() error {
 	return d.WriteManifest()
 }
 
-func (d *Dorothy) Commit(path, message string, nopin bool, parents []string) (err error) {
+func (d *Dorothy) Commit(ctx context.Context, path, message string, nopin bool, parents []string) (err error) {
 	if d.Config.User == nil || d.Config.User.Name == "" || d.Config.User.Email == "" {
 		return fmt.Errorf("user not configured; see `dorothy config user`")
 	}
@@ -305,19 +306,13 @@ func (d *Dorothy) Commit(path, message string, nopin bool, parents []string) (er
 		return fmt.Errorf("cannot access dataset %q: %v", path, err)
 	} else if stat.IsDir() {
 		pathtype = PathTypeDirectory
-		hash, err = d.Ipfs.AddDir(path, ipfs.Pin(!nopin), ipfs.Progress(true))
+		hash, err = d.Ipfs.Add(ctx, path, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
 		if err != nil {
 			return fmt.Errorf("failed to add dataset %q: %v", path, err)
 		}
 	} else {
 		pathtype = PathTypeFile
-		handle, err := os.Open(path)
-		defer handle.Close()
-		if err != nil {
-			return fmt.Errorf("failed to open dataset %q: %v", path, err)
-		}
-
-		hash, err = d.Ipfs.Add(handle, ipfs.Pin(!nopin))
+		hash, err = d.Ipfs.Add(ctx, path, options.Unixfs.Pin(!nopin))
 		if err != nil {
 			return fmt.Errorf("failed to add dataset %q: %v", path, err)
 		}
@@ -395,13 +390,13 @@ func (d *Dorothy) ReadFromEditor(filename string) (string, error) {
 	return string(body), nil
 }
 
-func (d *Dorothy) Recieve(old, new *Manifest) (*Manifest, []Conflict, error) {
+func (d *Dorothy) Recieve(ctx context.Context, old, new *Manifest) (*Manifest, []Conflict, error) {
 	merged, conflicts, err := old.Merge(new)
 	if err != nil || len(conflicts) != 0 {
 		return nil, conflicts, err
 	}
 
-	merged, err = d.Ipfs.SaveManifest(merged)
+	merged, err = d.Ipfs.SaveManifest(ctx, merged)
 	if err != nil {
 		return nil, nil, err
 	}

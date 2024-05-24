@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"maps"
 	"time"
@@ -315,6 +316,9 @@ func (d *Server) CreateDatasetHandler() fiber.Handler {
 
 func (d *Server) GetDataset() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		org, ok := c.Locals("Organization").(*model.Organization)
 		if !ok || org == nil {
 			return c.Status(fiber.StatusNotFound).Redirect("/")
@@ -345,7 +349,7 @@ func (d *Server) GetDataset() fiber.Handler {
 		}
 
 		var err error
-		dataset.Manifest, err = d.Ipfs.GetManifest(dataset.ManifestHash)
+		dataset.Manifest, err = d.Ipfs.GetManifest(ctx, dataset.ManifestHash)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "failed to get dataset manifest",
@@ -360,6 +364,9 @@ func (d *Server) GetDataset() fiber.Handler {
 
 func (d *Server) RecieveDataset() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		dataset, ok := c.Locals("Dataset").(*model.Dataset)
 		if !ok || dataset == nil || dataset.Manifest == nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -375,7 +382,7 @@ func (d *Server) RecieveDataset() fiber.Handler {
 			})
 		}
 
-		manifest, conflicts, err := d.Recieve(old, &new)
+		manifest, conflicts, err := d.Recieve(ctx, old, &new)
 		if len(conflicts) != 0 {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"conflicts": conflicts,

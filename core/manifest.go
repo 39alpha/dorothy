@@ -11,22 +11,9 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ipfs/boxo/path"
 	ts "v.io/x/lib/toposort"
 )
-
-type Manifest struct {
-	Versions []*Version `json:"versions"`
-	Hash     string     `json:"-"`
-}
-
-type Version struct {
-	Author   string    `json:"author"`
-	Date     time.Time `json:"date"`
-	Message  string    `json:"message"`
-	Hash     string    `json:"hash"`
-	PathType PathType  `json:"path_type"`
-	Parents  []string  `json:"parents"`
-}
 
 type PathType string
 
@@ -69,6 +56,26 @@ func (e PathType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type Version struct {
+	Author   string    `json:"author"`
+	Date     time.Time `json:"date"`
+	Message  string    `json:"message"`
+	Hash     string    `json:"hash"`
+	PathType PathType  `json:"path_type"`
+	Parents  []string  `json:"parents"`
+}
+
+func (v *Version) IpfsPath() (path.ImmutablePath, error) {
+	if v.Hash == "" {
+		return path.ImmutablePath{}, fmt.Errorf("version does has an empty hash")
+	}
+	ipfsPath, err := path.NewPath(v.Hash)
+	if err != nil {
+		return path.ImmutablePath{}, err
+	}
+	return path.NewImmutablePath(ipfsPath)
+}
+
 func (v *Version) SameHash(o *Version) bool {
 	return v.Hash == o.Hash
 }
@@ -99,6 +106,22 @@ func (v *Version) Equal(o *Version) bool {
 
 func (v *Version) Less(o *Version) bool {
 	return !v.SameHash(o) && v.Date.Before(o.Date)
+}
+
+type Manifest struct {
+	Versions []*Version `json:"versions"`
+	Hash     string     `json:"-"`
+}
+
+func (m *Manifest) IpfsPath() (path.ImmutablePath, error) {
+	if m.Hash == "" {
+		return path.ImmutablePath{}, fmt.Errorf("manifest does not have a loaded hash")
+	}
+	ipfsPath, err := path.NewPath(m.Hash)
+	if err != nil {
+		return path.ImmutablePath{}, err
+	}
+	return path.NewImmutablePath(ipfsPath)
 }
 
 func ReadManifestFile(filename string) (*Manifest, error) {
