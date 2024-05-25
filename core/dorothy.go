@@ -40,18 +40,29 @@ func NewDorothyFromConfigFile(filename string, noinherit bool) (*Dorothy, error)
 }
 
 func NewDorothyFromConfig(config *Config) (*Dorothy, error) {
-	ipfs, err := NewIpfs(config.Ipfs)
-	if err != nil {
-		return nil, err
-	}
-
 	manifest, _ := ReadManifestFile(filepath.Join(".dorothy", "manifest.json"))
 
 	return &Dorothy{
 		Config:   config,
-		Ipfs:     ipfs,
+		Ipfs:     NewIpfs(config.Ipfs),
 		Manifest: manifest,
 	}, nil
+}
+
+func (d *Dorothy) InitializeIpfsHere(ctx context.Context) error {
+	return d.InitializeIpfs(".dorothy")
+}
+
+func (d *Dorothy) InitializeIpfs(dir string) error {
+	return d.Ipfs.Initialize(dir)
+}
+
+func (d *Dorothy) ConnectIpfsHere(ctx context.Context) error {
+	return d.ConnectIpfs(ctx, ".dorothy")
+}
+
+func (d *Dorothy) ConnectIpfs(ctx context.Context, dir string) error {
+	return d.Ipfs.Connect(ctx, dir)
 }
 
 func (d *Dorothy) WriteConfig() error {
@@ -73,19 +84,27 @@ func (d *Dorothy) WriteManifestTo(filepath string) error {
 func (d *Dorothy) InitializeDirectory(ctx context.Context, cwd string) error {
 	dorothy_dir := filepath.Join(cwd, ".dorothy")
 
-	if d.Manifest == nil {
-		var err error
-		d.Manifest, err = d.Ipfs.CreateEmptyManifest(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
 	if err := os.MkdirAll(dorothy_dir, 0755); err != nil {
 		if os.IsExist(err) {
 			return fmt.Errorf("dorothy already initialized")
 		} else {
 			return fmt.Errorf("failed to create the .dorothy directory")
+		}
+	}
+
+	if err := d.InitializeIpfs(dorothy_dir); err != nil {
+		return fmt.Errorf("failed to initialize IPFS: %v", err)
+	}
+
+	if err := d.ConnectIpfs(ctx, dorothy_dir); err != nil {
+		return fmt.Errorf("failed to connect to IPFS: %v", err)
+	}
+
+	if d.Manifest == nil {
+		var err error
+		d.Manifest, err = d.Ipfs.CreateEmptyManifest(ctx)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -226,6 +245,10 @@ func Clone(ctx context.Context, remote, dest string) (*Dorothy, error) {
 }
 
 func (d *Dorothy) Checkout(ctx context.Context, hash, dest string) error {
+	if err := d.ConnectIpfsHere(ctx); err != nil {
+		return err
+	}
+
 	if d.Manifest == nil {
 		return fmt.Errorf("no manifest found")
 	}
@@ -297,6 +320,10 @@ func (d *Dorothy) Commit(ctx context.Context, path, message string, nopin bool, 
 
 	if message == "" {
 		return fmt.Errorf("empty message; aborting")
+	}
+
+	if err := d.ConnectIpfsHere(ctx); err != nil {
+		return err
 	}
 
 	var hash string
@@ -391,6 +418,10 @@ func (d *Dorothy) ReadFromEditor(filename string) (string, error) {
 }
 
 func (d *Dorothy) Recieve(ctx context.Context, old, new *Manifest) (*Manifest, []Conflict, error) {
+	if err := d.ConnectIpfsHere(ctx); err != nil {
+		return nil, nil, err
+	}
+
 	merged, conflicts, err := old.Merge(new)
 	if err != nil || len(conflicts) != 0 {
 		return nil, conflicts, err

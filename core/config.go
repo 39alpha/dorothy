@@ -75,13 +75,22 @@ type UserConfig struct {
 }
 
 type IpfsConfig struct {
-	Local bool   `toml:"local,omitempty"`
-	Host  string `toml:"host,omitempty"`
-	Port  int    `toml:"port,omitempty"`
+	Global bool   `toml:"global,omitempty"`
+	Host   string `toml:"host,omitempty"`
+	Port   int    `toml:"port,omitempty"`
 }
 
 func (c IpfsConfig) Url() string {
-	return fmt.Sprintf("%s:%d", c.Host, c.Port)
+	host := c.Host
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	port := c.Port
+	if port == 0 {
+		port = 5001
+	}
+
+	return fmt.Sprintf("%s:%d", host, port)
 }
 
 func (c IpfsConfig) Multiaddr() (ma.Multiaddr, error) {
