@@ -207,6 +207,13 @@ func Clone(ctx context.Context, remote, dest string) (*Dorothy, error) {
 		dest = r.Dataset
 	}
 
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	dest = filepath.Join(cwd, dest)
+
 	if err := os.MkdirAll(dest, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create the repository directory %q", dest)
 	}
@@ -226,7 +233,7 @@ func Clone(ctx context.Context, remote, dest string) (*Dorothy, error) {
 		return nil, err
 	}
 
-	if err := d.InitializeDirectory(ctx, "."); err != nil {
+	if err := d.InitializeDirectory(ctx, dest); err != nil {
 		return d, err
 	}
 

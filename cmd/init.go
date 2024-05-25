@@ -22,7 +22,13 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err = d.InitializeDirectory(ctx, "."); err != nil {
+		cwd, err := os.Getwd()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		}
+
+		if err = d.InitializeDirectory(ctx, cwd); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}
