@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
 	"github.com/ipfs/kubo/core/coreiface/options"
 )
@@ -245,6 +246,84 @@ func (d *Dorothy) Initialize(options ...IpfsNodeOption) error {
 	}
 
 	return nil
+}
+
+func (d *Dorothy) SetConfig(props []string, value any) error {
+	m, err := ReadConfigAsMap(d.LocalConfigPath())
+	if err != nil {
+		return err
+	}
+
+	n := len(props)
+	s := m
+	for i, prop := range props {
+		if i == n-1 {
+			s[prop] = value
+			break
+		}
+
+		if v, ok := s[prop]; ok {
+			s, ok = v.(map[string]any)
+			if !ok {
+				return fmt.Errorf("invalid property")
+			}
+		} else {
+			v = map[string]any{}
+			s[prop] = v
+			s = v.(map[string]any)
+		}
+	}
+
+	var buf bytes.Buffer
+	encoder := toml.NewEncoder(&buf)
+	if err := encoder.Encode(m); err != nil {
+		return err
+	}
+
+	config := Config{}
+	decoder := toml.NewDecoder(&buf)
+	if _, err := decoder.Decode(&config); err != nil {
+		return err
+	}
+
+	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
+		return err
+	}
+
+	return d.ReloadConfig()
+}
+
+func (d *Dorothy) GetConfig(props []string) (any, error) {
+	var buf bytes.Buffer
+	encoder := toml.NewEncoder(&buf)
+	if err := encoder.Encode(d.Config); err != nil {
+		return nil, err
+	}
+
+	var m map[string]any
+	decoder := toml.NewDecoder(&buf)
+	if _, err := decoder.Decode(&m); err != nil {
+		return nil, err
+	}
+
+	n := len(props)
+	for i, prop := range props {
+		v, ok := m[prop]
+		if !ok {
+			break
+		}
+
+		if i == n-1 {
+			return v, nil
+		}
+
+		m, ok = v.(map[string]any)
+		if !ok {
+			break
+		}
+	}
+
+	return nil, fmt.Errorf("configuration property not found")
 }
 
 func (d *Dorothy) SetUserName(name string) error {

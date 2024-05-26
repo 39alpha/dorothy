@@ -127,6 +127,15 @@ func ReadConfigFile(filename string) (*Config, error) {
 	return &config, nil
 }
 
+func ReadConfigAsMap(filename string) (map[string]any, error) {
+	var m map[string]any
+	_, err := toml.DecodeFile(filename, &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (config *Config) Read(r io.Reader) error {
 	decoder := toml.NewDecoder(r)
 	_, err := decoder.Decode(config)
@@ -143,10 +152,10 @@ func ReadConfig(r io.Reader) (*Config, error) {
 
 func (config *Config) WriteFile(filename string) error {
 	handle, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0755)
-	defer handle.Close()
 	if err != nil {
 		return err
 	}
+	defer handle.Close()
 
 	return config.Encode(handle)
 }

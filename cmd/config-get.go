@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/spf13/cobra"
 )
 
-var nameCmd = &cobra.Command{
-	Use:   "name username",
-	Short: "set the user name in the configuration file",
+var configGetCmd = &cobra.Command{
+	Use:   "get <property>",
+	Short: "get configuration properties",
 	Args:  cobra.ExactArgs(1),
 	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
 		dorothy, err := core.NewDorothy()
@@ -21,10 +22,18 @@ var nameCmd = &cobra.Command{
 			return fmt.Errorf("not a dorothy repository")
 		}
 
-		return dorothy.SetUserName(args[0])
+		props := strings.Split(args[0], ".")
+		prop, err := dorothy.GetConfig(props)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(prop)
+
+		return nil
 	}),
 }
 
 func init() {
-	userCmd.AddCommand(nameCmd)
+	configCmd.AddCommand(configGetCmd)
 }

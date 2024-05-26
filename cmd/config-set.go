@@ -2,15 +2,16 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/spf13/cobra"
 )
 
-var emailCmd = &cobra.Command{
-	Use:   "email addr",
-	Short: "set the user email in the configuration file",
-	Args:  cobra.ExactArgs(1),
+var configSetCmd = &cobra.Command{
+	Use:   "set <property> <value>",
+	Short: "set configuration properties",
+	Args:  cobra.ExactArgs(2),
 	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
 		dorothy, err := core.NewDorothy()
 		if err != nil {
@@ -21,10 +22,12 @@ var emailCmd = &cobra.Command{
 			return fmt.Errorf("not a dorothy repository")
 		}
 
-		return dorothy.SetUserEmail(args[0])
+		props := strings.Split(args[0], ".")
+
+		return dorothy.SetConfig(props, args[1])
 	}),
 }
 
 func init() {
-	userCmd.AddCommand(emailCmd)
+	configCmd.AddCommand(configSetCmd)
 }
