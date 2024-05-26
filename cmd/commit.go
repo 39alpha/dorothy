@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"sort"
 
@@ -60,58 +59,49 @@ var commitCmd = &cobra.Command{
 	Use:   "commit path",
 	Short: "commit a dataset",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
 		message, err := cmd.Flags().GetString("message")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
+			return err
 		}
 		nopin, err := cmd.Flags().GetBool("no-pin")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
+			return err
 		}
 		parents, err := cmd.Flags().GetStringSlice("parents")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
+			return err
 		}
 		pick, err := cmd.Flags().GetBool("pick")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
+			return err
 		}
 
-		d, initialized, err := core.NewDorothy()
+		dorothy, err := core.NewDorothy()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		} else if !initialized {
-			fmt.Fprintf(os.Stderr, "not a dorothy repository")
-			os.Exit(1)
+			return err
+		}
+
+		if err := dorothy.Setup(); err != nil {
+			return err
+		}
+
+		parents, ok, err := checkParentage(dorothy, parents, pick)
+		if err != nil {
+			return fmt.Errorf("%v; aborting commit\n", err)
+		} else if !ok {
+			return nil
 		}
 
 		if message == "" {
-			message, err = d.ReadFromEditor("commit-msg")
+			message, err = dorothy.ReadFromEditor("commit-msg")
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v; aborting commit\n", err)
-				os.Exit(1)
+				return fmt.Errorf("%v; aborting commit\n", err)
 			}
 		}
 
-		parents, ok, err := checkParentage(d, parents, pick)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v; aborting commit\n", err)
-			os.Exit(1)
-		} else if !ok {
-			os.Exit(0)
-		}
-
-		if err := d.Commit(args[0], message, nopin, parents); err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		}
-	},
+		return dorothy.Commit(args[0], message, nopin, parents)
+	}),
 }
 
 func init() {

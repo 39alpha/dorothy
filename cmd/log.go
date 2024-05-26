@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"text/tabwriter"
 
@@ -34,19 +33,19 @@ func printCommit(version *core.Version, showParents bool) {
 var logCmd = &cobra.Command{
 	Use:   "log",
 	Short: "display the manifest",
-	Run: func(cmd *cobra.Command, args []string) {
-		d, initialized, err := core.NewDorothy()
+	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
+		dorothy, err := core.NewDorothy()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		} else if !initialized {
-			fmt.Fprintf(os.Stderr, "not a dorothy repository\n")
-			os.Exit(1)
+			return err
+		}
+
+		if err := dorothy.Setup(); err != nil {
+			return err
 		}
 
 		var versions []*core.Version
-		if d.Manifest != nil {
-			versions = d.Manifest.Versions
+		if dorothy.Manifest != nil {
+			versions = dorothy.Manifest.Versions
 		}
 		if len(versions) == 0 {
 			fmt.Printf("no versions")
@@ -57,7 +56,9 @@ var logCmd = &cobra.Command{
 				printCommit(versions[i], showParents)
 			}
 		}
-	},
+
+		return nil
+	}),
 }
 
 func init() {

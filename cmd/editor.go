@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/spf13/cobra"
@@ -12,21 +11,18 @@ var editorCmd = &cobra.Command{
 	Use:   "editor cmd",
 	Short: "set the text editor in the configuration file",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		d, initialized, err := core.NewDorothy()
+	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
+		dorothy, err := core.NewDorothy()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		} else if !initialized {
-			fmt.Fprintf(os.Stderr, "not a dorothy repository")
-			os.Exit(1)
+			return err
 		}
 
-		if err := d.SetEditor(args[0]); err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
+		if !dorothy.IsInitialized() {
+			return fmt.Errorf("not a dorothy repository")
 		}
-	},
+
+		return dorothy.SetEditor(args[0])
+	}),
 }
 
 func init() {

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -122,32 +121,6 @@ func (m *Manifest) IpfsPath() (path.ImmutablePath, error) {
 		return path.ImmutablePath{}, err
 	}
 	return path.NewImmutablePath(ipfsPath)
-}
-
-func ReadManifestFile(filename string) (*Manifest, error) {
-	handle, err := os.OpenFile(filename, os.O_RDONLY, 0755)
-	defer handle.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	return ReadManifest(handle)
-}
-
-func ReadManifest(r io.Reader) (*Manifest, error) {
-	var manifest Manifest
-	decoder := json.NewDecoder(r)
-	return &manifest, decoder.Decode(&manifest)
-}
-
-func (manifest *Manifest) WriteFile(filename string) error {
-	handle, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0755)
-	defer handle.Close()
-	if err != nil {
-		return err
-	}
-
-	return manifest.Encode(handle)
 }
 
 func (manifest *Manifest) Encode(w io.Writer) error {

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/spf13/cobra"
@@ -11,16 +10,15 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "initialize a dataset",
-	Run: func(cmd *cobra.Command, args []string) {
-		d, initialized, err := core.NewDorothy()
+	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
+		dorothy, err := core.NewDorothy()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
+			return err
 		}
+		initialized := dorothy.IsInitialized()
 
-		if err = d.Initialize(); err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
+		if err = dorothy.Initialize(); err != nil {
+			return err
 		}
 
 		if initialized {
@@ -28,7 +26,9 @@ var initCmd = &cobra.Command{
 		} else {
 			fmt.Println("Dorothy initialized")
 		}
-	},
+
+		return nil
+	}),
 }
 
 func init() {

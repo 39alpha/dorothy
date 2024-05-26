@@ -27,38 +27,37 @@ type Dorothy struct {
 	Manifest      *Manifest
 }
 
-func NewDorothy() (*Dorothy, bool, error) {
+func NewDorothy() (*Dorothy, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	dorothy := &Dorothy{
 		Context:       context.Background(),
 		Directory:     filepath.Join(cwd, ".dorothy"),
 		LoadedConfigs: []string{},
-		Config:        &Config{},
 	}
 
 	if err := dorothy.LoadDefaultConfig(); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	dorothy.Ipfs = NewIpfs(dorothy.Config.Ipfs)
 
-	if !dorothy.IsInitialized() {
-		return dorothy, false, nil
+	return dorothy, nil
+}
+
+func (d *Dorothy) Setup() error {
+	if !d.IsInitialized() {
+		return fmt.Errorf("not a dorothy repository")
 	}
 
-	if err := dorothy.ConnectIpfs(); err != nil {
-		return nil, true, err
+	if err := d.ConnectIpfs(); err != nil {
+		return err
 	}
 
-	if err := dorothy.LoadManifest(); err != nil {
-		return nil, true, err
-	}
-
-	return dorothy, true, nil
+	return d.LoadManifest()
 }
 
 func (d *Dorothy) GlobalConfigPath() string {
@@ -70,7 +69,7 @@ func (d *Dorothy) LocalConfigPath() string {
 }
 
 func (d *Dorothy) ManifestPath() string {
-	return filepath.Join(d.Directory, "manifest.json")
+	return filepath.Join(d.Directory, "manifest")
 }
 
 func (d *Dorothy) IsInitialized() bool {
@@ -148,20 +147,44 @@ func (d *Dorothy) ReloadConfig() error {
 	return d.ReconnectIpfs()
 }
 
+func (d *Dorothy) LoadManifest() error {
+	if !d.Ipfs.IsConnected() {
+		return fmt.Errorf("not connected to IPFS")
+	}
+
+	hash, err := os.ReadFile(d.ManifestPath())
+	if err != nil {
+		return err
+	}
+
+	d.Manifest, err = d.Ipfs.GetManifest(d, string(hash))
+	return err
+}
+
+func (d *Dorothy) WriteManifest() error {
+	if !d.Ipfs.IsConnected() {
+		return fmt.Errorf("not connected to IPFS")
+	}
+
+	if d.Manifest == nil {
+		return fmt.Errorf("no manifest loaded")
+	}
+
+	var err error
+	d.Manifest, err = d.Ipfs.SaveManifest(d, d.Manifest)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(d.ManifestPath(), []byte(d.Manifest.Hash), 0755)
+}
+
 func (d *Dorothy) ReconnectIpfs() error {
 	if d.Config.Ipfs != nil && d.Ipfs != nil && d.Ipfs.CoreAPI != nil {
 		d.Ipfs = NewIpfs(d.Config.Ipfs)
 		return d.ConnectIpfs()
 	}
 	return nil
-}
-
-func (d *Dorothy) LoadManifest() error {
-	var err error
-
-	d.Manifest, err = ReadManifestFile(d.ManifestPath())
-
-	return err
 }
 
 func (d *Dorothy) InitializeIpfs() error {
@@ -176,10 +199,6 @@ func (d *Dorothy) WriteConfig() error {
 	return d.Config.WriteFile(d.LocalConfigPath())
 }
 
-func (d *Dorothy) WriteManifest() error {
-	return d.Manifest.WriteFile(d.ManifestPath())
-}
-
 func (d *Dorothy) InitializeAndConnectIpfs() error {
 	if err := d.InitializeIpfs(); err != nil {
 		return fmt.Errorf("failed to initialize IPFS: %v", err)
@@ -188,8 +207,8 @@ func (d *Dorothy) InitializeAndConnectIpfs() error {
 	if err := d.ConnectIpfs(); err != nil {
 		return fmt.Errorf("failed to connect to IPFS")
 	}
-	return nil
 
+	return nil
 }
 
 func (d *Dorothy) Initialize() error {
@@ -222,7 +241,7 @@ func (d *Dorothy) Initialize() error {
 	}
 
 	if err := d.WriteManifest(); err != nil {
-		return fmt.Errorf("failed to write manifest")
+		return fmt.Errorf("failed to write manifest: %v", err)
 	}
 
 	return nil
@@ -363,10 +382,12 @@ func Clone(remote, dest string) (*Dorothy, error) {
 		return nil, fmt.Errorf("failed to create the repository directory %q", dest)
 	}
 
-	d, initialized, err := NewDorothy()
+	d, err := NewDorothy()
 	if err != nil {
 		return nil, err
-	} else if initialized {
+	}
+
+	if d.IsInitialized() {
 		return nil, fmt.Errorf("directory already contains an initialized dataset")
 	}
 	d.Directory = dest

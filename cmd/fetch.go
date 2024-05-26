@@ -11,17 +11,17 @@ import (
 var fetchCmd = &cobra.Command{
 	Use:   "fetch",
 	Short: "fetch the current manifest from the remote",
-	Run: func(cmd *cobra.Command, args []string) {
-		d, initialized, err := core.NewDorothy()
+	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
+		dorothy, err := core.NewDorothy()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		} else if !initialized {
-			fmt.Fprintf(os.Stderr, "not a dorothy repository")
-			os.Exit(1)
+			return err
 		}
 
-		conflicts, err := d.Fetch()
+		if err := dorothy.Setup(); err != nil {
+			return err
+		}
+
+		conflicts, err := dorothy.Fetch()
 		if len(conflicts) != 0 {
 			fmt.Fprintf(os.Stderr, "conflicts:\n")
 			for _, conflict := range conflicts {
@@ -30,13 +30,13 @@ var fetchCmd = &cobra.Command{
 		}
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "fetch failed: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("fetch failed with errors: %v\n", err)
 		} else if len(conflicts) != 0 {
-			fmt.Fprintf(os.Stderr, "fetch failed with conflicts\n")
-			os.Exit(1)
+			return fmt.Errorf("fetch failed with conflicts\n")
 		}
-	},
+
+		return nil
+	}),
 }
 
 func init() {

@@ -43,6 +43,10 @@ func NewIpfs(config *IpfsConfig) *Ipfs {
 	return &Ipfs{nil, nil, *config}
 }
 
+func (s *Ipfs) IsConnected() bool {
+	return s != nil && s.CoreAPI != nil
+}
+
 func (s *Ipfs) Initialize(dir string) error {
 	if !s.config.Global {
 		return s.initializeLocal(dir)
@@ -174,8 +178,7 @@ func (s *Ipfs) CreateEmptyManifest(ctx context.Context) (*Manifest, error) {
 func (s *Ipfs) SaveManifest(ctx context.Context, manifest *Manifest) (*Manifest, error) {
 	buffer := new(bytes.Buffer)
 
-	encoder := json.NewEncoder(buffer)
-	if err := encoder.Encode(manifest); err != nil {
+	if err := manifest.Encode(buffer); err != nil {
 		return nil, err
 	}
 
@@ -194,7 +197,10 @@ func (s *Ipfs) SaveManifest(ctx context.Context, manifest *Manifest) (*Manifest,
 }
 
 func (s *Ipfs) GetManifest(ctx context.Context, hash string) (*Manifest, error) {
-	manifestPath, err := path.NewPath(hash)
+	manifestPath, err := path.NewPath("/ipfs/" + hash)
+	if err != nil {
+		return nil, err
+	}
 
 	fileNode, err := s.Unixfs().Get(ctx, manifestPath)
 	if err != nil {
