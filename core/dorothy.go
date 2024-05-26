@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,78 +14,189 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adrg/xdg"
 	"github.com/ipfs/kubo/core/coreiface/options"
 )
 
 type Dorothy struct {
-	Config *Config
-	Ipfs   *Ipfs
-
-	Manifest *Manifest
+	context.Context
+	Directory     string
+	LoadedConfigs []string
+	Config        *Config
+	Ipfs          *Ipfs
+	Manifest      *Manifest
 }
 
-func NewDorothy() (*Dorothy, error) {
-	config, err := LoadConfig()
+func NewDorothy() (*Dorothy, bool, error) {
+	cwd, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return NewDorothyFromConfig(config)
-}
 
-func NewDorothyFromConfigFile(filename string, noinherit bool) (*Dorothy, error) {
-	config, err := LoadConfigFromFile(filename, noinherit)
-	if err != nil {
-		return nil, err
+	dorothy := &Dorothy{
+		Context:       context.Background(),
+		Directory:     filepath.Join(cwd, ".dorothy"),
+		LoadedConfigs: []string{},
+		Config:        &Config{},
 	}
-	return NewDorothyFromConfig(config)
+
+	if err := dorothy.LoadDefaultConfig(); err != nil {
+		return nil, false, err
+	}
+
+	dorothy.Ipfs = NewIpfs(dorothy.Config.Ipfs)
+
+	if !dorothy.IsInitialized() {
+		return dorothy, false, nil
+	}
+
+	if err := dorothy.ConnectIpfs(); err != nil {
+		return nil, true, err
+	}
+
+	if err := dorothy.LoadManifest(); err != nil {
+		return nil, true, err
+	}
+
+	return dorothy, true, nil
 }
 
-func NewDorothyFromConfig(config *Config) (*Dorothy, error) {
-	manifest, _ := ReadManifestFile(filepath.Join(".dorothy", "manifest.json"))
-
-	return &Dorothy{
-		Config:   config,
-		Ipfs:     NewIpfs(config.Ipfs),
-		Manifest: manifest,
-	}, nil
+func (d *Dorothy) GlobalConfigPath() string {
+	return filepath.Join(xdg.ConfigHome, "dorothy", "config.toml")
 }
 
-func (d *Dorothy) InitializeIpfsHere(ctx context.Context) error {
-	return d.InitializeIpfs(".dorothy")
+func (d *Dorothy) LocalConfigPath() string {
+	return filepath.Join(d.Directory, "config.toml")
 }
 
-func (d *Dorothy) InitializeIpfs(dir string) error {
-	return d.Ipfs.Initialize(dir)
+func (d *Dorothy) ManifestPath() string {
+	return filepath.Join(d.Directory, "manifest.json")
 }
 
-func (d *Dorothy) ConnectIpfsHere(ctx context.Context) error {
-	return d.ConnectIpfs(ctx, ".dorothy")
+func (d *Dorothy) IsInitialized() bool {
+	expected_paths := []struct {
+		path   string
+		is_dir bool
+	}{
+		{path: d.Directory, is_dir: true},
+		{path: d.LocalConfigPath(), is_dir: false},
+		{path: d.ManifestPath(), is_dir: false},
+	}
+	for _, expected := range expected_paths {
+		stat, err := os.Stat(expected.path)
+		if err != nil {
+			return false
+		}
+
+		if stat.IsDir() != expected.is_dir {
+			return false
+		}
+	}
+
+	return true
 }
 
-func (d *Dorothy) ConnectIpfs(ctx context.Context, dir string) error {
-	return d.Ipfs.Connect(ctx, dir)
+func (d *Dorothy) LoadGlobalConfig() error {
+	return d.LoadConfigFile(d.GlobalConfigPath())
+}
+
+func (d *Dorothy) LoadLocalConfig() error {
+	return d.LoadConfigFile(d.LocalConfigPath())
+}
+
+func (d *Dorothy) LoadDefaultConfig() error {
+	paths := []string{
+		d.GlobalConfigPath(),
+		d.LocalConfigPath(),
+	}
+
+	for _, configpath := range paths {
+		if err := d.LoadConfigFile(configpath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (d *Dorothy) LoadConfigFile(filename string) error {
+	if d.Config == nil {
+		d.Config = &Config{}
+	}
+
+	if err := d.Config.ReadFile(filename); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	d.LoadedConfigs = append(d.LoadedConfigs, filename)
+
+	return nil
+}
+
+func (d *Dorothy) ReloadConfig() error {
+	d.Config = &Config{}
+	for _, filename := range d.LoadedConfigs {
+		if err := d.LoadConfigFile(filename); err != nil {
+			return err
+		}
+	}
+	return d.ReconnectIpfs()
+}
+
+func (d *Dorothy) ReconnectIpfs() error {
+	if d.Config.Ipfs != nil && d.Ipfs != nil && d.Ipfs.CoreAPI != nil {
+		d.Ipfs = NewIpfs(d.Config.Ipfs)
+		return d.ConnectIpfs()
+	}
+	return nil
+}
+
+func (d *Dorothy) LoadManifest() error {
+	var err error
+
+	d.Manifest, err = ReadManifestFile(d.ManifestPath())
+
+	return err
+}
+
+func (d *Dorothy) InitializeIpfs() error {
+	return d.Ipfs.Initialize(d.Directory)
+}
+
+func (d *Dorothy) ConnectIpfs() error {
+	return d.Ipfs.Connect(d, d.Directory)
 }
 
 func (d *Dorothy) WriteConfig() error {
-	return d.WriteConfigTo(filepath.Join(".dorothy", "config.toml"))
-}
-
-func (d *Dorothy) WriteConfigTo(filepath string) error {
-	return d.Config.WriteFile(filepath)
+	return d.Config.WriteFile(d.LocalConfigPath())
 }
 
 func (d *Dorothy) WriteManifest() error {
-	return d.WriteManifestTo(filepath.Join(".dorothy", "manifest.json"))
+	return d.Manifest.WriteFile(d.ManifestPath())
 }
 
-func (d *Dorothy) WriteManifestTo(filepath string) error {
-	return d.Manifest.WriteFile(filepath)
+func (d *Dorothy) InitializeAndConnectIpfs() error {
+	if err := d.InitializeIpfs(); err != nil {
+		return fmt.Errorf("failed to initialize IPFS: %v", err)
+	}
+
+	if err := d.ConnectIpfs(); err != nil {
+		return fmt.Errorf("failed to connect to IPFS")
+	}
+	return nil
+
 }
 
-func (d *Dorothy) InitializeDirectory(ctx context.Context, cwd string) error {
-	dorothy_dir := filepath.Join(cwd, ".dorothy")
+func (d *Dorothy) Initialize() error {
+	if d.IsInitialized() {
+		return d.InitializeAndConnectIpfs()
+	}
 
-	if err := os.MkdirAll(dorothy_dir, 0755); err != nil {
+	if err := os.MkdirAll(d.Directory, 0755); err != nil {
 		if os.IsExist(err) {
 			return fmt.Errorf("dorothy already initialized")
 		} else {
@@ -92,29 +204,23 @@ func (d *Dorothy) InitializeDirectory(ctx context.Context, cwd string) error {
 		}
 	}
 
-	if err := d.InitializeIpfs(dorothy_dir); err != nil {
-		return fmt.Errorf("failed to initialize IPFS: %v", err)
+	if err := (&Config{}).WriteFile(d.LocalConfigPath()); err != nil {
+		return fmt.Errorf("failed to write configuration")
 	}
 
-	if err := d.ConnectIpfs(ctx, dorothy_dir); err != nil {
-		return fmt.Errorf("failed to connect to IPFS: %v", err)
+	if err := d.InitializeAndConnectIpfs(); err != nil {
+		return err
 	}
 
 	if d.Manifest == nil {
 		var err error
-		d.Manifest, err = d.Ipfs.CreateEmptyManifest(ctx)
+		d.Manifest, err = d.Ipfs.CreateEmptyManifest(d)
 		if err != nil {
 			return err
 		}
 	}
 
-	config_path := filepath.Join(dorothy_dir, "config.toml")
-	if err := d.WriteConfigTo(config_path); err != nil {
-		return fmt.Errorf("failed to write configuration")
-	}
-
-	manifest_path := filepath.Join(dorothy_dir, "manifest.json")
-	if err := d.WriteManifestTo(manifest_path); err != nil {
+	if err := d.WriteManifest(); err != nil {
 		return fmt.Errorf("failed to write manifest")
 	}
 
@@ -122,42 +228,80 @@ func (d *Dorothy) InitializeDirectory(ctx context.Context, cwd string) error {
 }
 
 func (d *Dorothy) SetUserName(name string) error {
-	if d.Config.User == nil {
-		d.Config.User = &UserConfig{
+	config, err := ReadConfigFile(d.LocalConfigPath())
+	if err != nil {
+		return nil
+	}
+
+	if config.User == nil {
+		config.User = &UserConfig{
 			Name: name,
 		}
 	} else {
-		d.Config.User.Name = name
+		config.User.Name = name
 	}
 
-	return d.WriteConfig()
+	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
+		return err
+	}
+
+	return d.ReloadConfig()
 }
 
 func (d *Dorothy) SetUserEmail(email string) error {
-	if d.Config.User == nil {
-		d.Config.User = &UserConfig{
+	config, err := ReadConfigFile(d.LocalConfigPath())
+	if err != nil {
+		return nil
+	}
+
+	if config.User == nil {
+		config.User = &UserConfig{
 			Email: email,
 		}
 	} else {
-		d.Config.User.Email = email
+		config.User.Email = email
 	}
 
-	return d.WriteConfig()
+	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
+		return err
+	}
+
+	return d.ReloadConfig()
 }
 
 func (d *Dorothy) SetRemote(remote string) (err error) {
-	d.Config.Remote, err = NewRemote(remote)
+	config, err := ReadConfigFile(d.LocalConfigPath())
+	if err != nil {
+		return nil
+	}
+
+	config.Remote, err = NewRemote(remote)
 	if err != nil {
 		return err
 	}
 
-	d.Config.RemoteString = d.Config.Remote.String()
-	return d.WriteConfig()
+	config.RemoteString = config.Remote.String()
+
+	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
+		return err
+	}
+
+	return d.ReloadConfig()
 }
 
 func (d *Dorothy) SetEditor(editor string) error {
-	d.Config.Editor = editor
-	return d.WriteConfig()
+	config, err := ReadConfigFile(d.LocalConfigPath())
+	if err != nil {
+		return nil
+	}
+
+	config.Editor = editor
+
+	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
+		return err
+	}
+
+	return d.ReloadConfig()
 }
 
 func (d *Dorothy) Fetch() ([]Conflict, error) {
@@ -197,7 +341,7 @@ func (d *Dorothy) Fetch() ([]Conflict, error) {
 	return nil, d.WriteManifest()
 }
 
-func Clone(ctx context.Context, remote, dest string) (*Dorothy, error) {
+func Clone(remote, dest string) (*Dorothy, error) {
 	if dest == "" {
 		r, err := NewRemote(remote)
 		if err != nil {
@@ -218,22 +362,15 @@ func Clone(ctx context.Context, remote, dest string) (*Dorothy, error) {
 		return nil, fmt.Errorf("failed to create the repository directory %q", dest)
 	}
 
-	pwd, err := os.Getwd()
+	d, initialized, err := NewDorothy()
 	if err != nil {
 		return nil, err
+	} else if initialized {
+		return nil, fmt.Errorf("directory already contains an initialized dataset")
 	}
+	d.Directory = dest
 
-	if err := os.Chdir(dest); err != nil {
-		return nil, err
-	}
-	defer os.Chdir(pwd)
-
-	d, err := NewDorothy()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := d.InitializeDirectory(ctx, dest); err != nil {
+	if err := d.Initialize(); err != nil {
 		return d, err
 	}
 
@@ -251,8 +388,8 @@ func Clone(ctx context.Context, remote, dest string) (*Dorothy, error) {
 	return d, nil
 }
 
-func (d *Dorothy) Checkout(ctx context.Context, hash, dest string) error {
-	if err := d.ConnectIpfsHere(ctx); err != nil {
+func (d *Dorothy) Checkout(hash, dest string) error {
+	if err := d.ConnectIpfs(); err != nil {
 		return err
 	}
 
@@ -262,7 +399,7 @@ func (d *Dorothy) Checkout(ctx context.Context, hash, dest string) error {
 
 	for _, version := range d.Manifest.Versions {
 		if version.Hash == hash {
-			return d.Ipfs.Get(ctx, hash, dest)
+			return d.Ipfs.Get(d, hash, dest)
 		}
 	}
 
@@ -276,7 +413,7 @@ func (d *Dorothy) Checkout(ctx context.Context, hash, dest string) error {
 	if len(matches) == 0 {
 		return fmt.Errorf("hash %q not found in manifest", hash)
 	} else if len(matches) == 1 {
-		return d.Ipfs.Get(ctx, matches[0].Hash, dest)
+		return d.Ipfs.Get(d, matches[0].Hash, dest)
 	} else {
 		return fmt.Errorf("hash matches multiple commits; aborting")
 	}
@@ -320,7 +457,7 @@ func (d *Dorothy) Push() error {
 	return d.WriteManifest()
 }
 
-func (d *Dorothy) Commit(ctx context.Context, path, message string, nopin bool, parents []string) (err error) {
+func (d *Dorothy) Commit(path, message string, nopin bool, parents []string) (err error) {
 	if d.Config.User == nil || d.Config.User.Name == "" || d.Config.User.Email == "" {
 		return fmt.Errorf("user not configured; see `dorothy config user`")
 	}
@@ -329,7 +466,7 @@ func (d *Dorothy) Commit(ctx context.Context, path, message string, nopin bool, 
 		return fmt.Errorf("empty message; aborting")
 	}
 
-	if err := d.ConnectIpfsHere(ctx); err != nil {
+	if err := d.ConnectIpfs(); err != nil {
 		return err
 	}
 
@@ -340,13 +477,13 @@ func (d *Dorothy) Commit(ctx context.Context, path, message string, nopin bool, 
 		return fmt.Errorf("cannot access dataset %q: %v", path, err)
 	} else if stat.IsDir() {
 		pathtype = PathTypeDirectory
-		hash, err = d.Ipfs.Add(ctx, path, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
+		hash, err = d.Ipfs.Add(d, path, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
 		if err != nil {
 			return fmt.Errorf("failed to add dataset %q: %v", path, err)
 		}
 	} else {
 		pathtype = PathTypeFile
-		hash, err = d.Ipfs.Add(ctx, path, options.Unixfs.Pin(!nopin))
+		hash, err = d.Ipfs.Add(d, path, options.Unixfs.Pin(!nopin))
 		if err != nil {
 			return fmt.Errorf("failed to add dataset %q: %v", path, err)
 		}
@@ -424,8 +561,8 @@ func (d *Dorothy) ReadFromEditor(filename string) (string, error) {
 	return string(body), nil
 }
 
-func (d *Dorothy) Recieve(ctx context.Context, old, new *Manifest) (*Manifest, []Conflict, error) {
-	if err := d.ConnectIpfsHere(ctx); err != nil {
+func (d *Dorothy) Recieve(old, new *Manifest) (*Manifest, []Conflict, error) {
+	if err := d.ConnectIpfs(); err != nil {
 		return nil, nil, err
 	}
 
@@ -434,7 +571,7 @@ func (d *Dorothy) Recieve(ctx context.Context, old, new *Manifest) (*Manifest, [
 		return nil, conflicts, err
 	}
 
-	merged, err = d.Ipfs.SaveManifest(ctx, merged)
+	merged, err = d.Ipfs.SaveManifest(d, merged)
 	if err != nil {
 		return nil, nil, err
 	}

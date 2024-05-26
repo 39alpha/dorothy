@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -11,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/adrg/xdg"
 
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -156,34 +154,4 @@ func (config *Config) WriteFile(filename string) error {
 func (config *Config) Encode(w io.Writer) error {
 	encoder := toml.NewEncoder(w)
 	return encoder.Encode(config)
-}
-
-func LoadConfig() (*Config, error) {
-	paths := []string{
-		filepath.Join(xdg.ConfigHome, "dorothy", "config.toml"),
-		filepath.Join(".dorothy", "config.toml"),
-	}
-
-	var config Config
-	for _, configpath := range paths {
-		if err := config.ReadFile(configpath); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return nil, err
-		}
-	}
-
-	return &config, nil
-}
-
-func LoadConfigFromFile(filename string, noinherit bool) (*Config, error) {
-	if noinherit {
-		return ReadConfigFile(filename)
-	} else {
-		if config, err := LoadConfig(); err != nil {
-			return nil, err
-		} else if err := config.ReadFile(filename); err != nil {
-			return nil, err
-		} else {
-			return config, nil
-		}
-	}
 }

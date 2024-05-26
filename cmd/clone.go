@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -14,9 +13,6 @@ var cloneCmd = &cobra.Command{
 	Short: "clone a remote dataset",
 	Args:  cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		var dest string
 		if len(args) == 2 {
 			dest = args[1]
@@ -24,7 +20,7 @@ var cloneCmd = &cobra.Command{
 			dest = ""
 		}
 
-		if _, err := core.Clone(ctx, args[0], dest); err != nil {
+		if _, err := core.Clone(args[0], dest); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}

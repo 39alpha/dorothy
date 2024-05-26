@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -13,27 +12,22 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "initialize a dataset",
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		d, err := core.NewDorothy()
+		d, initialized, err := core.NewDorothy()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}
 
-		cwd, err := os.Getwd()
-		if err != nil {
+		if err = d.Initialize(); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}
 
-		if err = d.InitializeDirectory(ctx, cwd); err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
+		if initialized {
+			fmt.Println("Dorothy re-initialized")
+		} else {
+			fmt.Println("Dorothy initialized")
 		}
-
-		fmt.Println("Dorothy initialized")
 	},
 }
 

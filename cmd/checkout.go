@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -14,16 +13,16 @@ var checkoutCmd = &cobra.Command{
 	Short: "checkout a version to a specific destination",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		d, err := core.NewDorothy()
+		d, initialized, err := core.NewDorothy()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
+		} else if !initialized {
+			fmt.Fprintf(os.Stderr, "not dorothy repository\n")
+			os.Exit(1)
 		}
 
-		if err := d.Checkout(ctx, args[0], args[1]); err != nil {
+		if err := d.Checkout(args[0], args[1]); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}

@@ -13,9 +13,12 @@ var remoteCmd = &cobra.Command{
 	Short: "set the remote in the configuration file",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		d, err := core.NewDorothy()
+		d, initialized, err := core.NewDorothy()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		} else if !initialized {
+			fmt.Fprintf(os.Stderr, "not a dorothy repository\n")
 			os.Exit(1)
 		}
 

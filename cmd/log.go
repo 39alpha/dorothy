@@ -35,9 +35,12 @@ var logCmd = &cobra.Command{
 	Use:   "log",
 	Short: "display the manifest",
 	Run: func(cmd *cobra.Command, args []string) {
-		d, err := core.NewDorothy()
+		d, initialized, err := core.NewDorothy()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		} else if !initialized {
+			fmt.Fprintf(os.Stderr, "not a dorothy repository\n")
 			os.Exit(1)
 		}
 
@@ -45,10 +48,14 @@ var logCmd = &cobra.Command{
 		if d.Manifest != nil {
 			versions = d.Manifest.Versions
 		}
-		for i := len(versions) - 1; i >= 0; i-- {
-			version := versions[i]
-			showParents := len(version.Parents) >= 1 && i != 0 && version.Parents[0] != versions[i-1].Hash
-			printCommit(versions[i], showParents)
+		if len(versions) == 0 {
+			fmt.Printf("no versions")
+		} else {
+			for i := len(versions) - 1; i >= 0; i-- {
+				version := versions[i]
+				showParents := len(version.Parents) >= 1 && i != 0 && version.Parents[0] != versions[i-1].Hash
+				printCommit(versions[i], showParents)
+			}
 		}
 	},
 }
