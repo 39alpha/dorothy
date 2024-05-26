@@ -1,35 +1,41 @@
 package core
 
 import (
+	"context"
+	"os"
 	"testing"
 	"time"
 )
 
-var client *Ipfs
+func setup(t *testing.T) (*Ipfs, context.Context) {
+	ctx, cancel := context.WithCancel(context.Background())
 
-func init() {
-	config := &Config{
-		Ipfs: &IpfsConfig{
-			Host: "127.0.0.1",
-			Port: 5001,
-		},
-	}
-
-	var err error
-	client, err = NewIpfs(config.Ipfs)
+	working_dir, err := os.MkdirTemp(os.TempDir(), "dorothy-ipfs-")
 	if err != nil {
-		panic(err)
+		t.Fatalf("test setup failed: %v", err)
 	}
+	t.Cleanup(func() {
+		cancel()
+		os.RemoveAll(working_dir)
+	})
+
+	client := NewIpfs(&IpfsConfig{
+		Global: false,
+	})
+	if err := client.Initialize(working_dir); err != nil {
+		t.Fatalf("test setup failed: %v", err)
+	}
+	if err := client.Connect(ctx, working_dir, IpfsOffline); err != nil {
+		t.Fatalf("test setup failed: %v", err)
+	}
+
+	return client, ctx
 }
 
 func TestCreateEmptyManifest(t *testing.T) {
-	manifest, err := client.CreateEmptyManifest()
-	defer func() {
-		if err := client.Uncommit(manifest, true); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	client, ctx := setup(t)
 
+	manifest, err := client.CreateEmptyManifest(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,18 +50,14 @@ func TestCreateEmptyManifest(t *testing.T) {
 }
 
 func TestGetManifest(t *testing.T) {
-	manifest, err := client.CreateEmptyManifest()
-	defer func() {
-		if err := client.Uncommit(manifest, true); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	client, ctx := setup(t)
 
+	manifest, err := client.CreateEmptyManifest(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fetched, err := client.GetManifest(manifest.Hash)
+	fetched, err := client.GetManifest(ctx, manifest.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,6 +72,8 @@ func TestGetManifest(t *testing.T) {
 }
 
 func TestCommit(t *testing.T) {
+	client, ctx := setup(t)
+
 	hash := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 
 	manifest := &Manifest{
@@ -85,15 +89,10 @@ func TestCommit(t *testing.T) {
 		},
 	}
 
-	returned, err := client.Commit(manifest)
+	returned, err := client.SaveManifest(ctx, manifest)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		if err := client.Uncommit(returned, true); err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	if len(returned.Versions) != 1 {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(returned.Versions))
@@ -105,7 +104,7 @@ func TestCommit(t *testing.T) {
 		}
 	}
 
-	saved, err := client.GetManifest(returned.Hash)
+	saved, err := client.GetManifest(ctx, returned.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,6 +121,8 @@ func TestCommit(t *testing.T) {
 }
 
 func TestMultipleCommits(t *testing.T) {
+	client, ctx := setup(t)
+
 	hash1 := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
 	hash2 := "bafybeicysbsujtlq2d7ygbab47lywcb7vehx64zwv4etis6hom45iorjwm"
 
@@ -149,25 +150,15 @@ func TestMultipleCommits(t *testing.T) {
 		}),
 	}
 
-	first, err := client.Commit(manifest1)
+	_, err := client.SaveManifest(ctx, manifest1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		if err := client.Uncommit(first, true); err != nil {
-			t.Fatal(err)
-		}
-	}()
 
-	returned, err := client.Commit(manifest2)
+	returned, err := client.SaveManifest(ctx, manifest2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		if err := client.Uncommit(returned, true); err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	if len(returned.Versions) != 2 {
 		t.Fatalf("expected %d entries in manifest, got %d", 1, len(returned.Versions))
@@ -179,7 +170,7 @@ func TestMultipleCommits(t *testing.T) {
 		}
 	}
 
-	saved, err := client.GetManifest(returned.Hash)
+	saved, err := client.GetManifest(ctx, returned.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,91 +182,6 @@ func TestMultipleCommits(t *testing.T) {
 	for i, version := range manifest2.Versions {
 		if !version.Equal(saved.Versions[i]) {
 			t.Fatalf("expected saved[%d] = %v, got %v", i, version, saved.Versions[0])
-		}
-	}
-}
-
-func TestConflictingCommits(t *testing.T) {
-	hash1 := "bafkreidpvvw3h2f4hdhznb5shvncgqj5j3wht3k7ewxfpy4rk5ep4h7j5y"
-	hash2 := "bafybeicysbsujtlq2d7ygbab47lywcb7vehx64zwv4etis6hom45iorjwm"
-	hash3 := "bafybeifvnc6qllx2cuwcrkf5fxuocg7jraesroxeuzd3ru7aexnayjnjgu"
-
-	time1, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T10:00:00")
-	time2, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T11:00:00")
-	time3, _ := time.Parse("2006-01-02T15:04:05", "2023-03-16T12:00:00")
-
-	versions := []*Version{
-		{
-			Author:   "Douglas G. Moore <doug@dglmoore.com>",
-			Date:     time1,
-			Message:  "Aardvark Wikipedia Article",
-			Hash:     hash1,
-			PathType: PathTypeFile,
-			Parents:  nil,
-		},
-		{
-			Author:   "Douglas G. Moore <doug@dglmoore.com>",
-			Date:     time2,
-			Message:  "Africa Wikipedia Article",
-			Hash:     hash2,
-			PathType: PathTypeFile,
-			Parents:  nil,
-		},
-		{
-			Author:   "Douglas G. Moore <doug@dglmoore.com>",
-			Date:     time3,
-			Message:  "Cold War Wikipedia Article",
-			Hash:     hash3,
-			PathType: PathTypeFile,
-			Parents:  nil,
-		},
-	}
-
-	manifest1 := &Manifest{Versions: []*Version{versions[0], versions[2]}}
-	manifest2 := &Manifest{Versions: []*Version{versions[0], versions[1]}}
-
-	first, err := client.Commit(manifest1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := client.Uncommit(first, true); err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	returned, err := client.MergeAndCommit(manifest1, manifest2)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := client.Uncommit(returned, true); err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	if len(returned.Versions) != 3 {
-		t.Fatalf("expected %d entries in manifest, got %d", 3, len(returned.Versions))
-	}
-
-	for i, version := range versions {
-		if !version.Equal(returned.Versions[i]) {
-			t.Fatalf("expected returned[%d] = %v, got %v", i, version, returned.Versions[0])
-		}
-	}
-
-	saved, err := client.GetManifest(returned.Hash)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(saved.Versions) != 3 {
-		t.Fatalf("expected %d entries in manifest, got %d", 1, len(saved.Versions))
-	}
-
-	for i, version := range versions {
-		if !version.Equal(saved.Versions[i]) {
-			t.Fatalf("expected saved.Versions[%d] = %v, got %v", i, version, saved.Versions[0])
 		}
 	}
 }

@@ -15,11 +15,12 @@ $(CSS): $(SCSS)
 test: test-go test-cli
 
 test-go:
-	go test ./...
-	make -C server test
+	@echo Running Go Tests
+	@go test -count=1 ./...
 
 test-cli:
-	./test/bats/bin/bats $(BATS_ARGS) test/
+	@echo Running CLI Tests
+	@./test/bats/bin/bats $(BATS_ARGS) test/
 
 clean:
 	rm -rf dorothy

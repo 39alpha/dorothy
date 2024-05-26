@@ -13,12 +13,8 @@ var session *DatabaseSession
 func setup(t *testing.T) {
 	var err error
 
-	session, err = NewDatabaseSession(&core.Config{
-		Server: &core.ServerConfig{
-			Database: &core.DatabaseConfig{
-				Path: ":memory:",
-			},
-		},
+	session, err = NewDatabaseSession(&core.DatabaseConfig{
+		Path: ":memory:",
 	})
 	if err != nil {
 		t.Fatal(err)
