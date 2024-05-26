@@ -15,5 +15,5 @@ test:
 	make -C server test
 
 clean:
-	rm -r dorothy
+	rm -rf dorothy
 	make -C server clean
