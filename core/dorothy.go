@@ -22,7 +22,7 @@ type Dorothy struct {
 	context.Context
 	Directory     string
 	LoadedConfigs []string
-	Config        *Config
+	Config        Config
 	Ipfs          *Ipfs
 	Manifest      *Manifest
 }
@@ -96,6 +96,11 @@ func (d *Dorothy) IsInitialized() bool {
 	return true
 }
 
+func (d *Dorothy) ResetConfig() {
+	d.Config = Config{}
+	d.LoadedConfigs = []string{}
+}
+
 func (d *Dorothy) LoadGlobalConfig() error {
 	return d.LoadConfigFile(d.GlobalConfigPath())
 }
@@ -120,10 +125,6 @@ func (d *Dorothy) LoadDefaultConfig() error {
 }
 
 func (d *Dorothy) LoadConfigFile(filename string) error {
-	if d.Config == nil {
-		d.Config = &Config{}
-	}
-
 	if err := d.Config.ReadFile(filename); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil
@@ -138,7 +139,7 @@ func (d *Dorothy) LoadConfigFile(filename string) error {
 }
 
 func (d *Dorothy) ReloadConfig() error {
-	d.Config = &Config{}
+	d.Config = Config{}
 	for _, filename := range d.LoadedConfigs {
 		if err := d.LoadConfigFile(filename); err != nil {
 			return err

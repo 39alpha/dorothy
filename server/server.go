@@ -29,26 +29,21 @@ type Server struct {
 }
 
 func NewServer() (*Server, error) {
-	dorothy, _, err := core.NewDorothy()
+	dorothy, err := core.NewDorothy()
 	if err != nil {
-		return nil, err
-	}
-	if err = dorothy.LoadDefaultConfig(); err != nil {
 		return nil, err
 	}
 	return NewServerFromDorothy(dorothy)
 }
 
 func NewServerFromConfigFile(filename string, noinherit bool) (*Server, error) {
-	dorothy, _, err := core.NewDorothy()
+	dorothy, err := core.NewDorothy()
 	if err != nil {
 		return nil, err
 	}
 
-	if !noinherit {
-		if err = dorothy.LoadDefaultConfig(); err != nil {
-			return nil, err
-		}
+	if noinherit {
+		dorothy.ResetConfig()
 	}
 	if err = dorothy.LoadConfigFile(filename); err != nil {
 		return nil, err
