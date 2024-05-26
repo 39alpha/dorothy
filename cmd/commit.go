@@ -60,6 +60,14 @@ var commitCmd = &cobra.Command{
 	Short: "commit a dataset",
 	Args:  cobra.ExactArgs(1),
 	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
+		configpath, err := cmd.Flags().GetString("config")
+		if err != nil {
+			return err
+		}
+		noinherit, err := cmd.Flags().GetBool("noinherit")
+		if err != nil {
+			return err
+		}
 		message, err := cmd.Flags().GetString("message")
 		if err != nil {
 			return err
@@ -80,6 +88,17 @@ var commitCmd = &cobra.Command{
 		dorothy, err := core.NewDorothy()
 		if err != nil {
 			return err
+		}
+
+		if noinherit {
+			if err := dorothy.ResetConfig(); err != nil {
+				return err
+			}
+		}
+		if configpath != "" {
+			if err := dorothy.LoadConfigFile(configpath); err != nil {
+				return err
+			}
 		}
 
 		if err := dorothy.Setup(core.IpfsOffline); err != nil {
@@ -107,7 +126,7 @@ var commitCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(commitCmd)
 	commitCmd.Flags().StringP("message", "m", "", "commit message")
-	commitCmd.Flags().BoolP("no-pin", "n", false, "do not pin the data to your local node")
+	commitCmd.Flags().BoolP("no-pin", "N", false, "do not pin the data to your local node")
 	commitCmd.Flags().StringSliceP("parents", "p", nil, "parents of this commit")
 	commitCmd.Flags().BoolP("pick", "P", false, "interactively choose parents (implied by empty --partents)")
 }
