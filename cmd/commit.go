@@ -82,7 +82,7 @@ var commitCmd = &cobra.Command{
 			return err
 		}
 
-		if err := dorothy.Setup(); err != nil {
+		if err := dorothy.Setup(core.IpfsOffline); err != nil {
 			return err
 		}
 

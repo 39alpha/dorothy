@@ -48,12 +48,12 @@ func NewDorothy() (*Dorothy, error) {
 	return dorothy, nil
 }
 
-func (d *Dorothy) Setup() error {
+func (d *Dorothy) Setup(options ...IpfsNodeOption) error {
 	if !d.IsInitialized() {
 		return fmt.Errorf("not a dorothy repository")
 	}
 
-	if err := d.ConnectIpfs(); err != nil {
+	if err := d.ConnectIpfs(options...); err != nil {
 		return err
 	}
 
@@ -179,10 +179,10 @@ func (d *Dorothy) WriteManifest() error {
 	return os.WriteFile(d.ManifestPath(), []byte(d.Manifest.Hash), 0755)
 }
 
-func (d *Dorothy) ReconnectIpfs() error {
+func (d *Dorothy) ReconnectIpfs(options ...IpfsNodeOption) error {
 	if d.Config.Ipfs != nil && d.Ipfs != nil && d.Ipfs.CoreAPI != nil {
 		d.Ipfs = NewIpfs(d.Config.Ipfs)
-		return d.ConnectIpfs()
+		return d.ConnectIpfs(options...)
 	}
 	return nil
 }
@@ -191,29 +191,29 @@ func (d *Dorothy) InitializeIpfs() error {
 	return d.Ipfs.Initialize(d.Directory)
 }
 
-func (d *Dorothy) ConnectIpfs() error {
-	return d.Ipfs.Connect(d, d.Directory)
+func (d *Dorothy) ConnectIpfs(options ...IpfsNodeOption) error {
+	return d.Ipfs.Connect(d, d.Directory, options...)
 }
 
 func (d *Dorothy) WriteConfig() error {
 	return d.Config.WriteFile(d.LocalConfigPath())
 }
 
-func (d *Dorothy) InitializeAndConnectIpfs() error {
+func (d *Dorothy) InitializeAndConnectIpfs(options ...IpfsNodeOption) error {
 	if err := d.InitializeIpfs(); err != nil {
 		return fmt.Errorf("failed to initialize IPFS: %v", err)
 	}
 
-	if err := d.ConnectIpfs(); err != nil {
+	if err := d.ConnectIpfs(options...); err != nil {
 		return fmt.Errorf("failed to connect to IPFS")
 	}
 
 	return nil
 }
 
-func (d *Dorothy) Initialize() error {
+func (d *Dorothy) Initialize(options ...IpfsNodeOption) error {
 	if d.IsInitialized() {
-		return d.InitializeAndConnectIpfs()
+		return d.InitializeAndConnectIpfs(options...)
 	}
 
 	if err := os.MkdirAll(d.Directory, 0755); err != nil {
@@ -228,7 +228,7 @@ func (d *Dorothy) Initialize() error {
 		return fmt.Errorf("failed to write configuration")
 	}
 
-	if err := d.InitializeAndConnectIpfs(); err != nil {
+	if err := d.InitializeAndConnectIpfs(options...); err != nil {
 		return err
 	}
 
@@ -411,8 +411,8 @@ func Clone(remote, dest string) (*Dorothy, error) {
 }
 
 func (d *Dorothy) Checkout(hash, dest string) error {
-	if err := d.ConnectIpfs(); err != nil {
-		return err
+	if !d.Ipfs.IsConnected() {
+		return fmt.Errorf("not connected to IPFS")
 	}
 
 	if d.Manifest == nil {
@@ -442,6 +442,10 @@ func (d *Dorothy) Checkout(hash, dest string) error {
 }
 
 func (d *Dorothy) Push() error {
+	if !d.Ipfs.IsConnected() {
+		return fmt.Errorf("not connected to IPFS")
+	}
+
 	if d.Config.RemoteString == "" {
 		return fmt.Errorf("no remote set")
 	} else if d.Config.Remote == nil {
@@ -480,16 +484,16 @@ func (d *Dorothy) Push() error {
 }
 
 func (d *Dorothy) Commit(path, message string, nopin bool, parents []string) (err error) {
+	if !d.Ipfs.IsConnected() {
+		return fmt.Errorf("not connected to IPFS")
+	}
+
 	if d.Config.User == nil || d.Config.User.Name == "" || d.Config.User.Email == "" {
 		return fmt.Errorf("user not configured; see `dorothy config user`")
 	}
 
 	if message == "" {
 		return fmt.Errorf("empty message; aborting")
-	}
-
-	if err := d.ConnectIpfs(); err != nil {
-		return err
 	}
 
 	var hash string
@@ -584,8 +588,8 @@ func (d *Dorothy) ReadFromEditor(filename string) (string, error) {
 }
 
 func (d *Dorothy) Recieve(old, new *Manifest) (*Manifest, []Conflict, error) {
-	if err := d.ConnectIpfs(); err != nil {
-		return nil, nil, err
+	if !d.Ipfs.IsConnected() {
+		return nil, nil, fmt.Errorf("not connected to IPFS")
 	}
 
 	merged, conflicts, err := old.Merge(new)

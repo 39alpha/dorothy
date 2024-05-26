@@ -127,11 +127,14 @@ func setupPlugins() error {
 
 type IpfsNodeOption func(*kubo.BuildCfg) *kubo.BuildCfg
 
-func Online(online bool) IpfsNodeOption {
-	return func(cfg *kubo.BuildCfg) *kubo.BuildCfg {
-		cfg.Online = online
-		return cfg
-	}
+func IpfsOnline(cfg *kubo.BuildCfg) *kubo.BuildCfg {
+	cfg.Online = true
+	return cfg
+}
+
+func IpfsOffline(cfg *kubo.BuildCfg) *kubo.BuildCfg {
+	cfg.Online = false
+	return cfg
 }
 
 func createNode(ctx context.Context, dir string, options ...IpfsNodeOption) (*kubo.IpfsNode, error) {
