@@ -73,7 +73,7 @@ type UserConfig struct {
 }
 
 type IpfsConfig struct {
-	Global bool   `toml:"global,omitempty"`
+	Global bool   `toml:"global"`
 	Host   string `toml:"host,omitempty"`
 	Port   int    `toml:"port,omitempty"`
 }
@@ -139,6 +139,10 @@ func ReadConfigAsMap(filename string) (map[string]any, error) {
 func (config *Config) Read(r io.Reader) error {
 	decoder := toml.NewDecoder(r)
 	_, err := decoder.Decode(config)
+	if err != nil {
+		return err
+	}
+	config.Remote, err = NewRemote(config.RemoteString)
 	return err
 }
 
@@ -163,4 +167,15 @@ func (config *Config) WriteFile(filename string) error {
 func (config *Config) Encode(w io.Writer) error {
 	encoder := toml.NewEncoder(w)
 	return encoder.Encode(config)
+}
+
+func (config *Config) SetDefaults() {
+	config.Ipfs.SetDefaults()
+}
+
+func (config *IpfsConfig) SetDefaults() {
+	if config != nil {
+		config.Host = "127.0.0.1"
+		config.Port = 5001
+	}
 }

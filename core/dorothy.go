@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -96,9 +97,9 @@ func (d *Dorothy) IsInitialized() bool {
 	return true
 }
 
-func (d *Dorothy) ResetConfig() {
-	d.Config = Config{}
+func (d *Dorothy) ResetConfig() error {
 	d.LoadedConfigs = []string{}
+	return d.ReloadConfig()
 }
 
 func (d *Dorothy) LoadGlobalConfig() error {
@@ -248,24 +249,56 @@ func (d *Dorothy) Initialize(options ...IpfsNodeOption) error {
 	return nil
 }
 
-func (d *Dorothy) SetConfig(props []string, value any) error {
-	m, err := ReadConfigAsMap(d.LocalConfigPath())
-	if err != nil {
-		return err
+func promote(x string) any {
+	if value, err := strconv.ParseBool(x); err == nil {
+		return value
+	}
+
+	if value, err := strconv.ParseInt(x, 10, 64); err == nil {
+		return value
+	}
+
+	if value, err := strconv.ParseFloat(x, 64); err == nil {
+		return value
+	}
+
+	return x
+}
+
+func (d *Dorothy) SetConfig(props []string, value string, global bool) (string, error) {
+	var err error
+	var m map[string]any
+
+	var configpath string
+	if global {
+		configpath = d.GlobalConfigPath()
+		m, err = ReadConfigAsMap(configpath)
+		if err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				return "", err
+			}
+			m = map[string]any{}
+		}
+	} else {
+		configpath = d.LoadedConfigs[len(d.LoadedConfigs)-1]
+		m, err = ReadConfigAsMap(configpath)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	n := len(props)
 	s := m
 	for i, prop := range props {
 		if i == n-1 {
-			s[prop] = value
+			s[prop] = promote(value)
 			break
 		}
 
 		if v, ok := s[prop]; ok {
 			s, ok = v.(map[string]any)
 			if !ok {
-				return fmt.Errorf("invalid property")
+				return "", fmt.Errorf("invalid property")
 			}
 		} else {
 			v = map[string]any{}
@@ -277,20 +310,34 @@ func (d *Dorothy) SetConfig(props []string, value any) error {
 	var buf bytes.Buffer
 	encoder := toml.NewEncoder(&buf)
 	if err := encoder.Encode(m); err != nil {
-		return err
+		return "", err
 	}
 
 	config := Config{}
 	decoder := toml.NewDecoder(&buf)
 	if _, err := decoder.Decode(&config); err != nil {
-		return err
+		return "", err
 	}
 
-	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
-		return err
+	config.SetDefaults()
+
+	if err = config.WriteFile(configpath); err != nil {
+		if errors.Is(err, os.ErrNotExist) && global {
+			if err := os.MkdirAll(filepath.Dir(configpath), 0755); err != nil {
+				return "", err
+			}
+			handle, err := os.Create(configpath)
+			if err != nil {
+				return "", err
+			}
+			handle.Close()
+			err = config.WriteFile(configpath)
+		} else {
+			return "", err
+		}
 	}
 
-	return d.ReloadConfig()
+	return configpath, d.ReloadConfig()
 }
 
 func (d *Dorothy) GetConfig(props []string) (any, error) {

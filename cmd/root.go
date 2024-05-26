@@ -25,6 +25,11 @@ var rootCmd = &cobra.Command{
 	Short: "A stab at data management",
 }
 
+func init() {
+	rootCmd.PersistentFlags().StringP("config", "c", "", "path to configuration file")
+	rootCmd.PersistentFlags().BoolP("noinherit", "n", false, "do not inherit options from system configurations")
+}
+
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {

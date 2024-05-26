@@ -43,8 +43,11 @@ func NewServerFromConfigFile(filename string, noinherit bool) (*Server, error) {
 	}
 
 	if noinherit {
-		dorothy.ResetConfig()
+		if err := dorothy.ResetConfig(); err != nil {
+			return nil, err
+		}
 	}
+
 	if err = dorothy.LoadConfigFile(filename); err != nil {
 		return nil, err
 	}
