@@ -9,6 +9,9 @@ build: $(CSS)
 run: $(CSS)
 	go run . serve -c ./config.toml
 
+docs:
+	make -C docs
+
 $(CSS): $(SCSS)
 	make -C server
 
@@ -28,4 +31,4 @@ clean:
 	rm -rf dorothy coverage
 	make -C server clean
 
-.PHONY: clean test
+.PHONY: clean test docs

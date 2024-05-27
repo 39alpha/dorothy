@@ -1,0 +1,127 @@
+= Dorothy - Making Scientific Data Transparent, Accessible, and Reproducible
+39 Alpha Research <39alpha@39alpharesearch.org>
+v0.0.0, May 2024
+:toc2:
+:toclevels: 2
+:source-highlighter: prettify
+
+[[introduction]]
+== Introduction
+
+*Dorothy* is a unified solution for data management, versioning, hosting, and
+distribution, and aims to be accessible to researchers in any field, working
+from anywhere, managing any kind of data, from initial data curation through to
+publication and long-term archiving.
+
+While *Dorothy* is still a work in progress, we have four ambitious objectives:
+
+1. *Make data more transparent.* Researchers will be able to easily track
+   versions of their data over time, linking specific versions to particular
+   analyses.
+2. *Increase data accessibility.* Anyone with an internet connection will be
+   able to quickly download and contribute data products, either via centralized
+   repositories or from the peer-to-peer network, opening collaboration and
+   access possibilities otherwise impossible.
+3. *Improve reproducibility.* Datasets are referenceable by their content,
+   not their names. Subsequent efforts built on such data can be certain
+   that the data assets are identical to those used previously, improving
+   reproducibility.
+4. *Further inclusive practices.* Dorothy will provide both the tools and
+   venue for diverse and inclusive communities of researchers around the world,
+   analogous to GitHub for software developers. Dorothy will also provide data
+   storage and dissemination resources to those without the means to run their
+   own Dorothy node.
+
+Ideally, updating a dataset should be as simple as:
+[source,shell]
+----
+# Clone an existing dataset to your machine
+$ dorothy clone https://dorothy.39alpharesearch.org/team/dataset
+$ cd dataset
+
+# View the history
+$ dorothy log
+
+# Checkout a version
+$ dorothy checkout Qm123 data
+
+# Edit the data
+
+# Commit a new version
+$ dorothy commit data
+
+# Push the changes back to the remote host
+$ dorothy push
+----
+
+*Dorothy* comes with a "dataforge" analgous to Gitlab/Github, but specifically
+for managing datasets.
+[source,shell]
+----
+$ dorothy serve
+----
+Anyone can host a *Dorothy* dataforge if they choose, or use a 
+
+[[getting-started]]
+== Getting Started
+
+[[installation-from-source]]
+=== Installation from Source
+
+[source]
+----
+$ git clone https://github.com/39alpha/dorothy
+$ cd dorothy
+$ make
+$ make install
+$ sudo mv dorothy /usr/bin/dorothy # not ideal, but it's what we've got ATM
+----
+
+Build Dependencies:: link:https://golang.org[Go] >= 1.22, link:https://nodejs.org[nodejs]
+
+[[binary-release]]
+=== Binary Releases
+
+At the moment, we don't have binary releases setup.
+
+[[intellectual-relatives]]
+=== Intellectual Relatives
+
+Foundations and Inspiration::
+
+* link:https://git-scm.com/[git] - Dorothy's interface is designed to mirror
+  `git`
+* link:https://darcs.net/[darcs] - The way Dorothy manages history mirrors
+  `darcs` in many ways
+* link:https://ipfs.tech[IPFS] - Dorothy uses IPFS for content-based hashing,
+  deduplication and peer-to-peer networking.
+
+Alternatives::
+
+* link:https://github.com/qri-io/qri[Qri] - An abandoned attempt a
+  data-management via IPFS
+* link:https://github.com/dolthub/dolt[Dolt] - "Git for Data" based on a
+  database
+* link:https://www.quiltdata.com/[Quilt] - "A data mesh for connecting people
+  with actionable data"
+* link:https://dvc.org/[DVC] - "ML Experiments and Data Management with Git"
+
+[[community]]
+== The Dorothy Community
+
+Public Dataforges:: _No public dataforges exist quite yet_.
+
+[[copyright]]
+== Copyright and Licensing
+Copyright © 2023-2024 39 Alpha Research. Free use of this software is granted
+under the terms of the MIT License.
+
+[[support]]
+== Support
+This project was supported by the National Aeronautics and Space Administration
+(NASA) under Grant Number 22-HPOSS22-0021, through Research Opportunities
+in Space and Earth Science (ROSES-2022), Program Element F.15 High Priority
+Open-Source Science.
+
+If you wish to further support this project, or 39 Alpha Research in general,
+please visit https://39alpharesearch.org/donate.
