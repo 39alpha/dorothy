@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/39alpha/dorothy/core"
@@ -51,9 +50,7 @@ var configSetCmd = &cobra.Command{
 		props := strings.Split(args[0], ".")
 
 		configpath, err = dorothy.SetConfig(props, args[1], global)
-		if configpath == "" {
-			fmt.Fprintf(os.Stderr, "fatal: did not write configuration\n")
-		} else {
+		if configpath != "" {
 			fmt.Printf("wrote to %q\n", configpath)
 		}
 

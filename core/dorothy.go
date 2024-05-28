@@ -127,9 +127,7 @@ func (d *Dorothy) LoadDefaultConfig() error {
 
 func (d *Dorothy) LoadConfigFile(filename string) error {
 	if err := d.Config.ReadFile(filename); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil
-		} else {
+		if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
 	}
@@ -272,19 +270,15 @@ func (d *Dorothy) SetConfig(props []string, value string, global bool) (string, 
 	var configpath string
 	if global {
 		configpath = d.GlobalConfigPath()
-		m, err = ReadConfigAsMap(configpath)
-		if err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				return "", err
-			}
-			m = map[string]any{}
-		}
 	} else {
 		configpath = d.LoadedConfigs[len(d.LoadedConfigs)-1]
-		m, err = ReadConfigAsMap(configpath)
-		if err != nil {
+	}
+	m, err = ReadConfigAsMap(configpath)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
 			return "", err
 		}
+		m = map[string]any{}
 	}
 
 	n := len(props)
