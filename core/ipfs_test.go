@@ -29,7 +29,7 @@ func setup(t *testing.T) (*Ipfs, context.Context) {
 		t.Fatalf("test setup failed: %v", err)
 	}
 
-	return client, ctx
+	return &client, ctx
 }
 
 func TestCreateEmptyManifest(t *testing.T) {

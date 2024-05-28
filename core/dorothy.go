@@ -25,7 +25,7 @@ type Dorothy struct {
 	Directory     string
 	LoadedConfigs []string
 	Config        Config
-	Ipfs          *Ipfs
+	Ipfs          Ipfs
 	Manifest      *Manifest
 }
 
@@ -45,9 +45,7 @@ func NewDorothy() (*Dorothy, error) {
 		return nil, err
 	}
 
-	dorothy.Ipfs = NewIpfs(dorothy.Config.Ipfs)
-
-	return dorothy, nil
+	return dorothy, dorothy.ReloadIpfs()
 }
 
 func (d *Dorothy) Setup(options ...IpfsNodeOption) error {
@@ -134,7 +132,7 @@ func (d *Dorothy) LoadConfigFile(filename string) error {
 
 	d.LoadedConfigs = append(d.LoadedConfigs, filename)
 
-	return nil
+	return d.ReloadIpfs()
 }
 
 func (d *Dorothy) ReloadConfig() error {
@@ -144,7 +142,16 @@ func (d *Dorothy) ReloadConfig() error {
 			return err
 		}
 	}
-	return d.ReconnectIpfs()
+	return d.ReloadIpfs()
+}
+
+func (d *Dorothy) ReloadIpfs() error {
+	connected := d.Ipfs.IsConnected()
+	d.Ipfs = NewIpfs(d.Config.Ipfs)
+	if connected {
+		return d.ConnectIpfs()
+	}
+	return nil
 }
 
 func (d *Dorothy) LoadManifest() error {
@@ -177,14 +184,6 @@ func (d *Dorothy) WriteManifest() error {
 	}
 
 	return os.WriteFile(d.ManifestPath(), []byte(d.Manifest.Hash), 0755)
-}
-
-func (d *Dorothy) ReconnectIpfs(options ...IpfsNodeOption) error {
-	if d.Config.Ipfs != nil && d.Ipfs != nil && d.Ipfs.CoreAPI != nil {
-		d.Ipfs = NewIpfs(d.Config.Ipfs)
-		return d.ConnectIpfs(options...)
-	}
-	return nil
 }
 
 func (d *Dorothy) InitializeIpfs() error {

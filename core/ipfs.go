@@ -27,20 +27,23 @@ var loadPluginsOnce sync.Once
 
 type Ipfs struct {
 	icore.CoreAPI
-	node   *kubo.IpfsNode
-	config IpfsConfig
+	node    *kubo.IpfsNode
+	config  IpfsConfig
+	options []IpfsNodeOption
 }
 
-func NewIpfs(config *IpfsConfig) *Ipfs {
+func NewIpfs(config *IpfsConfig) Ipfs {
 	if config == nil {
-		return &Ipfs{
+		return Ipfs{
 			config: IpfsConfig{
 				Global: false,
 			},
 		}
 	}
 
-	return &Ipfs{nil, nil, *config}
+	return Ipfs{
+		config: *config,
+	}
 }
 
 func (s *Ipfs) IsConnected() bool {
@@ -72,6 +75,7 @@ func (s *Ipfs) initializeLocal(dir string) error {
 }
 
 func (s *Ipfs) Connect(ctx context.Context, dir string, options ...IpfsNodeOption) error {
+	s.options = options
 	if !s.config.Global {
 		return s.connectLocal(ctx, dir, options...)
 	} else {
