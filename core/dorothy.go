@@ -366,83 +366,6 @@ func (d *Dorothy) GetConfig(props []string) (any, error) {
 	return nil, fmt.Errorf("configuration property not found")
 }
 
-func (d *Dorothy) SetUserName(name string) error {
-	config, err := ReadConfigFile(d.LocalConfigPath())
-	if err != nil {
-		return nil
-	}
-
-	if config.User == nil {
-		config.User = &UserConfig{
-			Name: name,
-		}
-	} else {
-		config.User.Name = name
-	}
-
-	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
-		return err
-	}
-
-	return d.ReloadConfig()
-}
-
-func (d *Dorothy) SetUserEmail(email string) error {
-	config, err := ReadConfigFile(d.LocalConfigPath())
-	if err != nil {
-		return nil
-	}
-
-	if config.User == nil {
-		config.User = &UserConfig{
-			Email: email,
-		}
-	} else {
-		config.User.Email = email
-	}
-
-	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
-		return err
-	}
-
-	return d.ReloadConfig()
-}
-
-func (d *Dorothy) SetRemote(remote string) (err error) {
-	config, err := ReadConfigFile(d.LocalConfigPath())
-	if err != nil {
-		return nil
-	}
-
-	config.Remote, err = NewRemote(remote)
-	if err != nil {
-		return err
-	}
-
-	config.RemoteString = config.Remote.String()
-
-	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
-		return err
-	}
-
-	return d.ReloadConfig()
-}
-
-func (d *Dorothy) SetEditor(editor string) error {
-	config, err := ReadConfigFile(d.LocalConfigPath())
-	if err != nil {
-		return nil
-	}
-
-	config.Editor = editor
-
-	if err := config.WriteFile(d.LocalConfigPath()); err != nil {
-		return err
-	}
-
-	return d.ReloadConfig()
-}
-
 func (d *Dorothy) Fetch() ([]Conflict, error) {
 	if d.Config.RemoteString == "" {
 		return nil, fmt.Errorf("no remote set")
@@ -515,7 +438,7 @@ func Clone(remote, dest string) (*Dorothy, error) {
 		return d, err
 	}
 
-	if err := d.SetRemote(remote); err != nil {
+	if _, err := d.SetConfig([]string{"remote"}, remote, false); err != nil {
 		return d, err
 	}
 
