@@ -33,6 +33,7 @@ func NewServer() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return NewServerFromDorothy(dorothy)
 }
 
@@ -56,6 +57,10 @@ func NewServerFromConfigFile(filename string, noinherit bool) (*Server, error) {
 }
 
 func NewServerFromDorothy(dorothy *core.Dorothy) (*Server, error) {
+	if err := dorothy.ConnectIpfs(); err != nil {
+		return nil, err
+	}
+
 	jwtAuth, err := NewAuth()
 	if err != nil {
 		return nil, err
