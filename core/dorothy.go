@@ -18,6 +18,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
 	"github.com/ipfs/kubo/core/coreiface/options"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 type Dorothy struct {
@@ -499,15 +500,17 @@ func (d *Dorothy) Push() error {
 		return fmt.Errorf("ill-formed remote")
 	}
 
+	payload := struct {
+		Hash         string  `json:"hash"`
+		PeerIdentity peer.ID `json:"identity"`
+	}{
+		Hash:         d.Manifest.Hash,
+		PeerIdentity: d.Ipfs.Identity,
+	}
+
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)
-	encoder.Encode(d.Manifest)
-
-	handle, err := os.Open(filepath.Join(".dorothy", "manifest.json"))
-	defer handle.Close()
-	if err != nil {
-		return fmt.Errorf("failed to read Manifest")
-	}
+	encoder.Encode(payload)
 
 	resp, err := http.Post(d.Config.Remote.Url(), "application/json", &buf)
 	if err != nil {
@@ -523,8 +526,17 @@ func (d *Dorothy) Push() error {
 		return fmt.Errorf("push failed: %s", content)
 	}
 
-	if err := json.Unmarshal(content, d.Manifest); err != nil {
-		return fmt.Errorf("invalid Manifest received from the server: %v", err)
+	if err := json.Unmarshal(content, &payload); err != nil {
+		return fmt.Errorf("invalid response received from the server: %v", err)
+	}
+
+	if err := d.Ipfs.ConnectToPeerById(d, payload.PeerIdentity); err != nil {
+		return fmt.Errorf("failed to connect to remote peer after push: %v", err)
+	}
+
+	d.Manifest, err = d.Ipfs.GetManifest(d, payload.Hash)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve manifest after push: %v", err)
 	}
 
 	return d.WriteManifest()
@@ -634,9 +646,14 @@ func (d *Dorothy) ReadFromEditor(filename string) (string, error) {
 	return string(body), nil
 }
 
-func (d *Dorothy) Recieve(old, new *Manifest) (*Manifest, []Conflict, error) {
+func (d *Dorothy) Recieve(old *Manifest, hash string) (*Manifest, []Conflict, error) {
 	if !d.Ipfs.IsConnected() {
 		return nil, nil, fmt.Errorf("not connected to IPFS")
+	}
+
+	new, err := d.Ipfs.GetManifest(d, hash)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	merged, conflicts, err := old.Merge(new)

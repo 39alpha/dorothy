@@ -6,9 +6,9 @@ import (
 	"maps"
 	"time"
 
-	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/server/model"
 	"github.com/gofiber/fiber/v2"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 func bind(c *fiber.Ctx, local fiber.Map) fiber.Map {
@@ -372,14 +372,33 @@ func (d *Server) RecieveDataset() fiber.Handler {
 		}
 		old := dataset.Manifest
 
-		var new core.Manifest
-		if err := c.BodyParser(&new); err != nil {
+		var payload struct {
+			Hash         string  `json:"hash"`
+			PeerIdentity peer.ID `json:"identity"`
+		}
+		if err := c.BodyParser(&payload); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "recieved invalid manifest",
 			})
 		}
 
-		manifest, conflicts, err := d.Recieve(old, &new)
+		ctx, cancel := context.WithTimeout(d, 10*time.Second)
+		defer cancel()
+
+		err := d.Ipfs.ConnectToPeerById(ctx, payload.PeerIdentity)
+		if err != nil {
+			if ctx.Err() == nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "failed to connect to ipfs peer",
+				})
+			} else {
+				return c.Status(fiber.StatusRequestTimeout).JSON(fiber.Map{
+					"message": "attempt to connect to ipfs peer timed out",
+				})
+			}
+		}
+
+		manifest, conflicts, err := d.Recieve(old, payload.Hash)
 		if len(conflicts) != 0 {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"conflicts": conflicts,
@@ -400,7 +419,10 @@ func (d *Server) RecieveDataset() fiber.Handler {
 
 		addState(c, "Dataset", dataset)
 
-		return c.JSON(manifest)
+		return c.JSON(fiber.Map{
+			"hash":     dataset.ManifestHash,
+			"identity": d.Ipfs.Identity,
+		})
 	}
 }
 

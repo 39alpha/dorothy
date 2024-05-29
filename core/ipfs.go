@@ -17,6 +17,7 @@ import (
 	"github.com/ipfs/kubo/core/node/libp2p"
 	"github.com/ipfs/kubo/plugin/loader"
 	"github.com/ipfs/kubo/repo/fsrepo"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	kuboconfig "github.com/ipfs/kubo/config"
 	kubo "github.com/ipfs/kubo/core"
@@ -27,9 +28,10 @@ var loadPluginsOnce sync.Once
 
 type Ipfs struct {
 	icore.CoreAPI
-	node    *kubo.IpfsNode
-	config  IpfsConfig
-	options []IpfsNodeOption
+	Identity peer.ID
+	node     *kubo.IpfsNode
+	config   IpfsConfig
+	options  []IpfsNodeOption
 }
 
 func NewIpfs(config *IpfsConfig) Ipfs {
@@ -79,28 +81,40 @@ func (s *Ipfs) Connect(ctx context.Context, dir string, options ...IpfsNodeOptio
 	if !s.config.Global {
 		return s.connectLocal(ctx, dir, options...)
 	} else {
-		return s.connectGlobal()
+		return s.connectGlobal(ctx)
 	}
 }
 
-func (s *Ipfs) connectGlobal() error {
+func (s *Ipfs) connectGlobal(ctx context.Context) error {
 	var err error
 
+	var api *rpc.HttpApi
 	if s.config.Host == "" && s.config.Port == 0 {
-		s.CoreAPI, err = rpc.NewLocalApi()
+		api, err = rpc.NewLocalApi()
 	} else {
 		addr, err := s.config.Multiaddr()
 		if err != nil {
 			return err
 		}
-		s.CoreAPI, err = rpc.NewApi(addr)
+		api, err = rpc.NewApi(addr)
 	}
 
 	if err != nil {
 		return err
-	} else if s.CoreAPI == nil {
+	} else if api == nil {
 		return fmt.Errorf("cannot connect to global IPFS instance")
 	}
+
+	var resp struct {
+		Identity peer.ID `json:"ID"`
+	}
+	builder := api.Request("id")
+	if err := builder.Exec(ctx, &resp); err != nil {
+		return fmt.Errorf("cannot get peer id for global node")
+	}
+
+	s.CoreAPI = api
+	s.Identity = resp.Identity
 
 	return nil
 }
@@ -174,6 +188,8 @@ func (s *Ipfs) connectLocal(ctx context.Context, filepath string, options ...Ipf
 	if err != nil {
 		return fmt.Errorf("failed to connect to local IPFS API")
 	}
+
+	s.Identity = s.node.Identity
 
 	return nil
 }
@@ -265,4 +281,12 @@ func (s *Ipfs) Add(ctx context.Context, filepath string, options ...options.Unix
 	}
 
 	return cidfile.RootCid().String(), nil
+}
+
+func (s *Ipfs) ConnectToPeerById(ctx context.Context, id peer.ID) error {
+	addrInfo, err := s.Routing().FindPeer(ctx, id)
+	if err != nil {
+		return err
+	}
+	return s.Swarm().Connect(ctx, addrInfo)
 }
