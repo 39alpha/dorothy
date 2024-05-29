@@ -155,7 +155,7 @@ func ReadConfig(r io.Reader) (*Config, error) {
 }
 
 func (config *Config) WriteFile(filename string) error {
-	handle, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0755)
+	handle, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
 		return err
 	}

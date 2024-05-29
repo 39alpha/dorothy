@@ -371,6 +371,81 @@ func (d *Dorothy) GetConfig(props []string) (any, error) {
 	return nil, fmt.Errorf("configuration property not found")
 }
 
+func (d *Dorothy) DelConfig(props []string, global bool) (string, error) {
+	var err error
+	var m map[string]any
+
+	var configpath string
+	if global {
+		configpath = d.GlobalConfigPath()
+	} else {
+		configpath = d.LoadedConfigs[len(d.LoadedConfigs)-1]
+	}
+	m, err = ReadConfigAsMap(configpath)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+		m = map[string]any{}
+	}
+
+	n := len(props)
+	s := m
+	for i, prop := range props {
+		if i == n-1 {
+			if _, ok := s[prop]; ok {
+				delete(s, prop)
+				break
+			} else {
+				return "", fmt.Errorf("invalid property")
+			}
+		}
+
+		if v, ok := s[prop]; ok {
+			s, ok = v.(map[string]any)
+			if !ok {
+				return "", fmt.Errorf("invalid property")
+			}
+		} else {
+			v = map[string]any{}
+			s[prop] = v
+			s = v.(map[string]any)
+		}
+	}
+
+	var buf bytes.Buffer
+	encoder := toml.NewEncoder(&buf)
+	if err := encoder.Encode(m); err != nil {
+		return "", err
+	}
+
+	config := Config{}
+	decoder := toml.NewDecoder(&buf)
+	if _, err := decoder.Decode(&config); err != nil {
+		return "", err
+	}
+
+	config.SetDefaults()
+
+	if err = config.WriteFile(configpath); err != nil {
+		if errors.Is(err, os.ErrNotExist) && global {
+			if err := os.MkdirAll(filepath.Dir(configpath), 0755); err != nil {
+				return "", err
+			}
+			handle, err := os.Create(configpath)
+			if err != nil {
+				return "", err
+			}
+			handle.Close()
+			err = config.WriteFile(configpath)
+		} else {
+			return "", err
+		}
+	}
+
+	return configpath, d.ReloadConfig()
+}
+
 func (d *Dorothy) Fetch() ([]Conflict, error) {
 	if d.Config.RemoteString == "" {
 		return nil, fmt.Errorf("no remote set")
