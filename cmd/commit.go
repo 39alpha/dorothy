@@ -15,7 +15,11 @@ func checkParentage(d *core.Dorothy, parents []string, pick bool) ([]string, boo
 		var picked []string
 		for {
 			var err error
-			picked, err = d.ChooseVersions("Which versions are parents of this version?", false)
+			selected := d.Manifest.LeafVersions()
+			if len(selected) > 1 {
+				selected = nil
+			}
+			picked, err = d.ChooseVersionsWithSelected("Which versions are parents of this version?", false, selected)
 			if err != nil {
 				return nil, false, err
 			} else if len(picked) == 0 {

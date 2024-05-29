@@ -203,6 +203,23 @@ func (manifest *Manifest) UnknownCommits(commits []string) []string {
 	return unknown
 }
 
+func (manifest *Manifest) LeafVersions() []*Version {
+	isParent := make(map[string]bool)
+	for _, version := range manifest.Versions {
+		for _, parent := range version.Parents {
+			isParent[parent] = true
+		}
+	}
+
+	var leaves []*Version
+	for _, version := range manifest.Versions {
+		if _, ok := isParent[version.Hash]; !ok {
+			leaves = append(leaves, version)
+		}
+	}
+	return leaves
+}
+
 type Conflict struct {
 	Left  *Version
 	Right *Version
@@ -312,7 +329,7 @@ func toposort(versions []*Version) ([]*Version, error) {
 func (m *Manifest) ReverseVersions() []*Version {
 	N := len(m.Versions)
 	var versions []*Version
-	for i, _ := range m.Versions {
+	for i := range m.Versions {
 		versions = append(versions, m.Versions[N-i-1])
 	}
 	return versions

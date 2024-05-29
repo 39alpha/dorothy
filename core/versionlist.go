@@ -140,7 +140,7 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	return d
 }
 
-func newModel(title string, manifest *Manifest, required bool) viewModel {
+func newModel(title string, manifest *Manifest, required bool, selected []*Version) viewModel {
 	var (
 		listKeys     = newListKeyMap()
 		delegateKeys = newDelegateKeyMap()
@@ -148,9 +148,19 @@ func newModel(title string, manifest *Manifest, required bool) viewModel {
 
 	var versions []list.Item
 	for i := len(manifest.Versions) - 1; i >= 0; i-- {
+		v := manifest.Versions[i]
+
+		chosen := false
+		for _, s := range selected {
+			if v.Equal(s) {
+				chosen = true
+				break
+			}
+		}
+
 		versions = append(versions, &version{
-			version: manifest.Versions[i],
-			chosen:  false,
+			version: v,
+			chosen:  chosen,
 		})
 	}
 
@@ -238,7 +248,11 @@ func (m viewModel) HasChosen() bool {
 }
 
 func (d *Dorothy) ChooseVersions(title string, required bool) ([]string, error) {
-	model := newModel(title, d.Manifest, required)
+	return d.ChooseVersionsWithSelected(title, required, nil)
+}
+
+func (d *Dorothy) ChooseVersionsWithSelected(title string, required bool, selected []*Version) ([]string, error) {
+	model := newModel(title, d.Manifest, required, selected)
 
 	p := tea.NewProgram(model)
 	m, err := p.Run()
