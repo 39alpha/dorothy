@@ -17,6 +17,10 @@ var serveCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		global, err := cmd.Flags().GetBool("global")
+		if err != nil {
+			return err
+		}
 		port, err := cmd.Flags().GetInt("port")
 		if err != nil {
 			return err
@@ -24,9 +28,9 @@ var serveCmd = &cobra.Command{
 
 		var app *server.Server
 		if configpath == "" {
-			app, err = server.NewServer()
+			app, err = server.NewServer(global)
 		} else {
-			app, err = server.NewServerFromConfigFile(configpath, noinherit)
+			app, err = server.NewServerFromConfigFile(configpath, noinherit, global)
 		}
 		if err != nil {
 			return err
@@ -37,6 +41,7 @@ var serveCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(serveCmd)
+	serveCmd.Flags().BoolP("global", "g", false, "initialize the repository to use a global IPFS instance")
 	serveCmd.Flags().IntP("port", "p", 4248, "port on which to listen")
+	rootCmd.AddCommand(serveCmd)
 }

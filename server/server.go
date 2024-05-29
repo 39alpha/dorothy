@@ -28,16 +28,16 @@ type Server struct {
 	session *DatabaseSession
 }
 
-func NewServer() (*Server, error) {
+func NewServer(global bool) (*Server, error) {
 	dorothy, err := core.NewDorothy()
 	if err != nil {
 		return nil, err
 	}
 
-	return NewServerFromDorothy(dorothy)
+	return NewServerFromDorothy(dorothy, global)
 }
 
-func NewServerFromConfigFile(filename string, noinherit bool) (*Server, error) {
+func NewServerFromConfigFile(filename string, noinherit, global bool) (*Server, error) {
 	dorothy, err := core.NewDorothy()
 	if err != nil {
 		return nil, err
@@ -53,10 +53,20 @@ func NewServerFromConfigFile(filename string, noinherit bool) (*Server, error) {
 		return nil, err
 	}
 
-	return NewServerFromDorothy(dorothy)
+	return NewServerFromDorothy(dorothy, global)
 }
 
-func NewServerFromDorothy(dorothy *core.Dorothy) (*Server, error) {
+func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
+	if global {
+		if dorothy.Config.Ipfs == nil {
+			dorothy.Config.Ipfs = &core.IpfsConfig{
+				Global: true,
+			}
+		} else {
+			dorothy.Config.Ipfs.Global = true
+		}
+		dorothy.ReloadIpfs()
+	}
 	if err := dorothy.ConnectIpfs(); err != nil {
 		return nil, err
 	}
