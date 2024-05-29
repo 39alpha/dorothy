@@ -168,19 +168,9 @@ func (d *Dorothy) LoadManifest() error {
 	return err
 }
 
-func (d *Dorothy) WriteManifest() error {
-	if !d.Ipfs.IsConnected() {
-		return fmt.Errorf("not connected to IPFS")
-	}
-
+func (d *Dorothy) WriteManifestFile() error {
 	if d.Manifest == nil {
 		return fmt.Errorf("no manifest loaded")
-	}
-
-	var err error
-	d.Manifest, err = d.Ipfs.SaveManifest(d, d.Manifest)
-	if err != nil {
-		return err
 	}
 
 	return os.WriteFile(d.ManifestPath(), []byte(d.Manifest.Hash), 0755)
@@ -231,16 +221,18 @@ func (d *Dorothy) Initialize(options ...IpfsNodeOption) error {
 		return err
 	}
 
+	var err error
 	if d.Manifest == nil {
-		var err error
 		d.Manifest, err = d.Ipfs.CreateEmptyManifest(d)
-		if err != nil {
-			return err
-		}
+	} else {
+		d.Manifest, err = d.Ipfs.SaveManifest(d, d.Manifest)
+	}
+	if err != nil {
+		return err
 	}
 
-	if err := d.WriteManifest(); err != nil {
-		return fmt.Errorf("failed to write manifest: %v", err)
+	if err := d.WriteManifestFile(); err != nil {
+		return fmt.Errorf("failed to write manifest file: %v", err)
 	}
 
 	return nil
@@ -403,13 +395,13 @@ func (d *Dorothy) Fetch() ([]Conflict, error) {
 		return nil, err
 	}
 
-	merged, conflicts, err := d.Manifest.Merge(manifest)
+	merged, conflicts, err := d.Ipfs.MergeAndCommit(d, d.Manifest, manifest)
 	if err != nil || len(conflicts) != 0 {
 		return conflicts, err
 	}
 
 	d.Manifest = merged
-	return nil, d.WriteManifest()
+	return nil, d.WriteManifestFile()
 }
 
 func Clone(remote, dest string) (*Dorothy, error) {
@@ -497,15 +489,15 @@ func (d *Dorothy) Checkout(hash, dest string) error {
 	}
 }
 
-func (d *Dorothy) Push() error {
+func (d *Dorothy) Push() ([]Conflict, error) {
 	if !d.Ipfs.IsConnected() {
-		return fmt.Errorf("not connected to IPFS")
+		return nil, fmt.Errorf("not connected to IPFS")
 	}
 
 	if d.Config.RemoteString == "" {
-		return fmt.Errorf("no remote set")
+		return nil, fmt.Errorf("no remote set")
 	} else if d.Config.Remote == nil {
-		return fmt.Errorf("ill-formed remote")
+		return nil, fmt.Errorf("ill-formed remote")
 	}
 
 	var buf bytes.Buffer
@@ -517,94 +509,89 @@ func (d *Dorothy) Push() error {
 
 	resp, err := http.Post(d.Config.Remote.Url(), "application/json", &buf)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	content, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("cannot process server response")
+		return nil, fmt.Errorf("cannot process server response")
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("push failed: %s", content)
+		return nil, fmt.Errorf("push failed: %s", content)
 	}
 
 	var payload Payload
 	if err := json.Unmarshal(content, &payload); err != nil {
-		return fmt.Errorf("invalid response received from the server: %v", err)
+		return nil, fmt.Errorf("invalid response received from the server: %v", err)
 	}
 
 	if err := d.Ipfs.ConnectToPeerById(d, payload.PeerIdentity); err != nil {
-		return fmt.Errorf("failed to connect to remote peer after push: %v", err)
+		return nil, fmt.Errorf("failed to connect to remote peer after push: %v", err)
 	}
 
-	d.Manifest, err = d.Ipfs.GetManifest(d, payload.Hash)
+	remote, err := d.Ipfs.GetManifest(d, payload.Hash)
 	if err != nil {
-		return fmt.Errorf("failed to retrieve manifest after push: %v", err)
+		return nil, fmt.Errorf("failed to retrieve manifest after push: %v", err)
 	}
 
-	return d.WriteManifest()
+	merged, conflicts, err := d.Ipfs.MergeAndCommit(d, d.Manifest, remote)
+	if err != nil || len(conflicts) != 0 {
+		return conflicts, err
+	}
+
+	d.Manifest = merged
+	return nil, d.WriteManifestFile()
 }
 
-func (d *Dorothy) Commit(path, message string, nopin bool, parents []string) (err error) {
+func (d *Dorothy) Commit(path, message string, nopin bool, parents []string) ([]Conflict, error) {
 	if !d.Ipfs.IsConnected() {
-		return fmt.Errorf("not connected to IPFS")
+		return nil, fmt.Errorf("not connected to IPFS")
 	}
 
 	if d.Config.User == nil || d.Config.User.Name == "" || d.Config.User.Email == "" {
-		return fmt.Errorf("user not configured; see `dorothy config user`")
+		return nil, fmt.Errorf("user not configured; see `dorothy config user`")
 	}
 
 	if message == "" {
-		return fmt.Errorf("empty message; aborting")
+		return nil, fmt.Errorf("empty message; aborting")
 	}
 
 	var hash string
 	var pathtype PathType
 
 	if stat, err := os.Stat(path); err != nil {
-		return fmt.Errorf("cannot access dataset %q: %v", path, err)
+		return nil, fmt.Errorf("cannot access dataset %q: %v", path, err)
 	} else if stat.IsDir() {
 		pathtype = PathTypeDirectory
 	} else {
 		pathtype = PathTypeFile
 	}
 
-	hash, err = d.Ipfs.Add(d, path, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
+	hash, err := d.Ipfs.Add(d, path, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
 	if err != nil {
-		return fmt.Errorf("failed to add dataset %q: %v", path, err)
+		return nil, fmt.Errorf("failed to add dataset %q: %v", path, err)
 	}
 
-	version := &Version{
-		Author:   d.Config.User.String(),
-		Date:     time.Now(),
-		Message:  message,
-		Hash:     hash,
-		PathType: pathtype,
-		Parents:  parents,
-	}
-
-	var manifest *Manifest
-	var conflicts []Conflict
-	manifest, conflicts, err = d.Manifest.Merge(
-		&Manifest{
-			Versions: []*Version{version},
+	merged, conflicts, err := d.Ipfs.MergeAndCommit(d, d.Manifest, &Manifest{
+		Versions: []*Version{
+			{
+				Author:   d.Config.User.String(),
+				Date:     time.Now(),
+				Message:  message,
+				Hash:     hash,
+				PathType: pathtype,
+				Parents:  parents,
+			},
 		},
-	)
+	})
 
-	if len(conflicts) != 0 {
-		s := strings.Builder{}
-		s.WriteString("Version conflicts with one ore more previous versions:\n\n")
-		for _, conflict := range conflicts {
-			s.WriteString(conflict.String())
-		}
-		return fmt.Errorf(s.String())
-	} else if err != nil {
-		return err
+	if err != nil || len(conflicts) != 0 {
+		return conflicts, err
 	}
 
-	d.Manifest = manifest
-	return d.WriteManifest()
+	d.Manifest = merged
+	return nil, d.WriteManifestFile()
 }
 
 func (d *Dorothy) UnknownCommits(commits []string) []string {
@@ -657,15 +644,5 @@ func (d *Dorothy) Recieve(old *Manifest, hash string) (*Manifest, []Conflict, er
 		return nil, nil, err
 	}
 
-	merged, conflicts, err := old.Merge(new)
-	if err != nil || len(conflicts) != 0 {
-		return nil, conflicts, err
-	}
-
-	merged, err = d.Ipfs.SaveManifest(d, merged)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return merged, nil, nil
+	return d.Ipfs.MergeAndCommit(d, old, new)
 }

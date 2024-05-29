@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"sort"
 
@@ -119,7 +120,14 @@ var commitCmd = &cobra.Command{
 			}
 		}
 
-		return dorothy.Commit(args[0], message, nopin, parents)
+		conflicts, err := dorothy.Commit(args[0], message, nopin, parents)
+		if len(conflicts) != 0 {
+			fmt.Fprintf(os.Stderr, "conflicts:\n")
+			for _, conflict := range conflicts {
+				fmt.Fprintf(os.Stderr, "  %s", conflict)
+			}
+		}
+		return err
 	}),
 }
 

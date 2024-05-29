@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/39alpha/dorothy/core"
 	"github.com/spf13/cobra"
 )
@@ -39,7 +42,21 @@ var pushCmd = &cobra.Command{
 			return err
 		}
 
-		return dorothy.Push()
+		conflicts, err := dorothy.Push()
+		if len(conflicts) != 0 {
+			fmt.Fprintf(os.Stderr, "conflicts:\n")
+			for _, conflict := range conflicts {
+				fmt.Fprintf(os.Stderr, "  %s", conflict)
+			}
+		}
+
+		if err != nil {
+			return fmt.Errorf("fetch failed with errors: %v\n", err)
+		} else if len(conflicts) != 0 {
+			return fmt.Errorf("fetch failed with conflicts\n")
+		}
+
+		return nil
 	}),
 }
 

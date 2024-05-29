@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -289,4 +290,44 @@ func (s *Ipfs) ConnectToPeerById(ctx context.Context, id peer.ID) error {
 		return err
 	}
 	return s.Swarm().Connect(ctx, addrInfo)
+}
+
+func (s Ipfs) MergeAndCommit(ctx context.Context, old, new *Manifest) (*Manifest, []Conflict, error) {
+	merged, conflicts, err := old.Merge(new)
+	if err != nil || len(conflicts) != 0 {
+		return nil, conflicts, err
+	}
+
+	delta, err := old.Diff(new)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	errs := make([]error, 0, len(delta))
+	for _, version := range delta {
+		_, err := s.CommitVersion(ctx, version)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) != 0 {
+		return nil, nil, errors.Join(errs...)
+	}
+
+	manifest, err := s.SaveManifest(ctx, merged)
+	return manifest, nil, err
+}
+
+func (s Ipfs) Commit(ctx context.Context, manifest *Manifest) (*Manifest, error) {
+	merged, _, err := s.MergeAndCommit(ctx, &Manifest{}, manifest)
+	return merged, err
+}
+
+func (s Ipfs) CommitVersion(ctx context.Context, version *Version) (string, error) {
+	versionPath, err := path.NewPath("/ipfs/" + version.Hash)
+	if err != nil {
+		return "", err
+	}
+	return version.Hash, s.Pin().Add(ctx, versionPath)
 }
