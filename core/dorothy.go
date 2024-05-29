@@ -424,6 +424,12 @@ func Clone(remote, dest string) (*Dorothy, error) {
 		return nil, fmt.Errorf("failed to create the repository directory %q", dest)
 	}
 
+	err = os.Chdir(dest)
+	if err != nil {
+		return nil, err
+	}
+	defer os.Chdir(cwd)
+
 	d, err := NewDorothy()
 	if err != nil {
 		return nil, err
@@ -432,7 +438,6 @@ func Clone(remote, dest string) (*Dorothy, error) {
 	if d.IsInitialized() {
 		return nil, fmt.Errorf("directory already contains an initialized dataset")
 	}
-	d.Directory = dest
 
 	if err := d.Initialize(); err != nil {
 		return d, err
