@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"os"
+	"os/signal"
+
 	"github.com/39alpha/dorothy/server"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +39,20 @@ var serveCmd = &cobra.Command{
 			return err
 		}
 
-		return app.ListenOnPort(port)
+		c := make(chan error, 1)
+		go func(c chan error, app *server.Server, port int) {
+			c <- app.ListenOnPort(port)
+		}(c, app, port)
+
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, os.Interrupt)
+		for {
+			select {
+			case <-sigs:
+				app.Shutdown()
+				return <-c
+			}
+		}
 	}),
 }
 
