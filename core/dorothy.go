@@ -566,16 +566,13 @@ func (d *Dorothy) Commit(path, message string, nopin bool, parents []string) (er
 		return fmt.Errorf("cannot access dataset %q: %v", path, err)
 	} else if stat.IsDir() {
 		pathtype = PathTypeDirectory
-		hash, err = d.Ipfs.Add(d, path, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
-		if err != nil {
-			return fmt.Errorf("failed to add dataset %q: %v", path, err)
-		}
 	} else {
 		pathtype = PathTypeFile
-		hash, err = d.Ipfs.Add(d, path, options.Unixfs.Pin(!nopin))
-		if err != nil {
-			return fmt.Errorf("failed to add dataset %q: %v", path, err)
-		}
+	}
+
+	hash, err = d.Ipfs.Add(d, path, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
+	if err != nil {
+		return fmt.Errorf("failed to add dataset %q: %v", path, err)
 	}
 
 	version := &Version{
