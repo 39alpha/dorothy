@@ -19,6 +19,10 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		global, err := cmd.Flags().GetBool("global")
+		if err != nil {
+			return err
+		}
 
 		dorothy, err := core.NewDorothy()
 		if err != nil {
@@ -37,7 +41,7 @@ var initCmd = &cobra.Command{
 		}
 
 		initialized := dorothy.IsInitialized()
-		if err = dorothy.Initialize(); err != nil {
+		if err = dorothy.Initialize(global); err != nil {
 			return err
 		}
 
@@ -52,5 +56,6 @@ var initCmd = &cobra.Command{
 }
 
 func init() {
+	initCmd.Flags().BoolP("global", "g", false, "initialize the repository to use a global IPFS instance")
 	rootCmd.AddCommand(initCmd)
 }

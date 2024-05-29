@@ -200,7 +200,7 @@ func (d *Dorothy) InitializeAndConnectIpfs(options ...IpfsNodeOption) error {
 	return nil
 }
 
-func (d *Dorothy) Initialize(options ...IpfsNodeOption) error {
+func (d *Dorothy) Initialize(global bool, options ...IpfsNodeOption) error {
 	if d.IsInitialized() {
 		return d.InitializeAndConnectIpfs(options...)
 	}
@@ -213,7 +213,20 @@ func (d *Dorothy) Initialize(options ...IpfsNodeOption) error {
 		}
 	}
 
-	if err := (&Config{}).WriteFile(d.LocalConfigPath()); err != nil {
+	config := Config{}
+	if global {
+		config.Ipfs = &IpfsConfig{
+			Global: true,
+		}
+		if d.Config.Ipfs == nil {
+			d.Config.Ipfs = config.Ipfs
+		} else {
+			d.Config.Ipfs.Global = true
+		}
+		d.Ipfs = NewIpfs(d.Config.Ipfs)
+	}
+
+	if err := (&config).WriteFile(d.LocalConfigPath()); err != nil {
 		return fmt.Errorf("failed to write configuration")
 	}
 
@@ -404,7 +417,7 @@ func (d *Dorothy) Fetch() ([]Conflict, error) {
 	return nil, d.WriteManifestFile()
 }
 
-func Clone(remote, dest string) (*Dorothy, error) {
+func Clone(remote, dest string, global bool) (*Dorothy, error) {
 	if dest == "" {
 		r, err := NewRemote(remote)
 		if err != nil {
@@ -440,7 +453,7 @@ func Clone(remote, dest string) (*Dorothy, error) {
 		return nil, fmt.Errorf("directory already contains an initialized dataset")
 	}
 
-	if err := d.Initialize(); err != nil {
+	if err := d.Initialize(global); err != nil {
 		return d, err
 	}
 
