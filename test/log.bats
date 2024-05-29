@@ -14,7 +14,7 @@ teardown() {
   assert_output "fatal: not a dorothy repository"
 }
 
-@test "log successed in empty repository" {
+@test "log succeeds in empty repository" {
   dorothy init
   run dorothy log
   assert_output "no versions"
