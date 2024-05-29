@@ -18,7 +18,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
 	"github.com/ipfs/kubo/core/coreiface/options"
-	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 type Dorothy struct {
@@ -500,17 +499,12 @@ func (d *Dorothy) Push() error {
 		return fmt.Errorf("ill-formed remote")
 	}
 
-	payload := struct {
-		Hash         string  `json:"hash"`
-		PeerIdentity peer.ID `json:"identity"`
-	}{
-		Hash:         d.Manifest.Hash,
-		PeerIdentity: d.Ipfs.Identity,
-	}
-
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)
-	encoder.Encode(payload)
+	encoder.Encode(Payload{
+		Hash:         d.Manifest.Hash,
+		PeerIdentity: d.Ipfs.Identity,
+	})
 
 	resp, err := http.Post(d.Config.Remote.Url(), "application/json", &buf)
 	if err != nil {
@@ -526,6 +520,7 @@ func (d *Dorothy) Push() error {
 		return fmt.Errorf("push failed: %s", content)
 	}
 
+	var payload Payload
 	if err := json.Unmarshal(content, &payload); err != nil {
 		return fmt.Errorf("invalid response received from the server: %v", err)
 	}

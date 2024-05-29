@@ -6,9 +6,9 @@ import (
 	"maps"
 	"time"
 
+	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/server/model"
 	"github.com/gofiber/fiber/v2"
-	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 func bind(c *fiber.Ctx, local fiber.Map) fiber.Map {
@@ -372,10 +372,7 @@ func (d *Server) RecieveDataset() fiber.Handler {
 		}
 		old := dataset.Manifest
 
-		var payload struct {
-			Hash         string  `json:"hash"`
-			PeerIdentity peer.ID `json:"identity"`
-		}
+		var payload core.Payload
 		if err := c.BodyParser(&payload); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "recieved invalid manifest",
