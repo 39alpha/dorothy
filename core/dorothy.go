@@ -389,12 +389,21 @@ func (d *Dorothy) Fetch() ([]Conflict, error) {
 		return nil, err
 	}
 
-	var manifest Manifest
-	if err := json.Unmarshal(body, &manifest); err != nil {
+	var payload Payload
+	if err := json.Unmarshal(body, &payload); err != nil {
 		return nil, err
 	}
 
-	merged, conflicts, err := d.Manifest.Merge(&manifest)
+	if err := d.Ipfs.ConnectToPeerById(d, payload.PeerIdentity); err != nil {
+		return nil, err
+	}
+
+	manifest, err := d.Ipfs.GetManifest(d, payload.Hash)
+	if err != nil {
+		return nil, err
+	}
+
+	merged, conflicts, err := d.Manifest.Merge(manifest)
 	if err != nil || len(conflicts) != 0 {
 		return conflicts, err
 	}

@@ -138,7 +138,7 @@ func (d *Server) setup() {
 	organization.Post("/dataset/create", d.CreateDatasetHandler())
 
 	dataset := organization.Group("/:dataset", d.GetDataset())
-	dataset.Get("/", Dataset)
+	dataset.Get("/", d.Dataset())
 	dataset.Post("/", d.RecieveDataset())
 }
 

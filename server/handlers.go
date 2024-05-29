@@ -416,32 +416,38 @@ func (d *Server) RecieveDataset() fiber.Handler {
 
 		addState(c, "Dataset", dataset)
 
-		return c.JSON(fiber.Map{
-			"hash":     dataset.ManifestHash,
-			"identity": d.Ipfs.Identity,
+		return c.JSON(core.Payload{
+			Hash:         dataset.ManifestHash,
+			PeerIdentity: d.Ipfs.Identity,
 		})
 	}
 }
 
-func Dataset(c *fiber.Ctx) error {
-	if c.Accepts("text/html") != "" {
+func (d *Server) Dataset() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		if c.Accepts("text/html") != "" {
+			return c.Render("views/dataset", bind(c, fiber.Map{
+				"AuthUser": c.Locals("AuthUser"),
+			}), "views/layouts/main")
+		} else if c.Accepts("application/json") != "" {
+			dataset, ok := c.Locals("Dataset").(*model.Dataset)
+			if !ok || dataset == nil || dataset.Manifest == nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "failed to fetch dataset manifest",
+				})
+			}
+			return c.JSON(core.Payload{
+				Hash:         dataset.ManifestHash,
+				PeerIdentity: d.Ipfs.Identity,
+			})
+		} else if c.Accepts("text/plain") != "" {
+			if dataset, ok := c.Locals("Dataset").(*model.Dataset); ok {
+				msg := dataset.ManifestHash + "\n" + string(d.Ipfs.Identity)
+				return c.SendString(msg)
+			}
+		}
 		return c.Render("views/dataset", bind(c, fiber.Map{
 			"AuthUser": c.Locals("AuthUser"),
 		}), "views/layouts/main")
-	} else if c.Accepts("application/json") != "" {
-		dataset, ok := c.Locals("Dataset").(*model.Dataset)
-		if !ok || dataset == nil || dataset.Manifest == nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "failed to fetch dataset manifest",
-			})
-		}
-		return c.JSON(dataset.Manifest)
-	} else if c.Accepts("text/plain") != "" {
-		if dataset, ok := c.Locals("Dataset").(*model.Dataset); ok {
-			return c.SendString(dataset.ManifestHash)
-		}
 	}
-	return c.Render("views/dataset", bind(c, fiber.Map{
-		"AuthUser": c.Locals("AuthUser"),
-	}), "views/layouts/main")
 }
