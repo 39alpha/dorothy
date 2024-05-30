@@ -81,7 +81,7 @@ type IpfsConfig struct {
 func (c IpfsConfig) Url() string {
 	host := c.Host
 	if host == "" {
-		host = "127.0.0.1"
+		host = "http://127.0.0.1"
 	}
 	port := c.Port
 	if port == 0 {
@@ -167,15 +167,4 @@ func (config *Config) WriteFile(filename string) error {
 func (config *Config) Encode(w io.Writer) error {
 	encoder := toml.NewEncoder(w)
 	return encoder.Encode(config)
-}
-
-func (config *Config) SetDefaults() {
-	config.Ipfs.SetDefaults()
-}
-
-func (config *IpfsConfig) SetDefaults() {
-	if config != nil {
-		config.Host = "127.0.0.1"
-		config.Port = 5001
-	}
 }

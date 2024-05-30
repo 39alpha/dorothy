@@ -317,8 +317,6 @@ func (d *Dorothy) SetConfig(props []string, value string, global bool) (string, 
 		return "", err
 	}
 
-	config.SetDefaults()
-
 	if err = config.WriteFile(configpath); err != nil {
 		if errors.Is(err, os.ErrNotExist) && global {
 			if err := os.MkdirAll(filepath.Dir(configpath), 0755); err != nil {
@@ -424,8 +422,6 @@ func (d *Dorothy) DelConfig(props []string, global bool) (string, error) {
 	if _, err := decoder.Decode(&config); err != nil {
 		return "", err
 	}
-
-	config.SetDefaults()
 
 	if err = config.WriteFile(configpath); err != nil {
 		if errors.Is(err, os.ErrNotExist) && global {
