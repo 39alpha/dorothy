@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"sync"
 
@@ -93,11 +94,12 @@ func (s *Ipfs) connectGlobal(ctx context.Context) error {
 	if s.config.Host == "" && s.config.Port == 0 {
 		api, err = rpc.NewLocalApi()
 	} else {
-		addr, err := s.config.Multiaddr()
-		if err != nil {
-			return err
-		}
-		api, err = rpc.NewApi(addr)
+		api, err = rpc.NewURLApiWithClient(s.config.Url(), &http.Client{
+			Transport: &http.Transport{
+				Proxy:             http.ProxyFromEnvironment,
+				DisableKeepAlives: true,
+			},
+		})
 	}
 
 	if err != nil {
