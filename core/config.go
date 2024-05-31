@@ -54,17 +54,23 @@ func NewRemote(remote string) (*Remote, error) {
 	return r, nil
 }
 
-func (r Remote) String() string {
-	url := url.URL{
+func (r Remote) BaseUrl() *url.URL {
+	return &url.URL{
 		Scheme: r.Scheme,
 		Host:   r.Host,
-		Path:   filepath.Join(r.Organization, r.Dataset),
 	}
-	return url.String()
 }
 
-func (r Remote) Url() string {
-	return r.String()
+func (r Remote) Url() *url.URL {
+	return r.BaseUrl().JoinPath(r.Organization, r.Dataset)
+}
+
+func (r Remote) UrlString() string {
+	return r.Url().String()
+}
+
+func (r Remote) String() string {
+	return r.UrlString()
 }
 
 type UserConfig struct {

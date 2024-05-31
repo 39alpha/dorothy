@@ -50,9 +50,9 @@ var fetchCmd = &cobra.Command{
 		}
 
 		if err != nil {
-			return fmt.Errorf("fetch failed with errors: %v\n", err)
+			return fmt.Errorf("fetch failed - %v\n", err)
 		} else if len(conflicts) != 0 {
-			return fmt.Errorf("fetch failed with conflicts\n")
+			return fmt.Errorf("fetch failed\n")
 		}
 
 		return nil

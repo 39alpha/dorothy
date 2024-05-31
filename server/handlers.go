@@ -6,7 +6,7 @@ import (
 	"maps"
 	"time"
 
-	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/sdk"
 	"github.com/39alpha/dorothy/server/model"
 	"github.com/gofiber/fiber/v2"
 )
@@ -34,6 +34,18 @@ func addState(c *fiber.Ctx, key string, value interface{}) {
 	}
 	c.Locals("State", state)
 	c.Locals(key, value)
+}
+
+func Redirect(c *fiber.Ctx, status int, path string, json any, text string) error {
+	if c.Accepts("text/html") != "" {
+		return c.Status(status).Redirect(path)
+	} else if c.Accepts("application/json") != "" {
+		return c.Status(status).JSON(json)
+	} else if c.Accepts("text/plain") != "" {
+		return c.Status(status).SendString(text)
+	}
+
+	return c.Status(status).Redirect(path)
 }
 
 func Index(c *fiber.Ctx) error {
@@ -88,22 +100,30 @@ func Login(jwtAuth *Auth, db *DatabaseSession) fiber.Handler {
 
 		var login model.UserLogin
 		if err := c.BodyParser(&login); err != nil {
-			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
+			return Redirect(c, fiber.StatusBadRequest, "/login", fiber.Map{
+				"error": "bad request",
+			}, "bad request")
 		}
 
 		if err := db.ValidateCredentials(login.Email, login.Password); err != nil {
-			return c.Status(fiber.StatusUnauthorized).RedirectBack("login")
+			return Redirect(c, fiber.StatusUnauthorized, "/login", fiber.Map{
+				"error": "invalid login credentials",
+			}, "invalid logic credentials")
 		}
 
 		user := &model.User{Email: login.Email}
 		err := db.Select("id", "email", "name", "orcid").Where(user).First(user).Error
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).RedirectBack("login")
+			return Redirect(c, fiber.StatusInternalServerError, "/login", fiber.Map{
+				"error": "an unexpected error occurred",
+			}, "an unexpected error occurred")
 		}
 
 		token, err := jwtAuth.MakeToken(user)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).RedirectBack("login")
+			return Redirect(c, fiber.StatusInternalServerError, "/login", fiber.Map{
+				"error": "an unexpected error occurred",
+			}, "an unexpected error occurred")
 		}
 
 		c.Cookie(&fiber.Cookie{
@@ -111,6 +131,16 @@ func Login(jwtAuth *Auth, db *DatabaseSession) fiber.Handler {
 			Value:   token,
 			Expires: time.Now().Add(72 * time.Hour),
 		})
+
+		if c.Accepts("text/html") == "" {
+			if c.Accepts("application/json") != "" {
+				return c.JSON(fiber.Map{
+					"message": "success",
+				})
+			} else if c.Accepts("text/plain") != "" {
+				return c.SendString("success")
+			}
+		}
 
 		if fields.Redirect == "" {
 			return c.Redirect("/")
@@ -321,12 +351,16 @@ func (d *Server) GetDataset() fiber.Handler {
 
 		org, ok := c.Locals("Organization").(*model.Organization)
 		if !ok || org == nil {
-			return c.Status(fiber.StatusNotFound).Redirect("/")
+			return Redirect(c, fiber.StatusNotFound, "/", fiber.Map{
+				"error": "not found",
+			}, "not found")
 		}
 
 		datasetSlug := c.Params("dataset")
 		if datasetSlug == "" {
-			return c.Status(fiber.StatusBadRequest).Redirect("/" + org.Slug)
+			return Redirect(c, fiber.StatusNotFound, "/"+org.Slug, fiber.Map{
+				"error": "bad request",
+			}, "bad request")
 		}
 
 		dataset := model.Dataset{
@@ -334,17 +368,21 @@ func (d *Server) GetDataset() fiber.Handler {
 			OrganizationID: org.ID,
 		}
 		if err := d.session.Preload("Organization").Where(&dataset).First(&dataset).Error; err != nil {
-			return c.Status(fiber.StatusNotFound).Redirect("/")
+			return Redirect(c, fiber.StatusNotFound, "/"+org.Slug, fiber.Map{
+				"error": "not found",
+			}, "not found")
 		}
 
 		if org.IsPrivate || dataset.IsPrivate {
-			if c.Locals("AuthUser") == nil {
-				return c.Status(fiber.StatusUnauthorized).Redirect("/login?Redirect=" + c.Path())
-			}
-
-			user := c.Locals("AuthUser").(*model.User)
-			if !user.CanReadDataset(dataset) {
-				return c.Status(fiber.StatusForbidden).Redirect("/" + org.Slug)
+			user, ok := c.Locals("AuthUser").(*model.User)
+			if !ok {
+				return Redirect(c, fiber.StatusUnauthorized, "/login?Redirect="+c.Path(), fiber.Map{
+					"error": "unauthorized",
+				}, "unauthorized")
+			} else if !user.CanReadDataset(dataset) {
+				return Redirect(c, fiber.StatusForbidden, "/"+org.Slug, fiber.Map{
+					"error": "forbidden",
+				}, "forbidden")
 			}
 		}
 
@@ -372,7 +410,7 @@ func (d *Server) RecieveDataset() fiber.Handler {
 		}
 		old := dataset.Manifest
 
-		var payload core.Payload
+		var payload sdk.Payload
 		if err := c.BodyParser(&payload); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "recieved invalid manifest",
@@ -416,7 +454,7 @@ func (d *Server) RecieveDataset() fiber.Handler {
 
 		addState(c, "Dataset", dataset)
 
-		return c.JSON(core.Payload{
+		return c.JSON(sdk.Payload{
 			Hash:         dataset.ManifestHash,
 			PeerIdentity: d.Ipfs.Identity,
 		})
@@ -436,7 +474,7 @@ func (d *Server) Dataset() fiber.Handler {
 					"error": "failed to fetch dataset manifest",
 				})
 			}
-			return c.JSON(core.Payload{
+			return c.JSON(sdk.Payload{
 				Hash:         dataset.ManifestHash,
 				PeerIdentity: d.Ipfs.Identity,
 			})

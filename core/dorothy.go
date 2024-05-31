@@ -3,11 +3,8 @@ package core
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/39alpha/dorothy/sdk"
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
 	"github.com/ipfs/kubo/core/coreiface/options"
@@ -27,6 +25,8 @@ type Dorothy struct {
 	Config        Config
 	Ipfs          Ipfs
 	Manifest      *Manifest
+
+	sdkClient *sdk.Client
 }
 
 func NewDorothy() (*Dorothy, error) {
@@ -70,6 +70,10 @@ func (d *Dorothy) LocalConfigPath() string {
 
 func (d *Dorothy) ManifestPath() string {
 	return filepath.Join(d.Directory, "manifest")
+}
+
+func (d *Dorothy) CookiesPath() string {
+	return filepath.Join(d.Directory, "cookies")
 }
 
 func (d *Dorothy) IsInitialized() bool {
@@ -442,33 +446,50 @@ func (d *Dorothy) DelConfig(props []string, global bool) (string, error) {
 	return configpath, d.ReloadConfig()
 }
 
-func (d *Dorothy) Fetch() ([]Conflict, error) {
+func (d *Dorothy) SdkClient() (*sdk.Client, error) {
+	if d.sdkClient != nil {
+		return d.sdkClient, nil
+	}
+
 	if d.Config.RemoteString == "" {
 		return nil, fmt.Errorf("no remote set")
 	} else if d.Config.Remote == nil {
 		return nil, fmt.Errorf("ill-formed remote")
 	}
 
-	req, err := http.NewRequest("GET", d.Config.Remote.Url(), nil)
+	var err error
+	d.sdkClient, err = sdk.NewClientWithCookies(d.Config.Remote.BaseUrl(), d.CookiesPath())
+
+	return d.sdkClient, err
+}
+
+func (d *Dorothy) Fetch() ([]Conflict, error) {
+	if !d.Ipfs.IsConnected() {
+		return nil, fmt.Errorf("not connected to IPFS")
+	}
+
+	client, err := d.SdkClient()
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Accept", "application/json")
 
-	resp, err := (&http.Client{}).Do(req)
-	if err != nil {
-		return nil, err
+	result := client.LoginGuard(func() sdk.Result {
+		return client.GetAsset(d.Config.Remote.Organization, d.Config.Remote.Dataset)
+	})
+
+	if result.Error != nil {
+		return nil, result.Error
+	} else if result.Code != 200 {
+		return nil, fmt.Errorf("unexpected status from server (%d)", result.Code)
+	} else if result.Payload == nil {
+		return nil, fmt.Errorf("no payload in response")
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	if result.RequiredLogin {
+		client.WriteCookies(d.CookiesPath())
 	}
 
-	var payload Payload
-	if err := json.Unmarshal(body, &payload); err != nil {
-		return nil, err
-	}
+	payload := result.Payload
 
 	if err := d.Ipfs.ConnectToPeerById(d, payload.PeerIdentity); err != nil {
 		return nil, err
@@ -578,37 +599,32 @@ func (d *Dorothy) Push() ([]Conflict, error) {
 		return nil, fmt.Errorf("not connected to IPFS")
 	}
 
-	if d.Config.RemoteString == "" {
-		return nil, fmt.Errorf("no remote set")
-	} else if d.Config.Remote == nil {
-		return nil, fmt.Errorf("ill-formed remote")
-	}
-
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.Encode(Payload{
-		Hash:         d.Manifest.Hash,
-		PeerIdentity: d.Ipfs.Identity,
-	})
-
-	resp, err := http.Post(d.Config.Remote.Url(), "application/json", &buf)
+	client, err := d.SdkClient()
 	if err != nil {
 		return nil, err
 	}
 
-	content, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("cannot process server response")
+	result := client.LoginGuard(func() sdk.Result {
+		payload := sdk.Payload{
+			Hash:         d.Manifest.Hash,
+			PeerIdentity: d.Ipfs.Identity,
+		}
+		return client.PostAsset(payload, d.Config.Remote.Organization, d.Config.Remote.Dataset)
+	})
+
+	if result.Error != nil {
+		return nil, result.Error
+	} else if result.Code != 200 {
+		return nil, fmt.Errorf("unexpected status from server")
+	} else if result.Payload == nil {
+		return nil, fmt.Errorf("no payload in response")
 	}
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("push failed: %s", content)
+	if result.RequiredLogin {
+		client.WriteCookies(d.CookiesPath())
 	}
 
-	var payload Payload
-	if err := json.Unmarshal(content, &payload); err != nil {
-		return nil, fmt.Errorf("invalid response received from the server: %v", err)
-	}
+	payload := result.Payload
 
 	if err := d.Ipfs.ConnectToPeerById(d, payload.PeerIdentity); err != nil {
 		return nil, fmt.Errorf("failed to connect to remote peer after push: %v", err)
@@ -691,7 +707,7 @@ func (d *Dorothy) ReadFromEditor(filename string) (string, error) {
 		}
 	}
 
-	path := filepath.Join(".dorothy", filename)
+	path := filepath.Join(d.Directory, filename)
 	defer os.RemoveAll(path)
 
 	handle, err := os.Create(path)
