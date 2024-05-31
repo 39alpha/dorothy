@@ -6,9 +6,9 @@
 $ dorothy init
 Dorothy initialized
 $ dorothy config set user.name 'John Doe'
-wrote to "/home/dgm/docs/go/src/github.com/39alpha/dorothy/working/.dorothy/config.toml"
+wrote to "/home/johndoe/dataset/.dorothy/config.toml"
 $ dorothy config set user.email 'john.doe@39alpharesearch.org'
-wrote to "/home/dgm/docs/go/src/github.com/39alpha/dorothy/working/.dorothy/config.toml"
+wrote to "/home/johndoe/dataset/.dorothy/config.toml"
 $ touch README.md
 $ dorothy commit -m 'Initial commit' README.md
 $ dorothy log
