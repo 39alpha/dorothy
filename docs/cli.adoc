@@ -1,2 +1,25 @@
 [[cli]]
 == Command Line Interface
+
+[source,shell]
+----
+$ dorothy init
+Dorothy initialized
+$ dorothy config set user.name 'John Doe'
+wrote to "/home/dgm/docs/go/src/github.com/39alpha/dorothy/working/.dorothy/config.toml"
+$ dorothy config set user.email 'john.doe@39alpharesearch.org'
+wrote to "/home/dgm/docs/go/src/github.com/39alpha/dorothy/working/.dorothy/config.toml"
+$ touch README.md
+$ dorothy commit -m 'Initial commit' README.md
+$ dorothy log
+Hash:    QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH
+Author:  John Doe <john.doe@39alpharesearch.org>
+Date:    Thu May 30 22:29:35 2024 -0700
+Type:    FILE
+
+    Initial commit
+
+$ dorothy checkout QmbFMk NEW_README.md
+$ ls
+NEW_README.md  README.md
+----
