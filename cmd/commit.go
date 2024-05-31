@@ -63,7 +63,7 @@ func checkParentage(d *core.Dorothy, parents []string, pick bool) ([]string, boo
 var commitCmd = &cobra.Command{
 	Use:   "commit path",
 	Short: "commit a dataset",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
 		configpath, err := cmd.Flags().GetString("config")
 		if err != nil {
@@ -124,7 +124,7 @@ var commitCmd = &cobra.Command{
 			}
 		}
 
-		conflicts, err := dorothy.Commit(args[0], message, nopin, parents)
+		conflicts, err := dorothy.Commit(args, message, nopin, parents)
 		if len(conflicts) != 0 {
 			fmt.Fprintf(os.Stderr, "conflicts:\n")
 			for _, conflict := range conflicts {

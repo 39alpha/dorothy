@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/ipfs/boxo/files"
@@ -271,13 +272,39 @@ func getUnixFileNode(filepath string) (files.Node, error) {
 	return files.NewSerialFile(filepath, true, stat)
 }
 
-func (s *Ipfs) Add(ctx context.Context, filepath string, options ...options.UnixfsAddOption) (string, error) {
-	filenode, err := getUnixFileNode(filepath)
+func (s *Ipfs) Add(ctx context.Context, filename string, options ...options.UnixfsAddOption) (string, error) {
+	filenode, err := getUnixFileNode(filename)
 	if err != nil {
 		return "", err
 	}
 
 	cidfile, err := s.Unixfs().Add(ctx, filenode, options...)
+
+	if err != nil {
+		return "", err
+	}
+
+	return cidfile.RootCid().String(), nil
+}
+
+func (s Ipfs) AddMany(ctx context.Context, filenames []string, options ...options.UnixfsAddOption) (string, error) {
+	if len(filenames) == 0 {
+		return "", fmt.Errorf("no files provided")
+	}
+
+	var entries []files.DirEntry
+	for _, path := range filenames {
+		node, err := getUnixFileNode(path)
+		if err != nil {
+			return "", err
+		}
+
+		entries = append(entries, files.FileEntry(filepath.Base(path), node))
+	}
+
+	dir := files.NewSliceDirectory(entries)
+
+	cidfile, err := s.Unixfs().Add(ctx, dir, options...)
 
 	if err != nil {
 		return "", err

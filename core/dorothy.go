@@ -644,7 +644,11 @@ func (d *Dorothy) Push() ([]Conflict, error) {
 	return nil, d.WriteManifestFile()
 }
 
-func (d *Dorothy) Commit(path, message string, nopin bool, parents []string) ([]Conflict, error) {
+func (d *Dorothy) Commit(paths []string, message string, nopin bool, parents []string) ([]Conflict, error) {
+	if len(paths) == 0 {
+		return nil, nil
+	}
+
 	if !d.Ipfs.IsConnected() {
 		return nil, fmt.Errorf("not connected to IPFS")
 	}
@@ -657,20 +661,29 @@ func (d *Dorothy) Commit(path, message string, nopin bool, parents []string) ([]
 		return nil, fmt.Errorf("empty message; aborting")
 	}
 
-	var hash string
 	var pathtype PathType
+	var hash string
+	var err error
 
-	if stat, err := os.Stat(path); err != nil {
-		return nil, fmt.Errorf("cannot access dataset %q: %v", path, err)
-	} else if stat.IsDir() {
-		pathtype = PathTypeDirectory
+	if len(paths) == 1 {
+		path := paths[0]
+
+		if stat, err := os.Stat(path); err != nil {
+			return nil, fmt.Errorf("cannot access dataset %q: %v", path, err)
+		} else if stat.IsDir() {
+			pathtype = PathTypeDirectory
+		} else {
+			pathtype = PathTypeFile
+		}
+
+		hash, err = d.Ipfs.Add(d, path, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
 	} else {
-		pathtype = PathTypeFile
+		pathtype = PathTypeDirectory
+		hash, err = d.Ipfs.AddMany(d, paths, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
 	}
 
-	hash, err := d.Ipfs.Add(d, path, options.Unixfs.Pin(!nopin), options.Unixfs.Progress(true))
 	if err != nil {
-		return nil, fmt.Errorf("failed to add dataset %q: %v", path, err)
+		return nil, fmt.Errorf("failed to add dataset %v: %v", paths, err)
 	}
 
 	merged, conflicts, err := d.Ipfs.MergeAndCommit(d, d.Manifest, &Manifest{
