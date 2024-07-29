@@ -1,22 +1,19 @@
 <header role="banner">
+  <nav>
     <div>
-        <h1><a href="/">Dorothy</a></h1>
+      <h1><a href="/">Dorothy</a></h1>
+      <p>Welcome to the dataforge.</p>
     </div>
     <ul>
-        <div class="nav-left">
-            {{ range .Items }}
-            <li class="active">
-                <a class="page-link" href={{.Href}}>{{.Title}}</a>
-            </li>
-            {{ end }}
-        </div>
-        <div class="nav-right">
-            {{ with .AuthUser }}
-            <li class="active"><span>{{ .Email }}</span> <a class="page-link" href="/logout">Logout</a></li>
-            {{ else }}
-            <li class="active"><a class="page-link" href="/login">Login</a></li>
-            <li class="active"><a class="page-link" href="/register">Register</a></li>
-            {{ end }}
-        </div>
+      {{ if .AuthUser }}
+      <li>
+        <b>{{.AuthUser.Name}}</b>
+      </li>
+      <li><a href="/logout">Logout</a></li>
+      {{ else }}
+      <li><a href="/login">Login</a></li>
+      <li><a href="/register">Register</a></li>
+      {{ end }}
     </ul>
+  </nav>
 </header>

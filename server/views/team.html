@@ -1,0 +1,39 @@
+{{ $team := .Team }}
+
+<h1>{{ $team.Name }} Datasets</h1>
+<div class="featured">
+  <div class="featured_buttons">
+    {{ if .AuthUser }}
+    <div class="button">
+      <a class="button_link" href="/{{ $team.Slug }}/dataset/create">
+        <div class="button_body">
+          <span class="button_text">Create Dataset ▶</span>
+        </div>
+      </a>
+    </div>
+    {{ end }}
+  </div>
+  <div class="featured_items">
+    {{ range $team.Datasets }}
+    <div class="featured_item">
+      <a class="featured_item_link" href="/{{ $team.Slug }}/{{ .Slug }}">
+        <div class="featured_item_body">
+          <div class="featured_item_titlebar">
+            <span class="featured_item_title">{{ $team.Slug }} / {{ .Slug }} &mdash; {{ .Name }}</span>
+            {{ if .IsPrivate }}
+            <i class="fa-solid fa-lock-open"></i>
+            {{ end }}
+          </div>
+          {{ with .Description }}
+          <p class="featured_item_description">{{ . }}</p>
+          {{ else }}
+          <p class="featured_item_description featured_item_description-empty">No description...</p>
+          {{ end }}
+        </div>
+      </a>
+    </div>
+    {{ else }}
+    <p class="featured_empty">No datasets have been created yet.</p>
+    {{ end }}
+  </div>
+</div>

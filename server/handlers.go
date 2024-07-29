@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"math"
 	"time"
 
 	"github.com/39alpha/dorothy/sdk"
@@ -48,9 +49,25 @@ func Redirect(c *fiber.Ctx, status int, path string, json any, text string) erro
 	return c.Status(status).Redirect(path)
 }
 
-func Index(c *fiber.Ctx) error {
+func (d *Server) Index(c *fiber.Ctx) error {
+	user, _ := c.Locals("AuthUser").(*model.User)
+
+	teams, err := d.session.GetTeams(user, false)
+	if err != nil {
+		teams = []model.Team{}
+	}
+	teams = teams[0:int64(math.Min(float64(len(teams)), 6))]
+
+	datasets, err := d.session.GetDatasets(user)
+	if err != nil {
+		datasets = []model.Dataset{}
+	}
+	datasets = datasets[0:int64(math.Min(float64(len(datasets)), 6))]
+
 	return c.Render("views/index", bind(c, fiber.Map{
-		"AuthUser": c.Locals("AuthUser"),
+		"AuthUser": user,
+		"Teams":    teams,
+		"Datasets": datasets,
 	}), "views/layouts/main")
 }
 
@@ -155,68 +172,34 @@ func Logout(c *fiber.Ctx) error {
 	return c.Redirect("/")
 }
 
-func GetOrganizations(db *DatabaseSession) fiber.Handler {
+func GetTeams(db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		orgs := []model.Organization{}
-		if err := db.Preload("Datasets.Organization").Find(&orgs).Error; err != nil {
+		user, _ := c.Locals("AuthUser").(*model.User)
+
+		teams, err := db.GetTeams(user, true)
+		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).Redirect("/")
 		}
 
-		organizations := []model.Organization{}
-
-		if c.Locals("AuthUser") == nil {
-			for _, org := range orgs {
-				if org.IsPrivate {
-					continue
-				}
-
-				datasets := []model.Dataset{}
-				for _, dataset := range org.Datasets {
-					if !dataset.IsPrivate {
-						datasets = append(datasets, dataset)
-					}
-				}
-				org.Datasets = datasets
-
-				organizations = append(organizations, org)
-			}
-		} else {
-			user := c.Locals("AuthUser").(*model.User)
-			for _, org := range orgs {
-				if !user.CanReadOrganization(org) {
-					continue
-				}
-
-				datasets := []model.Dataset{}
-				for _, dataset := range org.Datasets {
-					if user.CanReadDataset(dataset) {
-						datasets = append(datasets, dataset)
-					}
-				}
-				org.Datasets = datasets
-
-				organizations = append(organizations, org)
-			}
-		}
-
-		addState(c, "Organizations", organizations)
+		addState(c, "Teams", teams)
 
 		return c.Next()
 	}
 }
 
-func CreateOrganizationForm(c *fiber.Ctx) error {
+func CreateTeamForm(c *fiber.Ctx) error {
 	authUser := c.Locals("AuthUser")
 	if authUser == nil {
 		return c.Redirect("/login?Redirect=" + c.Path())
 	} else {
-		return c.Render("views/create-organization", bind(c, fiber.Map{
+		return c.Render("views/create-team", bind(c, fiber.Map{
 			"AuthUser": c.Locals("AuthUser"),
+			"Error":    c.Locals("Error"),
 		}), "views/layouts/main")
 	}
 }
 
-func CreateOrganization(db *DatabaseSession) fiber.Handler {
+func CreateTeam(db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authUser, ok := c.Locals("AuthUser").(*model.User)
 
@@ -224,85 +207,86 @@ func CreateOrganization(db *DatabaseSession) fiber.Handler {
 			return c.Status(fiber.StatusUnauthorized).Redirect("/")
 		}
 
-		var neworg model.NewOrganization
-		if err := c.BodyParser(&neworg); err != nil {
+		var newteam model.NewTeam
+		if err := c.BodyParser(&newteam); err != nil {
 			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
 		}
 
-		org := &model.Organization{
-			Slug:      neworg.Slug,
-			Name:      neworg.Name,
-			Contact:   neworg.Contact,
-			IsPrivate: neworg.IsPrivate,
+		team := &model.Team{
+			Slug:      newteam.Slug,
+			Name:      newteam.Name,
+			Contact:   newteam.Contact,
+			IsPrivate: newteam.IsPrivate,
 		}
-		if neworg.Description != nil {
-			org.Description = *neworg.Description
+		if newteam.Description != nil {
+			team.Description = *newteam.Description
 		}
-		if err := db.Save(org).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).Redirect("/")
+		if err := db.Save(team).Error; err != nil {
+			c.Locals("Error", "A team with slug \""+team.Slug+"\" already exists. Try a different name.")
+			return CreateTeamForm(c)
 		}
 
-		db.Save(&model.UserOrganizationPrivilege{
+		db.Save(&model.UserTeamPrivilege{
 			User:          authUser,
-			Organization:  org,
+			Team:          team,
 			PrivilegeCode: "admin",
 		})
 
-		return c.Redirect("/" + org.Slug)
+		return c.Redirect("/" + team.Slug)
 	}
 }
 
-func GetOrganization(db *DatabaseSession) fiber.Handler {
+func GetTeam(db *DatabaseSession) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		slug := c.Params("organization")
+		slug := c.Params("team")
 		if slug == "" {
 			return c.Status(fiber.StatusNotFound).Redirect("/")
 		}
 
-		org := model.Organization{Slug: slug}
-		if err := db.Preload("Datasets.Organization").Where(&org).First(&org).Error; err != nil {
+		team := model.Team{Slug: slug}
+		if err := db.Preload("Datasets.Team").Where(&team).First(&team).Error; err != nil {
 			return c.Status(fiber.StatusNotFound).Redirect("/")
 		}
 
 		datasets := []model.Dataset{}
 		if c.Locals("AuthUser") == nil {
-			if org.IsPrivate {
+			if team.IsPrivate {
 				return c.Status(fiber.StatusUnauthorized).Redirect("/login?Redirect=" + c.Path())
 			}
-			for _, dataset := range org.Datasets {
+			for _, dataset := range team.Datasets {
 				if !dataset.IsPrivate {
 					datasets = append(datasets, dataset)
 				}
 			}
 		} else {
 			user := c.Locals("AuthUser").(*model.User)
-			if !user.CanReadOrganization(org) {
+			if !user.CanReadTeam(team) {
 				return c.Status(fiber.StatusForbidden).Redirect("/")
 			}
-			for _, dataset := range org.Datasets {
+			for _, dataset := range team.Datasets {
 				if user.CanReadDataset(dataset) {
 					datasets = append(datasets, dataset)
 				}
 			}
 		}
-		org.Datasets = datasets
+		team.Datasets = datasets
 
-		addState(c, "Organization", &org)
+		addState(c, "Team", &team)
 
 		return c.Next()
 	}
 }
 
-func Organization(c *fiber.Ctx) error {
-	return c.Render("views/organization", bind(c, fiber.Map{
+func Team(c *fiber.Ctx) error {
+	return c.Render("views/team", bind(c, fiber.Map{
 		"AuthUser": c.Locals("AuthUser"),
 	}), "views/layouts/main")
 }
 
 func CreateDatasetForm(c *fiber.Ctx) error {
 	authUser := c.Locals("AuthUser")
-	org, ok := c.Locals("Organization").(*model.Organization)
-	if !ok || org == nil {
+	team, ok := c.Locals("Team").(*model.Team)
+	if !ok || team == nil {
 		return c.Status(fiber.StatusNotFound).Redirect("/")
 	}
 
@@ -311,6 +295,7 @@ func CreateDatasetForm(c *fiber.Ctx) error {
 	} else {
 		return c.Render("views/create-dataset", bind(c, fiber.Map{
 			"AuthUser": c.Locals("AuthUser"),
+			"Error":    c.Locals("Error"),
 		}), "views/layouts/main")
 	}
 }
@@ -322,8 +307,8 @@ func (d *Server) CreateDatasetHandler() fiber.Handler {
 			return c.Status(fiber.StatusUnauthorized).Redirect("/")
 		}
 
-		org, ok := c.Locals("Organization").(*model.Organization)
-		if !ok || org == nil {
+		team, ok := c.Locals("Team").(*model.Team)
+		if !ok || team == nil {
 			return c.Status(fiber.StatusNotFound).Redirect("/")
 		}
 
@@ -332,15 +317,16 @@ func (d *Server) CreateDatasetHandler() fiber.Handler {
 			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
 		}
 
-		if org.ID != dataset.OrganizationID {
-			return c.Redirect("/"+org.Slug+"/dataset/create", 400)
+		if team.ID != dataset.TeamID {
+			return c.Redirect("/"+team.Slug+"/dataset/create", 400)
 		}
 
 		if err := d.CreateDataset(dataset, authUser); err != nil {
-			return c.Status(fiber.StatusInternalServerError).Redirect("/")
+			c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
+			return CreateDatasetForm(c)
 		}
 
-		return c.Redirect("/" + org.Slug + "/" + dataset.Slug)
+		return c.Redirect("/" + team.Slug + "/" + dataset.Slug)
 	}
 }
 
@@ -349,8 +335,8 @@ func (d *Server) GetDataset() fiber.Handler {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		org, ok := c.Locals("Organization").(*model.Organization)
-		if !ok || org == nil {
+		team, ok := c.Locals("Team").(*model.Team)
+		if !ok || team == nil {
 			return Redirect(c, fiber.StatusNotFound, "/", fiber.Map{
 				"error": "not found",
 			}, "not found")
@@ -358,29 +344,29 @@ func (d *Server) GetDataset() fiber.Handler {
 
 		datasetSlug := c.Params("dataset")
 		if datasetSlug == "" {
-			return Redirect(c, fiber.StatusNotFound, "/"+org.Slug, fiber.Map{
+			return Redirect(c, fiber.StatusNotFound, "/"+team.Slug, fiber.Map{
 				"error": "bad request",
 			}, "bad request")
 		}
 
 		dataset := model.Dataset{
-			Slug:           datasetSlug,
-			OrganizationID: org.ID,
+			Slug:   datasetSlug,
+			TeamID: team.ID,
 		}
-		if err := d.session.Preload("Organization").Where(&dataset).First(&dataset).Error; err != nil {
-			return Redirect(c, fiber.StatusNotFound, "/"+org.Slug, fiber.Map{
+		if err := d.session.Preload("Team").Where(&dataset).First(&dataset).Error; err != nil {
+			return Redirect(c, fiber.StatusNotFound, "/"+team.Slug, fiber.Map{
 				"error": "not found",
 			}, "not found")
 		}
 
-		if org.IsPrivate || dataset.IsPrivate {
+		if team.IsPrivate || dataset.IsPrivate {
 			user, ok := c.Locals("AuthUser").(*model.User)
 			if !ok {
 				return Redirect(c, fiber.StatusUnauthorized, "/login?Redirect="+c.Path(), fiber.Map{
 					"error": "unauthorized",
 				}, "unauthorized")
 			} else if !user.CanReadDataset(dataset) {
-				return Redirect(c, fiber.StatusForbidden, "/"+org.Slug, fiber.Map{
+				return Redirect(c, fiber.StatusForbidden, "/"+team.Slug, fiber.Map{
 					"error": "forbidden",
 				}, "forbidden")
 			}

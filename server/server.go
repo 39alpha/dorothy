@@ -129,9 +129,9 @@ func (d *Server) setup() {
 	})
 	d.Use(Verifier(d.auth))
 	d.Use(Authenticator(d.auth, d.session))
-	d.Use(GetOrganizations(d.session))
+	d.Use(GetTeams(d.session))
 
-	d.Get("/", Index)
+	d.Get("/", d.Index)
 
 	d.Get("/register", RegistrationForm)
 	d.Post("/register", Registration(d.session))
@@ -139,15 +139,15 @@ func (d *Server) setup() {
 	d.Post("/login", Login(d.auth, d.session))
 	d.Get("/logout", Logout)
 
-	d.Get("/organization/create", CreateOrganizationForm)
-	d.Post("/organization/create", CreateOrganization(d.session))
+	d.Get("/team/create", CreateTeamForm)
+	d.Post("/team/create", CreateTeam(d.session))
 
-	organization := d.Group("/:organization", GetOrganization(d.session))
-	organization.Get("/", Organization)
-	organization.Get("/dataset/create", CreateDatasetForm)
-	organization.Post("/dataset/create", d.CreateDatasetHandler())
+	team := d.Group("/:team", GetTeam(d.session))
+	team.Get("/", Team)
+	team.Get("/dataset/create", CreateDatasetForm)
+	team.Post("/dataset/create", d.CreateDatasetHandler())
 
-	dataset := organization.Group("/:dataset", d.GetDataset())
+	dataset := team.Group("/:dataset", d.GetDataset())
 	dataset.Get("/", d.Dataset())
 	dataset.Post("/", d.RecieveDataset())
 }

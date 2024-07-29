@@ -17,40 +17,40 @@ type User struct {
 	UpdatedAt    time.Time      `json:"updatedAt"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
 
-	Role                   *Role                       `json:"role"`
-	OrganizationPrivileges []UserOrganizationPrivilege `json:"organizationPrivileges"`
-	DatasetPrivileges      []UserDatasetPrivilege      `json:"datasetPrivileges"`
+	Role              *Role                  `json:"role"`
+	TeamPrivileges    []UserTeamPrivilege    `json:"teamPrivileges"`
+	DatasetPrivileges []UserDatasetPrivilege `json:"datasetPrivileges"`
 }
 
-func (user User) OrganizationPrivilege(org Organization) string {
+func (user User) TeamPrivilege(team Team) string {
 	if user.RoleCode == "admin" {
 		return "admin"
 	}
 
-	for _, privilege := range user.OrganizationPrivileges {
-		if privilege.OrganizationID == org.ID {
+	for _, privilege := range user.TeamPrivileges {
+		if privilege.TeamID == team.ID {
 			return privilege.PrivilegeCode
 		}
 	}
 
-	if org.IsPrivate {
+	if team.IsPrivate {
 		return ""
 	} else {
 		return "read"
 	}
 }
 
-func (user User) CanReadOrganization(org Organization) bool {
-	return user.OrganizationPrivilege(org) != ""
+func (user User) CanReadTeam(team Team) bool {
+	return user.TeamPrivilege(team) != ""
 }
 
-func (user User) CanWriteOrganization(org Organization) bool {
-	privilege := user.OrganizationPrivilege(org)
+func (user User) CanWriteTeam(team Team) bool {
+	privilege := user.TeamPrivilege(team)
 	return privilege != "" && privilege != "read"
 }
 
-func (user User) CanManageOrganization(org Organization) bool {
-	return user.OrganizationPrivilege(org) == "admin"
+func (user User) CanManageTeam(team Team) bool {
+	return user.TeamPrivilege(team) == "admin"
 }
 
 func (user User) DatasetPrivilege(dataset Dataset) string {
@@ -64,12 +64,12 @@ func (user User) DatasetPrivilege(dataset Dataset) string {
 		}
 	}
 
-	org := dataset.Organization
+	team := dataset.Team
 	if dataset.IsPrivate {
-		if user.CanManageOrganization(*org) {
+		if user.CanManageTeam(*team) {
 			return "admin"
 		}
-	} else if user.CanReadOrganization(*org) {
+	} else if user.CanReadTeam(*team) {
 		return "read"
 	}
 

@@ -11,14 +11,14 @@ type Privilege struct {
 	Description string `json:"description"`
 }
 
-type UserOrganizationPrivilege struct {
-	UserID         uint   `json:"userId" gorm:"primaryKey"`
-	OrganizationID uint   `json:"organizationID" gorm:"primaryKey"`
-	PrivilegeCode  string `json:"privilegeCode"`
+type UserTeamPrivilege struct {
+	UserID        uint   `json:"userId" gorm:"primaryKey"`
+	TeamID        uint   `json:"TeamID" gorm:"primaryKey"`
+	PrivilegeCode string `json:"privilegeCode"`
 
-	User         *User         `json:"user"`
-	Organization *Organization `json:"organization"`
-	Privilege    *Privilege    `json:"privilege"`
+	User      *User      `json:"user"`
+	Team      *Team      `json:"Team"`
+	Privilege *Privilege `json:"privilege"`
 }
 
 type UserDatasetPrivilege struct {

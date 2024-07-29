@@ -1,23 +1,88 @@
-{{ if .AuthUser }}
-<div>
-    <span class="icon">
-        <i class="fa fa-square-plus"></i>
-    </span>
-    <a href="/organization/create">Create Organization</a>
-</div>
-{{ end }}
-<ul>
-    {{ range .Organizations }}
-    {{ $org := . }}
-    <li>
-        <a href="/{{ .Slug }}">{{ .Name }}</a>
-        <ul>
-            {{ range .Datasets }}
-            <li>
-                <a href="/{{ $org.Slug }}/{{ .Slug }}">{{ .Name }}</a>
-            </li>
+<section>
+  <h1>Featured Public Teams</h1>
+  <div class="featured">
+    <div class="featured_items">
+      {{ range .Teams }}
+      <div class="featured_item">
+        <a class="featured_item_link" href="/{{ .Slug }}">
+          <div class="featured_item_body">
+            <div class="featured_item_titlebar">
+              <span class="featured_item_title">{{ .Slug }} &mdash; {{ .Name }}</span>
+              {{ if .IsPrivate }}
+              <i class="fa-solid fa-lock-open"></i>
+              {{ end }}
+            </div>
+            <p class="featured_item_description">{{ .Description }}</p>
+          </div>
+        </a>
+      </div>
+      {{ else }}
+      <p class="featured_empty">No teams have been created yet.</p>
+      {{ end }}
+    </div>
+
+    <div class="featured_buttons">
+      {{ if .AuthUser }}
+      <div class="button">
+        <a class="button_link" href="/team/create">
+          <div class="button_body">
+            <span class="button_text">Create Team ▶</span>
+          </div>
+        </a>
+      </div>
+      {{ end }}
+
+      {{ if .Teams }}
+      <div class="button">
+        <a class="button_link" href="#">
+          <div class="button_body">
+            <span class="button_text">More Teams ▶</span>
+          </div>
+        </a>
+      </div>
+      {{ end }}
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1>Featured Public Datasets</h1>
+
+  <div class="featured">
+    <div class="featured_items">
+      {{ range .Datasets }}
+      <div class="featured_item">
+        <a class="featured_item_link" href="/{{ .Team.Slug }}/{{ .Slug }}">
+          <div class="featured_item_body">
+            <div class="featured_item_titlebar">
+              <span class="featured_item_title">{{ .Team.Slug }}/{{ .Slug }} &mdash; {{ .Name }}</span>
+              {{ if .IsPrivate }}
+              <i class="fa-solid fa-lock-open"></i>
+              {{ end }}
+            </div>
+            {{ with .Description }}
+            <p class="featured_item_description">{{ . }}</p>
+            {{ else }}
+            <p class="featured_item_description featured_item_description-empty">No description...</p>
             {{ end }}
-        </ul>
-    </li>
-    {{ end }}
-</ul>
+          </div>
+        </a>
+      </div>
+      {{ else }}
+      <p class="featured_empty">No datasets have been created yet.</p>
+      {{ end }}
+    </div>
+
+    <div class="featured_buttons">
+      {{ if .Datasets }}
+      <div class="button">
+        <a class="button_link" href="#">
+          <div class="button_body">
+            <span class="button_text">More Datasets ▶</span>
+          </div>
+        </a>
+      </div>
+      {{ end }}
+    </div>
+  </div>
+</section>

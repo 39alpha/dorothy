@@ -314,6 +314,10 @@ func (s Ipfs) AddMany(ctx context.Context, filenames []string, options ...option
 }
 
 func (s *Ipfs) ConnectToPeerById(ctx context.Context, id peer.ID) error {
+	if s.Identity == id {
+		return nil
+	}
+
 	addrInfo, err := s.Routing().FindPeer(ctx, id)
 	if err != nil {
 		return err

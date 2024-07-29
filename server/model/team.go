@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Organization struct {
+type Team struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
 	Slug        string         `json:"slug" gorm:"uniqueIndex"`
 	Name        string         `json:"name"`
@@ -17,11 +17,11 @@ type Organization struct {
 	UpdatedAt   time.Time      `json:"updatedAt"`
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
 
-	Datasets       []Dataset                   `json:"datasets"`
-	UserPrivileges []UserOrganizationPrivilege `json:"userPrivileges"`
+	Datasets       []Dataset           `json:"datasets"`
+	UserPrivileges []UserTeamPrivilege `json:"userPrivileges"`
 }
 
-type NewOrganization struct {
+type NewTeam struct {
 	Slug        string  `json:"slug"`
 	Name        string  `json:"name"`
 	Contact     string  `json:"contact"`
@@ -29,7 +29,7 @@ type NewOrganization struct {
 	IsPrivate   bool    `json:"private"`
 }
 
-type GetOrganization struct {
+type GetTeam struct {
 	ID   *uint   `json:"id,omitempty"`
 	Slug *string `json:"slug,omitempty"`
 }

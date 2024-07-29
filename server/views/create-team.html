@@ -1,4 +1,4 @@
-<h1>Create a Dataset for {{ .Team.Name }}</h1>
+<h1>Create a Team</h1>
 
 <form method="POST">
   {{ with .Error }}
@@ -9,16 +9,14 @@
   </div>
   {{ end }}
 
-  <input class="hidden" name="teamId" type="number" value="{{ .Team.ID }}" readonly />
-
   <div class="automatic">
-    <label for="slug">Slug</label>
+    <label for="slug">Slug:</label>
     <input class="disabled" id="slug" name="slug" type="text" readonly />
   </div>
 
   <div>
     <label for="name">Name</label>
-    <input id="name" name="name" type="text" placeholder="Dataset Name" />
+    <input id="name" name="name" type="text" placeholder="Team Name" />
   </div>
 
   <div>
@@ -28,7 +26,7 @@
 
   <div>
     <label for="description">Description</label>
-    <textarea name="description" rows="4" placeholder="Dataset Description"></textarea>
+    <textarea name="description" rows="4" placeholder="Team Description"></textarea>
   </div>
 
   <div class="inline">
@@ -37,7 +35,7 @@
   </div>
 
   <div>
-    <button type="submit">Create Dataset ▶</button>
+    <button type="submit">Create Team ▶</button>
   </div>
 </form>
 

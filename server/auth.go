@@ -98,8 +98,8 @@ func Authenticator(auth *Auth, db *DatabaseSession) fiber.Handler {
 			if email, ok := claims["email"]; ok {
 				var user *model.User
 				err := db.Preload("Role").
-					Preload("OrganizationPrivileges.Organization").
-					Preload("DatasetPrivileges.Dataset.Organization").
+					Preload("TeamPrivileges.Team").
+					Preload("DatasetPrivileges.Dataset.Team").
 					First(&user, "email = ?", email).Error
 
 				if err != nil {

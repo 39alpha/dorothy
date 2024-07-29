@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-    {{ template "views/partials/head" . }}
-    <body>
-    	<div class="content">
-        {{ template "views/partials/header" . }}
-        <main>
-          <div>
-            {{embed}}
-          </div>
-        </main>
-        {{ template "views/partials/footer" . }}
-    	</div>
-    </body>
+{{ template "views/partials/head" . }}
+
+<body>
+  {{ template "views/partials/header" . }}
+  <main>
+    {{embed}}
+  </main>
+  </div>
+  {{ template "views/partials/footer" . }}
+</body>
+
 </html>

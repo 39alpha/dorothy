@@ -62,10 +62,10 @@ func TestCanCreateUser(t *testing.T) {
 	}
 }
 
-func TestCanCreateOrganization(t *testing.T) {
+func TestCanCreateTeam(t *testing.T) {
 	setup(t)
 
-	org := &model.Organization{
+	team := &model.Team{
 		Slug:        "team-0",
 		Name:        "Team 0",
 		Contact:     "39alpha@39alpharesearch.org",
@@ -76,51 +76,51 @@ func TestCanCreateOrganization(t *testing.T) {
 		t.Fatalf("%v", result.Error)
 	}
 
-	var fetched model.Organization
-	result := session.First(&fetched, "organizations.slug = ?", "team-0")
+	var fetched model.Team
+	result := session.First(&fetched, "teams.slug = ?", "team-0")
 	if result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
-	if fetched.Slug != org.Slug {
-		t.Errorf("expected org.Slug = %q; got %q", org.Slug, fetched.Slug)
+	if fetched.Slug != team.Slug {
+		t.Errorf("expected team.Slug = %q; got %q", team.Slug, fetched.Slug)
 	}
 
-	if fetched.Name != org.Name {
-		t.Errorf("expected org.Name = %q; got %q", org.Name, fetched.Name)
+	if fetched.Name != team.Name {
+		t.Errorf("expected team.Name = %q; got %q", team.Name, fetched.Name)
 	}
 
-	if fetched.Contact != org.Contact {
-		t.Errorf("expected org.Contact = %v; got %v", org.Contact, fetched.Contact)
+	if fetched.Contact != team.Contact {
+		t.Errorf("expected team.Contact = %v; got %v", team.Contact, fetched.Contact)
 	}
 
-	if fetched.Description != org.Description {
-		t.Errorf("expected org.Description = %v; got %v", org.Description, fetched.Description)
+	if fetched.Description != team.Description {
+		t.Errorf("expected team.Description = %v; got %v", team.Description, fetched.Description)
 	}
 
-	if fetched.IsPrivate != org.IsPrivate {
-		t.Errorf("expected org.IsPrivate = %v; got %v", org.IsPrivate, fetched.IsPrivate)
+	if fetched.IsPrivate != team.IsPrivate {
+		t.Errorf("expected team.IsPrivate = %v; got %v", team.IsPrivate, fetched.IsPrivate)
 	}
 }
 
 func TestCanCreateDataset(t *testing.T) {
 	setup(t)
 
-	org := model.Organization{Slug: "team0"}
-	if result := session.Create(&org); result.Error != nil {
+	team := model.Team{Slug: "team0"}
+	if result := session.Create(&team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
-	if result := session.Where(&org).First(&org); result.Error != nil {
+	if result := session.Where(&team).First(&team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
 	dataset := &model.Dataset{
-		Slug:           "scotus",
-		Name:           "Supreme Court Opinion Analysis",
-		Contact:        "39alpha@39alpharesearch.org",
-		Description:    "Some kind of crazy analysis of SCOTUS opinions",
-		IsPrivate:      true,
-		OrganizationID: org.ID,
+		Slug:        "scotus",
+		Name:        "Supreme Court Opinion Analysis",
+		Contact:     "39alpha@39alpharesearch.org",
+		Description: "Some kind of crazy analysis of SCOTUS opinions",
+		IsPrivate:   true,
+		TeamID:      team.ID,
 	}
 	if result := session.Create(&dataset); result.Error != nil {
 		t.Fatalf("%v", result.Error)
@@ -153,11 +153,11 @@ func TestCanCreateDataset(t *testing.T) {
 	}
 }
 
-func TestUserOrganizationPrivileges(t *testing.T) {
+func TestUserTeamPrivileges(t *testing.T) {
 	setup(t)
 
-	org := &model.Organization{Slug: "scotus"}
-	if result := session.Create(org); result.Error != nil {
+	team := &model.Team{Slug: "scotus"}
+	if result := session.Create(team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
@@ -166,16 +166,16 @@ func TestUserOrganizationPrivileges(t *testing.T) {
 			Email:    "39alpha@39alpharesearch.org",
 			Name:     "39 Alpha Research",
 			RoleCode: "admin",
-			OrganizationPrivileges: []model.UserOrganizationPrivilege{
-				{Organization: org, PrivilegeCode: "admin"},
+			TeamPrivileges: []model.UserTeamPrivilege{
+				{Team: team, PrivilegeCode: "admin"},
 			},
 		},
 		{
 			Email:    "doug@39alpharesearch.org",
 			Name:     "Doug Moore",
 			RoleCode: "user",
-			OrganizationPrivileges: []model.UserOrganizationPrivilege{
-				{Organization: org, PrivilegeCode: "write"},
+			TeamPrivileges: []model.UserTeamPrivilege{
+				{Team: team, PrivilegeCode: "write"},
 			},
 		},
 	}
@@ -184,7 +184,7 @@ func TestUserOrganizationPrivileges(t *testing.T) {
 	}
 
 	users = []*model.User{}
-	result := session.Preload("OrganizationPrivileges.Privilege").Preload("OrganizationPrivileges.Organization").Find(&users)
+	result := session.Preload("TeamPrivileges.Privilege").Preload("TeamPrivileges.Team").Find(&users)
 	if result.Error != nil {
 		t.Fatal(result.Error)
 	}
@@ -192,29 +192,29 @@ func TestUserOrganizationPrivileges(t *testing.T) {
 	if len(users) != 2 {
 		t.Fatalf("expected 2 users, got %d", len(users))
 	}
-	if len(users[0].OrganizationPrivileges) != 1 {
-		t.Fatalf("expected 1 organization privilege, got %d", len(users[0].OrganizationPrivileges))
+	if len(users[0].TeamPrivileges) != 1 {
+		t.Fatalf("expected 1 team privilege, got %d", len(users[0].TeamPrivileges))
 	}
-	if users[0].OrganizationPrivileges[0].Privilege.Code != "admin" {
-		t.Fatalf("expected \"admin\" organization privilege, got %q", users[0].OrganizationPrivileges[0].Privilege.Code)
+	if users[0].TeamPrivileges[0].Privilege.Code != "admin" {
+		t.Fatalf("expected \"admin\" team privilege, got %q", users[0].TeamPrivileges[0].Privilege.Code)
 	}
-	if len(users[1].OrganizationPrivileges) != 1 {
-		t.Fatalf("expected 1 organization privilege, got %d", len(users[1].OrganizationPrivileges))
+	if len(users[1].TeamPrivileges) != 1 {
+		t.Fatalf("expected 1 team privilege, got %d", len(users[1].TeamPrivileges))
 	}
-	if users[1].OrganizationPrivileges[0].Privilege.Code != "write" {
-		t.Fatalf("expected \"write\" organization privilege, got %q", users[1].OrganizationPrivileges[0].Privilege.Code)
+	if users[1].TeamPrivileges[0].Privilege.Code != "write" {
+		t.Fatalf("expected \"write\" team privilege, got %q", users[1].TeamPrivileges[0].Privilege.Code)
 	}
 }
 
 func TestUserDatasetPrivileges(t *testing.T) {
 	setup(t)
 
-	org := &model.Organization{Slug: "team-0"}
-	if result := session.Create(org); result.Error != nil {
+	team := &model.Team{Slug: "team-0"}
+	if result := session.Create(team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
-	dataset := &model.Dataset{Slug: "dataset", Organization: org}
+	dataset := &model.Dataset{Slug: "dataset", Team: team}
 	if result := session.Create(dataset); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
@@ -251,15 +251,15 @@ func TestUserDatasetPrivileges(t *testing.T) {
 		t.Fatalf("expected 2 users, got %d", len(users))
 	}
 	if len(users[0].DatasetPrivileges) != 1 {
-		t.Fatalf("expected 1 organization privilege, got %d", len(users[0].DatasetPrivileges))
+		t.Fatalf("expected 1 team privilege, got %d", len(users[0].DatasetPrivileges))
 	}
 	if users[0].DatasetPrivileges[0].Privilege.Code != "admin" {
-		t.Fatalf("expected \"admin\" organization privilege, got %q", users[0].DatasetPrivileges[0].Privilege.Code)
+		t.Fatalf("expected \"admin\" team privilege, got %q", users[0].DatasetPrivileges[0].Privilege.Code)
 	}
 	if len(users[1].DatasetPrivileges) != 1 {
-		t.Fatalf("expected 1 organization privilege, got %d", len(users[1].DatasetPrivileges))
+		t.Fatalf("expected 1 team privilege, got %d", len(users[1].DatasetPrivileges))
 	}
 	if users[1].DatasetPrivileges[0].Privilege.Code != "write" {
-		t.Fatalf("expected \"write\" organization privilege, got %q", users[1].DatasetPrivileges[0].Privilege.Code)
+		t.Fatalf("expected \"write\" team privilege, got %q", users[1].DatasetPrivileges[0].Privilege.Code)
 	}
 }
