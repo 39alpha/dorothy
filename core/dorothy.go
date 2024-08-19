@@ -136,7 +136,7 @@ func (d *Dorothy) LoadConfigFile(filename string) error {
 
 	d.LoadedConfigs = append(d.LoadedConfigs, filename)
 
-	return d.ReloadIpfs()
+	return nil
 }
 
 func (d *Dorothy) ReloadConfig() error {
