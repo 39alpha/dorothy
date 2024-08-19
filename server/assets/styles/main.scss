@@ -129,6 +129,7 @@ section {
 .featured {
   &_items {
     display: grid;
+    gap: calc($spacing-unit / 2) $spacing-unit;
     grid-template-columns: repeat(5, 1fr);
 
     @include media-query(calc(5 * 300px + 4 * $spacing-unit + 4 * $spacing-unit)) {
@@ -146,8 +147,6 @@ section {
     @include media-query(calc(2 * 300px + 4 * $spacing-unit + $spacing-unit)) {
       grid-template-columns: repeat(1, 1fr);
     }
-
-    gap: calc($spacing-unit / 2) $spacing-unit;
   }
 
   &_item {
