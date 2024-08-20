@@ -87,6 +87,9 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 	engine.AddFunc("TimeFmt", func(t time.Time) string {
 		return t.Format("2006-01-02 15:04:05")
 	})
+	engine.AddFunc("GatewayUrl", func(hash string) string {
+		return dorothy.Config.Ipfs.GatewayUrl(hash)
+	})
 
 	app := fiber.New(fiber.Config{
 		Prefork:       false,

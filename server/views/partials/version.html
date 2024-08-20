@@ -1,6 +1,6 @@
-<li class="version version-{{if eq .PathType "DIRECTORY"}}dir{{else}}file{{end}}" data-hash="{{ .Hash }}"
+<li class="version version-{{if eq .PathType " DIRECTORY"}}dir{{else}}file{{end}}" data-hash="{{ .Hash }}"
   data-parents="{{ .Parents }}">
-  <a class="version_link" href="http://localhost:8080/ipfs/{{.Hash}}">
+  <a class="version_link" href="{{ GatewayUrl .Hash }}">
     <div class="version_body">
       <div class="version_row version_row-message">
         <span class="version_date">{{ .Date | TimeFmt }} </span>

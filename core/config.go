@@ -79,9 +79,10 @@ type UserConfig struct {
 }
 
 type IpfsConfig struct {
-	Global bool   `toml:"global"`
-	Host   string `toml:"host,omitempty"`
-	Port   int    `toml:"port,omitempty"`
+	Global  bool   `toml:"global"`
+	Host    string `toml:"host,omitempty"`
+	Port    int    `toml:"port,omitempty"`
+	Gateway string `toml:"gateway,omitempty"`
 }
 
 func (c IpfsConfig) Url() string {
@@ -99,6 +100,21 @@ func (c IpfsConfig) Url() string {
 
 func (c IpfsConfig) Multiaddr() (ma.Multiaddr, error) {
 	return ma.NewMultiaddr(c.Url())
+}
+
+func (c IpfsConfig) GatewayUrl(hash string) string {
+	gateway := c.Gateway
+	if gateway == "" {
+		gateway = "http://127.0.0.1:8080"
+	}
+
+	result, err := url.JoinPath(gateway, "ipfs", hash)
+	if err != nil {
+		gateway = "http://127.0.0.1:8080"
+		result, _ = url.JoinPath(gateway, "ipfs", hash)
+	}
+
+	return result
 }
 
 type DatabaseConfig struct {

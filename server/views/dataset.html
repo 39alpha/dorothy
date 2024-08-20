@@ -1,14 +1,14 @@
 <section>
   <h1><a href="/{{ .Team.Slug }}">{{ .Team.Name }}</a>/{{ .Dataset.Name }}</h1>
   <div class="manifest">
-  {{ if .Dataset.Manifest.Versions }}
-  <ul class="versions">
-    {{ range .Dataset.Manifest.ReverseVersions }}
-    {{ template "views/partials/version" . }}
+    {{ if .Dataset.Manifest.Versions }}
+    <ul class="versions">
+      {{ range .Dataset.Manifest.ReverseVersions }}
+      {{ template "views/partials/version" . }}
+      {{ end }}
+    </ul>
+    {{ else }}
+    <p>No versions have been uploaded quite yet!</p>
     {{ end }}
-  </ul>
-  {{ else }}
-  <p>No versions have been uploaded quite yet!</p>
-  {{ end }}
   </div>
 </section>
