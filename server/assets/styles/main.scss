@@ -46,11 +46,11 @@ h3 {
 }
 
 h1 {
-  $font-size: calc(1.25 * $base-font-size);
+  font-size: calc(1.25 * $base-font-size);
 }
 
 h2 {
-  $font-size: calc(1.125 * $base-font-size);
+  font-size: calc(1.125 * $base-font-size);
 }
 
 a {
@@ -130,11 +130,7 @@ section {
   &_items {
     display: grid;
     gap: calc($spacing-unit / 2) $spacing-unit;
-    grid-template-columns: repeat(5, 1fr);
-
-    @include media-query(calc(5 * 300px + 4 * $spacing-unit + 4 * $spacing-unit)) {
-      grid-template-columns: repeat(4, 1fr);
-    }
+    grid-template-columns: repeat(4, 1fr);
 
     @include media-query(calc(4 * 300px + 4 * $spacing-unit + 3 * $spacing-unit)) {
       grid-template-columns: repeat(3, 1fr);
@@ -353,12 +349,14 @@ form {
 }
 
 .manifest {
-  border: 1px solid black;
-  width: 350px;
+  min-width: 350px;
 }
 
 .versions {
   list-style: none;
+  display: grid;
+  gap: calc($spacing-unit / 4) $spacing-unit;
+  grid-template-columns: repeat(1, 0.25fr);
 }
 
 .version {
@@ -368,7 +366,9 @@ form {
 
   &-dir {}
 
-  &_body {}
+  &_body {
+    padding: calc($spacing-unit / 3) calc($spacing-unit / 2);
+  }
 
   &_link {
     color: $text-color;
@@ -381,20 +381,26 @@ form {
   }
 
   &_row {
-
     &-metadata,
     &-hash {
       border-left: 3px solid $gray-color-50;
-      font-size: calc(0.5 * $base-font-size);
       padding-left: calc($spacing-unit / 4);
+      font-size: calc(0.75 * $base-font-size);
     }
   }
 
-  &_message {}
+  &_message {
+    font-weight: bold;
+  }
 
   &_author {}
 
   &_date {}
 
   &_hash {}
+
+  &:hover {
+    background: $gray-color-10;
+    cursor: pointer;
+  }
 }

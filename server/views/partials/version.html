@@ -1,21 +1,19 @@
 <li class="version version-{{if eq .PathType "DIRECTORY"}}dir{{else}}file{{end}}" data-hash="{{ .Hash }}"
   data-parents="{{ .Parents }}">
-  <div class="version_body">
-    <a class="version_link" href="http://localhost:8080/ipfs/{{.Hash}}">
+  <a class="version_link" href="http://localhost:8080/ipfs/{{.Hash}}">
+    <div class="version_body">
       <div class="version_row version_row-message">
+        <span class="version_date">{{ .Date | TimeFmt }} </span>
         <span class="version_message">
           {{ .Message }}
         </span>
       </div>
       <div class="version_row version_row-metadata">
         <span class="version_author">{{ .Author }}</span>
-        <span class="version_date">{{ .Date }} </span>
       </div>
       <div class="version_row version_row-hash">
-        <span class="version_hash">
-            {{ .Hash }}
-        </span>
+        <span class="version_hash">{{ .Hash }}</span>
       </div>
-    </a>
-  </div>
+    </div>
+  </a>
 </li>

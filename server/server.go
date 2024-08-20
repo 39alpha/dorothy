@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/server/model"
@@ -82,13 +83,18 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 	}
 	session.Initialize()
 
+	engine := html.NewFileSystem(http.FS(viewsfs), ".html")
+	engine.AddFunc("TimeFmt", func(t time.Time) string {
+		return t.Format("2006-01-02 15:04:05")
+	})
+
 	app := fiber.New(fiber.Config{
 		Prefork:       false,
 		CaseSensitive: false,
 		StrictRouting: false,
 		ServerHeader:  "Dorothy",
 		AppName:       "Dorothy",
-		Views:         html.NewFileSystem(http.FS(viewsfs), ".html"),
+		Views:         engine,
 	})
 
 	server := &Server{app, dorothy, jwtAuth, session}
