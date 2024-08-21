@@ -544,28 +544,26 @@ func (d *Server) DatasetSettingsHandler() fiber.Handler {
 			return Redirect(c, fiber.StatusUnauthorized, "/login?Redirect="+c.Path(), fiber.Map{
 				"error": "unauthorized",
 			}, "unauthorized")
-		} else if !user.CanWriteDataset(*dataset) {
+		} else if !user.CanManageDataset(*dataset) {
 			return Redirect(c, fiber.StatusForbidden, "/"+team.Slug+"/"+dataset.Slug, fiber.Map{
 				"error": "forbidden",
 			}, "forbidden")
 		}
 
-		var updated model.Dataset
+		var updated model.UpdateDataset
 		if err := c.BodyParser(&updated); err != nil {
 			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
 		}
 
-		if team.ID != dataset.TeamID {
-			return c.Redirect("/"+team.Slug+"/dataset/create", 400)
+		if team.ID != updated.TeamID || team.ID != dataset.TeamID || dataset.ID != updated.ID {
+			return c.Redirect("/"+team.Slug+"/"+dataset.Slug+"/settings", 400)
 		}
 
-		fmt.Println(updated)
+		if err := d.UpdateDataset(updated); err != nil {
+			c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
+			return CreateDatasetForm(c)
+		}
 
-		// if err := d.UpdateDataset(dataset, authUser); err != nil {
-		// 	c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
-		// 	return CreateDatasetForm(c)
-		// }
-
-		return c.Redirect("/" + team.Slug + "/" + dataset.Slug)
+		return c.Redirect("/" + team.Slug + "/" + updated.Slug)
 	}
 }

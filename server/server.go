@@ -174,3 +174,7 @@ func (d *Server) CreateDataset(dataset model.NewDataset, authUser *model.User) e
 
 	return d.session.CreateDataset(dataset, manifest, authUser)
 }
+
+func (d *Server) UpdateDataset(update model.UpdateDataset) error {
+	return d.session.UpdateDataset(update)
+}

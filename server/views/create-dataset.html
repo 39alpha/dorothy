@@ -1,44 +1,48 @@
-<h1>Create a Dataset for {{ .Team.Name }}</h1>
+<section>
+  <header>
+    <h1>Create a Dataset for {{ .Team.Name }}</h1>
+  </header>
 
-<form method="POST">
-  {{ with .Error }}
-  <div class="message">
-    <p class="error">
-      {{ . }}
-    </p>
-  </div>
-  {{ end }}
+  <form method="POST">
+    {{ with .Error }}
+    <div class="message">
+      <p class="error">
+        {{ . }}
+      </p>
+    </div>
+    {{ end }}
 
-  <input class="hidden" name="teamId" type="number" value="{{ .Team.ID }}" readonly />
+    <input class="hidden" name="teamId" type="number" value="{{ .Team.ID }}" readonly />
 
-  <div class="automatic">
-    <label for="slug">Slug</label>
-    <input class="disabled" id="slug" name="slug" type="text" readonly />
-  </div>
+    <div class="automatic">
+      <label for="slug">Slug</label>
+      <input class="disabled" id="slug" name="slug" type="text" readonly />
+    </div>
 
-  <div>
-    <label for="name">Name</label>
-    <input id="name" name="name" type="text" placeholder="Dataset Name" />
-  </div>
+    <div>
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" placeholder="Dataset Name" />
+    </div>
 
-  <div>
-    <label for="contact">Contact Email</label>
-    <input name="contact" type="email" value="{{ .AuthUser.Email }}" />
-  </div>
+    <div>
+      <label for="contact">Contact Email</label>
+      <input name="contact" type="email" value="{{ .AuthUser.Email }}" />
+    </div>
 
-  <div>
-    <label for="description">Description</label>
-    <textarea name="description" rows="4" placeholder="Dataset Description"></textarea>
-  </div>
+    <div>
+      <label for="description">Description</label>
+      <textarea name="description" rows="4" placeholder="Dataset Description"></textarea>
+    </div>
 
-  <div class="inline">
-    <label for="isPrivate">Private?</label>
-    <input name="isPrivate" type="checkbox" value="true" />
-  </div>
+    <div class="inline">
+      <label for="isPrivate">Private?</label>
+      <input name="isPrivate" type="checkbox" value="true" />
+    </div>
 
-  <div>
-    <button type="submit">Create Dataset ▶</button>
-  </div>
-</form>
+    <div>
+      <button type="submit">Create Dataset ▶</button>
+    </div>
+  </form>
 
-{{ template "views/partials/slugify" . }}
+  {{ template "views/partials/slugify" . }}
+</section>

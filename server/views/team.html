@@ -1,6 +1,9 @@
 <section>
   {{ $team := .Team }}
-  <h1>{{ $team.Name }} Datasets</h1>
+  <header>
+    <h1>{{ $team.Name }} Datasets</h1>
+  </header>
+
   <div class="featured">
     <div class="featured_buttons">
       {{ if .AuthUser }}

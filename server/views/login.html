@@ -1,19 +1,23 @@
-<h1>Login</h1>
+<section>
+  <header>
+    <h1>Login</h1>
+  </header>
 
-<form method="POST">
-  <div>
-    <label for="email">Email</label>
-    <input name="email" type="email" autocomplete="email" placeholder="Enter Email" required />
-  </div>
-  <div>
-    <label for="password">Password</label>
-    <input name="password" type="password" autocomplete="current-password" placeholder="Enter Password" />
-  </div>
-  {{ with .Redirect }}
-  <input class="hidden" name="redirect" type="text" value="{{ . }}" readonly />
-  {{ end }}
-  <div>
-    <a>Forgot your password?</a>
-    <button type="submit">Login ▶</button>
-  </div>
-</form>
+  <form method="POST">
+    <div>
+      <label for="email">Email</label>
+      <input name="email" type="email" autocomplete="email" placeholder="Enter Email" required />
+    </div>
+    <div>
+      <label for="password">Password</label>
+      <input name="password" type="password" autocomplete="current-password" placeholder="Enter Password" />
+    </div>
+    {{ with .Redirect }}
+    <input class="hidden" name="redirect" type="text" value="{{ . }}" readonly />
+    {{ end }}
+    <div>
+      <a>Forgot your password?</a>
+      <button type="submit">Login ▶</button>
+    </div>
+  </form>
+</section>

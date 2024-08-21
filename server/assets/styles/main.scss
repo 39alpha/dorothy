@@ -121,6 +121,9 @@ section {
   margin-bottom: $spacing-unit;
 
   header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 0;
     border-bottom: 1px solid $gray-color-20;
     margin-bottom: calc($spacing-unit / 4);

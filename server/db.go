@@ -219,3 +219,21 @@ func (s *DatabaseSession) GetDatasets(user *model.User) ([]model.Dataset, error)
 
 	return datasets, nil
 }
+
+func (s *DatabaseSession) UpdateDataset(update model.UpdateDataset) error {
+	values := map[string]any{
+		"ID":          update.ID,
+		"Slug":        update.Slug,
+		"Name":        update.Name,
+		"TeamID":      update.TeamID,
+		"Contact":     update.Contact,
+		"IsPrivate":   update.IsPrivate,
+		"Description": "",
+	}
+	if update.Description != nil {
+		values["Description"] = *update.Description
+	}
+
+	result := s.Model(model.Dataset{ID: update.ID}).Omit("ManifestHash").Updates(values)
+	return result.Error
+}

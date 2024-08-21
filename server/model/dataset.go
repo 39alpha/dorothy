@@ -34,10 +34,6 @@ type NewDataset struct {
 	IsPrivate   bool    `json:"isPrivate"`
 }
 
-func (input *NewDataset) ID() string {
-	return Slugify(input.Name)
-}
-
 type GetDatasets struct {
 	TeamID uint `json:"teamId"`
 }
@@ -49,5 +45,5 @@ type GetDataset struct {
 
 type UpdateDataset struct {
 	NewDataset
-	Id uint `json:"id"`
+	ID uint `json:"id"`
 }
