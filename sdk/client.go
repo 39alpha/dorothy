@@ -128,7 +128,6 @@ func cleanup(filename string, file *os.File) {
 }
 
 func (c *Client) ReadCookies(filename string) error {
-	fmt.Println("ReadCookies")
 	if c == nil {
 		return fmt.Errorf("client is not initialized")
 	}
@@ -184,8 +183,6 @@ type Result struct {
 }
 
 func (c *Client) Login(creds UserLogin) (result Result) {
-	fmt.Println("Logging in")
-
 	if c == nil {
 		result.Error = fmt.Errorf("client is not initialized")
 		return
