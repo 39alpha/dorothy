@@ -381,6 +381,7 @@ form {
   }
 
   &_row {
+
     &-metadata,
     &-hash {
       border-left: 3px solid $gray-color-50;
@@ -397,7 +398,9 @@ form {
 
   &_date {}
 
-  &_hash {}
+  &_hash {
+    font-family: $mono;
+  }
 
   &:hover {
     background: $gray-color-10;
