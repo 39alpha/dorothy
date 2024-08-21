@@ -388,11 +388,18 @@ func (d *Server) GetDataset() fiber.Handler {
 
 func (d *Server) RecieveDataset() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		team, ok := c.Locals("Team").(*model.Team)
+		if !ok || team == nil {
+			return Redirect(c, fiber.StatusNotFound, "/", fiber.Map{
+				"error": "not found",
+			}, "not found")
+		}
+
 		dataset, ok := c.Locals("Dataset").(*model.Dataset)
 		if !ok || dataset == nil || dataset.Manifest == nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "failed to fetch dataset manifest",
-			})
+			return Redirect(c, fiber.StatusNotFound, "/", fiber.Map{
+				"error": "not found",
+			}, "not found")
 		}
 		old := dataset.Manifest
 
@@ -401,6 +408,17 @@ func (d *Server) RecieveDataset() fiber.Handler {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "recieved invalid manifest",
 			})
+		}
+
+		user, ok := c.Locals("AuthUser").(*model.User)
+		if !ok {
+			return Redirect(c, fiber.StatusUnauthorized, "/login?Redirect="+c.Path(), fiber.Map{
+				"error": "unauthorized",
+			}, "unauthorized")
+		} else if !user.CanWriteDataset(*dataset) {
+			return Redirect(c, fiber.StatusForbidden, "/"+team.Slug+"/"+dataset.Slug, fiber.Map{
+				"error": "forbidden",
+			}, "forbidden")
 		}
 
 		ctx, cancel := context.WithTimeout(d, 10*time.Second)
