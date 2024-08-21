@@ -120,9 +120,22 @@ header {
 section {
   margin-bottom: $spacing-unit;
 
-  h1 {
+  header {
+    padding: 0;
     border-bottom: 1px solid $gray-color-20;
     margin-bottom: calc($spacing-unit / 4);
+
+    h1 {
+      font-size: calc(1.25 * $base-font-size);
+    }
+
+    nav {
+      ul {
+        li {
+          margin: 0;
+        }
+      }
+    }
   }
 }
 

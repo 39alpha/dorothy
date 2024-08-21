@@ -159,6 +159,8 @@ func (d *Server) setup() {
 	dataset := team.Group("/:dataset", d.GetDataset())
 	dataset.Get("/", d.Dataset())
 	dataset.Post("/", d.RecieveDataset())
+	dataset.Get("/settings", DatasetSettingsForm)
+	dataset.Post("/settings", d.DatasetSettingsHandler())
 }
 
 func (d *Server) CreateDataset(dataset model.NewDataset, authUser *model.User) error {

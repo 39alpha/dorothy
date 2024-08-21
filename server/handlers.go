@@ -493,3 +493,79 @@ func (d *Server) Dataset() fiber.Handler {
 		}), "views/layouts/main")
 	}
 }
+
+func DatasetSettingsForm(c *fiber.Ctx) error {
+	team, ok := c.Locals("Team").(*model.Team)
+	if !ok || team == nil {
+		return c.Status(fiber.StatusNotFound).Redirect("/")
+	}
+
+	dataset, ok := c.Locals("Dataset").(*model.Dataset)
+	if !ok || dataset == nil || dataset.Manifest == nil {
+		return c.Status(fiber.StatusNotFound).Redirect("/")
+	}
+
+	user, ok := c.Locals("AuthUser").(*model.User)
+	if !ok {
+		return Redirect(c, fiber.StatusUnauthorized, "/login?Redirect="+c.Path(), fiber.Map{
+			"error": "unauthorized",
+		}, "unauthorized")
+	} else if !user.CanWriteDataset(*dataset) {
+		return Redirect(c, fiber.StatusForbidden, "/"+team.Slug+"/"+dataset.Slug, fiber.Map{
+			"error": "forbidden",
+		}, "forbidden")
+	}
+
+	return c.Render("views/edit-dataset", bind(c, fiber.Map{
+		"AuthUser": user,
+		"Error":    c.Locals("Error"),
+	}), "views/layouts/main")
+}
+
+func (d *Server) DatasetSettingsHandler() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authUser, ok := c.Locals("AuthUser").(*model.User)
+		if !ok || authUser == nil {
+			return c.Status(fiber.StatusUnauthorized).Redirect("/")
+		}
+
+		team, ok := c.Locals("Team").(*model.Team)
+		if !ok || team == nil {
+			return c.Status(fiber.StatusNotFound).Redirect("/")
+		}
+
+		dataset, ok := c.Locals("Dataset").(*model.Dataset)
+		if !ok || dataset == nil || dataset.Manifest == nil {
+			return c.Status(fiber.StatusNotFound).Redirect("/")
+		}
+
+		user, ok := c.Locals("AuthUser").(*model.User)
+		if !ok {
+			return Redirect(c, fiber.StatusUnauthorized, "/login?Redirect="+c.Path(), fiber.Map{
+				"error": "unauthorized",
+			}, "unauthorized")
+		} else if !user.CanWriteDataset(*dataset) {
+			return Redirect(c, fiber.StatusForbidden, "/"+team.Slug+"/"+dataset.Slug, fiber.Map{
+				"error": "forbidden",
+			}, "forbidden")
+		}
+
+		var updated model.Dataset
+		if err := c.BodyParser(&updated); err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
+		}
+
+		if team.ID != dataset.TeamID {
+			return c.Redirect("/"+team.Slug+"/dataset/create", 400)
+		}
+
+		fmt.Println(updated)
+
+		// if err := d.UpdateDataset(dataset, authUser); err != nil {
+		// 	c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
+		// 	return CreateDatasetForm(c)
+		// }
+
+		return c.Redirect("/" + team.Slug + "/" + dataset.Slug)
+	}
+}

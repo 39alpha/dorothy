@@ -46,3 +46,8 @@ type GetDataset struct {
 	GetDatasets
 	ID uint `json:"id"`
 }
+
+type UpdateDataset struct {
+	NewDataset
+	Id uint `json:"id"`
+}

@@ -1,5 +1,14 @@
 <section>
-  <h1><a href="/{{ .Team.Slug }}">{{ .Team.Name }}</a>/{{ .Dataset.Name }}</h1>
+  <header>
+    <nav>
+      <h1><a href="/{{ .Team.Slug }}">{{ .Team.Name }}</a>/{{ .Dataset.Name }}</h1>
+      <ul>
+        <li>
+          <a href="/{{ .Team.Slug }}/{{ .Dataset.Slug }}/settings"><i class="fa-solid fa-gear"></i></a>
+        </li>
+      </ul>
+    </nav>
+  </header>
   <div class="manifest">
     {{ if .Dataset.Manifest.Versions }}
     <ul class="versions">
