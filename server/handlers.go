@@ -516,7 +516,7 @@ func DatasetSettingsForm(c *fiber.Ctx) error {
 		}, "forbidden")
 	}
 
-	return c.Render("views/edit-dataset", bind(c, fiber.Map{
+	return c.Render("views/dataset-settings", bind(c, fiber.Map{
 		"AuthUser": user,
 		"Error":    c.Locals("Error"),
 	}), "views/layouts/main")

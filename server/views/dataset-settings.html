@@ -3,7 +3,12 @@
     <h1>Edit Dataset {{ .Team.Slug }}/{{ .Dataset.Slug }}</h1>
   </header>
 
-  <form method="POST">
+  <div class="modal model-hidden">
+    <h1 class="modal_title"></h1>
+    <p class="model_message"></p>
+  </div>
+
+  <form name="update" method="POST" onsubmit="return confirm()">
     {{ with .Error }}
     <div class="message">
       <p class="error">
@@ -40,13 +45,26 @@
 
     <div class="inline">
       <label for="isPrivate">Private?</label>
-      <input name="isPrivate" type="checkbox" {{ if .Dataset.IsPrivate }}checked{{ end }} />
+      <input name="isPrivate" type="checkbox" data-value="{{ .Dataset.IsPrivate }}" {{ if .Dataset.IsPrivate }}checked{{
+        end }} />
     </div>
 
     <div>
-      <button type="submit">Update Dataset ▶</button>
+      <button type=" submit">Update Dataset ▶</button>
     </div>
   </form>
 
   {{ template "views/partials/slugify" . }}
+
+  <script>
+    const confirm = function () {
+      const is_private = $("form[name='update']").find("input[name='isPrivate']");
+      const was = is_private.attr('data-value') == "true" ? true : false;
+      const now = is_private.prop('checked');
+      if (was !== now) {
+
+      }
+      return false;
+    }
+  </script>
 </section>
