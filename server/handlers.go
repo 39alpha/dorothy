@@ -559,11 +559,20 @@ func (d *Server) DatasetSettingsHandler() fiber.Handler {
 			return c.Redirect("/"+team.Slug+"/"+dataset.Slug+"/settings", 400)
 		}
 
-		if err := d.UpdateDataset(updated); err != nil {
-			c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
-			return CreateDatasetForm(c)
-		}
+		if updated.Delete {
+			if err := d.DeleteDataset(dataset, updated); err != nil {
+				c.Locals("Error", "We couldn't delete the dataset for some reason. Try again later?")
+				return DatasetSettingsForm(c)
+			}
 
-		return c.Redirect("/" + team.Slug + "/" + updated.Slug)
+			return c.Redirect("/" + team.Slug)
+		} else {
+			if err := d.UpdateDataset(updated); err != nil {
+				c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
+				return DatasetSettingsForm(c)
+			}
+
+			return c.Redirect("/" + team.Slug + "/" + updated.Slug)
+		}
 	}
 }

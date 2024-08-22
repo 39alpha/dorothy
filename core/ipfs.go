@@ -349,7 +349,11 @@ func (s Ipfs) MergeAndCommit(ctx context.Context, old, new *Manifest) (*Manifest
 	}
 
 	manifest, err := s.SaveManifest(ctx, merged)
-	return manifest, nil, err
+	if err != nil {
+		return manifest, nil, err
+	}
+
+	return manifest, nil, s.UnpinManifest(ctx, old, false)
 }
 
 func (s Ipfs) Commit(ctx context.Context, manifest *Manifest) (*Manifest, error) {
@@ -363,4 +367,37 @@ func (s Ipfs) CommitVersion(ctx context.Context, version *Version) (string, erro
 		return "", err
 	}
 	return version.Hash, s.Pin().Add(ctx, versionPath)
+}
+
+func (s Ipfs) UnpinVersion(ctx context.Context, version *Version) (string, error) {
+	versionPath, err := path.NewPath("/ipfs/" + version.Hash)
+	if err != nil {
+		return "", err
+	}
+	return version.Hash, s.Pin().Rm(ctx, versionPath)
+}
+
+func (s Ipfs) UnpinManifest(ctx context.Context, manifest *Manifest, recursive bool) error {
+	versionPath, err := path.NewPath("/ipfs/" + manifest.Hash)
+	if err != nil {
+		return err
+	}
+
+	var errs []error
+
+	if recursive {
+		for _, version := range manifest.Versions {
+			_, err := s.UnpinVersion(ctx, version)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) != 0 {
+		return errors.Join(errs...)
+	}
+	s.Pin().Rm(ctx, versionPath, options.Pin.RmRecursive(true))
+
+	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/39alpha/dorothy/core"
-	"gorm.io/gorm"
 )
 
 type Dataset struct {
@@ -19,10 +18,9 @@ type Dataset struct {
 	Manifest     *core.Manifest `json:"manifest" gorm:"-"`
 	CreatedAt    time.Time      `json:"createdAt"`
 	UpdatedAt    time.Time      `json:"updatedAt"`
-	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
 
 	Team           *Team                  `json:"team"`
-	UserPrivileges []UserDatasetPrivilege `json:"userPrivileges"`
+	UserPrivileges []UserDatasetPrivilege `json:"userPrivileges" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type NewDataset struct {
@@ -45,5 +43,6 @@ type GetDataset struct {
 
 type UpdateDataset struct {
 	NewDataset
-	ID uint `json:"id"`
+	ID     uint `json:"id"`
+	Delete bool `json:"delete"`
 }

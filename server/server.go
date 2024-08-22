@@ -178,3 +178,21 @@ func (d *Server) CreateDataset(dataset model.NewDataset, authUser *model.User) e
 func (d *Server) UpdateDataset(update model.UpdateDataset) error {
 	return d.session.UpdateDataset(update)
 }
+
+func (d *Server) DeleteDataset(dataset *model.Dataset, update model.UpdateDataset) error {
+	if dataset == nil {
+		return fmt.Errorf("cannot delete the dataset; the dataset is nil")
+	} else if dataset.Manifest == nil {
+		return fmt.Errorf("cannot delete the dataset; no manifest loaded")
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := d.session.DeleteDataset(update)
+	if err != nil {
+		return err
+	}
+
+	return d.Ipfs.UnpinManifest(ctx, dataset.Manifest, true)
+}

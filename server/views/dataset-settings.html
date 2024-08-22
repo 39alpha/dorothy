@@ -1,6 +1,6 @@
 <section>
   <header>
-    <h1>Edit Dataset {{ .Team.Slug }}/{{ .Dataset.Slug }}</h1>
+    <h1>{{ .Team.Slug }}/{{ .Dataset.Slug }} Settings</h1>
   </header>
 
   <form name="update" method="POST" onsubmit="return intentional();">
@@ -43,6 +43,11 @@
       <label for="isPrivate">Private?</label>
       <input name="isPrivate" type="checkbox" data-value="{{ .Dataset.IsPrivate }}" {{ if .Dataset.IsPrivate }}checked{{
         end }} />
+    </div>
+
+    <div class="inline">
+      <label for="delete">Delete the Dataset?</label>
+      <input name="delete" type="checkbox" />
     </div>
 
     <div>
@@ -88,8 +93,27 @@
       return true;
     };
 
+    const confirm_deletion = (form) => {
+      const delete_dataset = form.find("input[name='delete']").prop('checked');
+
+      let msg = `You are about to DELETE the dataset!.\n\n` +
+        `This cannot be undone.\n\n` +
+        `Are you sure you want to delete the dataset?`;
+
+      if (delete_dataset && !confirm(msg)) {
+        return false;
+      }
+
+      return true;
+    };
+
     const intentional = () => {
       const form = $("form[name='update']");
+
+      const delete_dataset = form.find("input[name='delete']").prop('checked');
+      if (delete_dataset) {
+        return confirm_deletion(form);
+      }
 
       if (!confirm_slug_change(form)) {
         return false;

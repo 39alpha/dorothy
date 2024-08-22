@@ -237,3 +237,7 @@ func (s *DatabaseSession) UpdateDataset(update model.UpdateDataset) error {
 	result := s.Model(model.Dataset{ID: update.ID}).Omit("ManifestHash").Updates(values)
 	return result.Error
 }
+
+func (s *DatabaseSession) DeleteDataset(update model.UpdateDataset) error {
+	return s.Delete(&model.Dataset{}, update.ID).Error
+}
