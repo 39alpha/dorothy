@@ -3,12 +3,7 @@
     <h1>Edit Dataset {{ .Team.Slug }}/{{ .Dataset.Slug }}</h1>
   </header>
 
-  <div class="modal model-hidden">
-    <h1 class="modal_title"></h1>
-    <p class="model_message"></p>
-  </div>
-
-  <form name="update" method="POST" onsubmit="return confirm()">
+  <form name="update" method="POST" onsubmit="return intentional();">
     {{ with .Error }}
     <div class="message">
       <p class="error">
@@ -23,12 +18,13 @@
 
     <div class="automatic">
       <label for="slug">Slug</label>
-      <input class="disabled" id="slug" name="slug" value="{{ .Dataset.Slug }}" type=" text" readonly />
+      <input class="disabled" id="slug" name="slug" data-value="{{ .Dataset.Slug }}" value="{{ .Dataset.Slug }}"
+        type=" text" readonly />
     </div>
 
     <div>
       <label for="name">Name</label>
-      <input id="name" name="name" type="text" value="{{ .Dataset.Name }}" />
+      <input id="name" name="name" type="text" data-value="{{ .Dataset.Name }}" value="{{ .Dataset.Name }}" />
     </div>
 
     <div>
@@ -50,21 +46,60 @@
     </div>
 
     <div>
-      <button type=" submit">Update Dataset ▶</button>
+      <button type="submit">Update Dataset ▶</button>
     </div>
   </form>
 
   {{ template "views/partials/slugify" . }}
 
   <script>
-    const confirm = function () {
-      const is_private = $("form[name='update']").find("input[name='isPrivate']");
-      const was = is_private.attr('data-value') == "true" ? true : false;
-      const now = is_private.prop('checked');
-      if (was !== now) {
+    const confirm_slug_change = (form) => {
+      const dataset_slug = form.find("input[name='slug']");
+      const was = dataset_slug.attr('data-value');
+      const now = dataset_slug.prop('value');
 
+      const msg = `You are about to change the dataset slug from ${was} to ${now}.\n\n` +
+        `Users who have cloned the repository will have to change their remote setting.\n\n` +
+        `Are you sure you want to do this?`;
+      if (was !== now && !confirm(msg)) {
+        return false;
       }
-      return false;
-    }
+
+      return true;
+    };
+
+    const confirm_visibility_change = (form) => {
+      const is_private = form.find("input[name='isPrivate']");
+      const was = is_private.attr('data-value') == 'true' ? 'private' : 'public';
+      const now = is_private.prop('checked') ? 'private' : 'public';
+
+      let msg = `You are about to change the visibility of the dataset from ${was} to ${now}.\n\n`;
+      if (now == 'public') {
+        msg += `Anyone will be able to view the dataset, but only users with admin or write access will be able to modify it.\n\n`;
+      } else {
+        msg += `Only users with read, write or admin access to the respository will be able to view the dataset.\n\n`;
+      }
+      msg += `Are you sure you want to do this?`;
+
+      if (was !== now && !confirm(msg)) {
+        return false;
+      }
+
+      return true;
+    };
+
+    const intentional = () => {
+      const form = $("form[name='update']");
+
+      if (!confirm_slug_change(form)) {
+        return false;
+      }
+
+      if (!confirm_visibility_change(form)) {
+        return false;
+      }
+
+      return true;
+    };
   </script>
 </section>
