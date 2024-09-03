@@ -238,6 +238,6 @@ func (s *DatabaseSession) UpdateDataset(update model.UpdateDataset) error {
 	return result.Error
 }
 
-func (s *DatabaseSession) DeleteDataset(update model.UpdateDataset) error {
-	return s.Delete(&model.Dataset{}, update.ID).Error
+func (s *DatabaseSession) DeleteDataset(dataset *model.Dataset) error {
+	return s.Delete(dataset).Error
 }

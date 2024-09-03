@@ -87,38 +87,47 @@ button {
   }
 }
 
-header {
-  box-sizing: border-box;
-  padding: $spacing-unit calc(2 * $spacing-unit);
+ul {
+  list-style: none;
+}
 
-  @include media-query(calc($on-palm + 5 * $spacing-unit)) {
-    padding: $spacing-unit calc($spacing-unit / 2);
-  }
+body {
+  &>header {
+    box-sizing: border-box;
+    padding: $spacing-unit calc(2 * $spacing-unit);
 
-  nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h1 {
-      font-size: calc(2 * $base-font-size);
+    @include media-query(calc($on-palm + 5 * $spacing-unit)) {
+      padding: $spacing-unit calc($spacing-unit / 2);
     }
 
-    ul {
+    nav {
       display: flex;
-      justify-content: flex-end;
-      list-style: none;
+      justify-content: space-between;
       align-items: center;
 
-      li {
-        margin: 0 calc($spacing-unit / 2);
+      h1 {
+        font-size: calc(2 * $base-font-size);
+      }
+
+      ul {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+
+        li {
+          margin: 0 calc($spacing-unit / 2);
+        }
       }
     }
   }
 }
 
-section {
+main {
   margin-bottom: $spacing-unit;
+
+  >section {
+    margin-bottom: $spacing-unit;
+  }
 
   header {
     display: flex;
@@ -128,12 +137,12 @@ section {
     border-bottom: 1px solid $gray-color-20;
     margin-bottom: calc($spacing-unit / 4);
 
-    h1 {
-      font-size: calc(1.25 * $base-font-size);
-    }
-
     nav {
       ul {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+
         li {
           margin: 0;
         }
@@ -238,7 +247,6 @@ footer {
   ul {
     display: flex;
     justify-content: flex-start;
-    list-style: none;
     align-items: center;
 
     li {
@@ -268,6 +276,15 @@ footer {
   margin: 0;
 }
 
+.message {
+  background: $gray-color-05;
+  margin: calc($spacing-unit/2) 0;
+  padding: calc($spacing-unit / 4) calc($spacing-unit / 2);
+  border: 1px solid $gray-color-40;
+  font-weight: bold;
+  font-style: italic;
+}
+
 form {
   width: 350px;
 
@@ -294,14 +311,6 @@ form {
       }
     }
 
-    &.message {
-      background: $gray-color-05;
-      margin: calc($spacing-unit/2) 0;
-      padding: calc($spacing-unit / 4) calc($spacing-unit / 2);
-      border: 1px solid $gray-color-40;
-      font-weight: bold;
-    }
-
     label {
       font-weight: bold;
     }
@@ -325,6 +334,21 @@ form {
 
       a {
         font-size: calc(0.8 * $base-font-size);
+      }
+    }
+  }
+
+  &.user_access {
+    ul {
+      li {
+        margin-bottom: calc($spacing-unit / 4);
+
+        ul {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-left: calc($spacing-unit / 2);
+        }
       }
     }
   }
@@ -369,7 +393,6 @@ form {
 }
 
 .versions {
-  list-style: none;
   display: grid;
   gap: calc($spacing-unit / 4) $spacing-unit;
   grid-template-columns: repeat(1, 0.25fr);

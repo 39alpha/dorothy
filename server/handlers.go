@@ -49,6 +49,29 @@ func Redirect(c *fiber.Ctx, status int, path string, json any, text string) erro
 	return c.Status(status).Redirect(path)
 }
 
+func Goto(path string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		return c.Redirect(path)
+	}
+}
+
+func GotoWithErrorMessage(path, err string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		c.Locals("Error", err)
+		return c.Redirect(path)
+	}
+}
+
+func Respond(c *fiber.Ctx, status int, json any, text string) error {
+	if c.Accepts("application/json") != "" {
+		return c.Status(status).JSON(json)
+	} else if c.Accepts("text/plain") != "" {
+		return c.Status(status).SendString(text)
+	}
+
+	return c.Status(status).JSON(json)
+}
+
 func (d *Server) Index(c *fiber.Ctx) error {
 	user, _ := c.Locals("AuthUser").(*model.User)
 
@@ -524,11 +547,6 @@ func DatasetSettingsForm(c *fiber.Ctx) error {
 
 func (d *Server) DatasetSettingsHandler() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		authUser, ok := c.Locals("AuthUser").(*model.User)
-		if !ok || authUser == nil {
-			return c.Status(fiber.StatusUnauthorized).Redirect("/")
-		}
-
 		team, ok := c.Locals("Team").(*model.Team)
 		if !ok || team == nil {
 			return c.Status(fiber.StatusNotFound).Redirect("/")
@@ -559,20 +577,47 @@ func (d *Server) DatasetSettingsHandler() fiber.Handler {
 			return c.Redirect("/"+team.Slug+"/"+dataset.Slug+"/settings", 400)
 		}
 
-		if updated.Delete {
-			if err := d.DeleteDataset(dataset, updated); err != nil {
-				c.Locals("Error", "We couldn't delete the dataset for some reason. Try again later?")
-				return DatasetSettingsForm(c)
-			}
-
-			return c.Redirect("/" + team.Slug)
-		} else {
-			if err := d.UpdateDataset(updated); err != nil {
-				c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
-				return DatasetSettingsForm(c)
-			}
-
-			return c.Redirect("/" + team.Slug + "/" + updated.Slug)
+		if err := d.UpdateDataset(updated); err != nil {
+			c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
+			return DatasetSettingsForm(c)
 		}
+
+		return c.Redirect("/" + team.Slug + "/" + updated.Slug)
+	}
+}
+
+func (d *Server) DeleteDatasetHandler() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		team, ok := c.Locals("Team").(*model.Team)
+		if !ok || team == nil {
+			return c.Status(fiber.StatusNotFound).Redirect("/")
+		}
+
+		dataset, ok := c.Locals("Dataset").(*model.Dataset)
+		if !ok || dataset == nil || dataset.Manifest == nil {
+			return c.Status(fiber.StatusNotFound).Redirect("/")
+		}
+
+		user, ok := c.Locals("AuthUser").(*model.User)
+		if !ok {
+			return Respond(c, fiber.StatusUnauthorized, fiber.Map{
+				"error": "unauthorized",
+			}, "unauthorized")
+		} else if !user.CanManageDataset(*dataset) {
+			return Respond(c, fiber.StatusForbidden, fiber.Map{
+				"error": "forbidden",
+			}, "forbidden")
+		}
+
+		if err := d.DeleteDataset(dataset); err != nil {
+			message := "We couldn't delete the dataset for some reason. Try again later?"
+			return Respond(c, fiber.StatusInternalServerError, fiber.Map{
+				"error": message,
+			}, message)
+		}
+
+		return Respond(c, fiber.StatusOK, fiber.Map{
+			"message": "success",
+		}, "success")
 	}
 }

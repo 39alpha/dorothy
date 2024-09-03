@@ -43,6 +43,5 @@ type GetDataset struct {
 
 type UpdateDataset struct {
 	NewDataset
-	ID     uint `json:"id"`
-	Delete bool `json:"delete"`
+	ID uint `json:"id"`
 }

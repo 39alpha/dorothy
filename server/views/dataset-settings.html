@@ -1,16 +1,17 @@
-<section>
-  <header>
-    <h1>{{ .Team.Slug }}/{{ .Dataset.Slug }} Settings</h1>
-  </header>
+<header>
+  <h1>{{ .Team.Slug }}/{{ .Dataset.Slug }} Settings</h1>
+</header>
 
-  <form name="update" method="POST" onsubmit="return intentional();">
-    {{ with .Error }}
-    <div class="message">
-      <p class="error">
-        {{ . }}
-      </p>
+<section>
+  <div class="message hidden">
+    <p class="error"></p>
+  </div>
+
+  <h2>General Settings</h2>
+  <form name="update" method="POST" onsubmit="return confirm_settings_update(event);">
+    <div class="message hidden">
+      <p class="error"></p>
     </div>
-    {{ end }}
 
     <input class="hidden" name="teamId" type="number" value="{{ .Team.ID }}" readonly />
 
@@ -45,85 +46,197 @@
         end }} />
     </div>
 
-    <div class="inline">
-      <label for="delete">Delete the Dataset?</label>
-      <input name="delete" type="checkbox" />
-    </div>
-
     <div>
       <button type="submit">Update Dataset ▶</button>
     </div>
   </form>
-
-  {{ template "views/partials/slugify" . }}
-
-  <script>
-    const confirm_slug_change = (form) => {
-      const dataset_slug = form.find("input[name='slug']");
-      const was = dataset_slug.attr('data-value');
-      const now = dataset_slug.prop('value');
-
-      const msg = `You are about to change the dataset slug from ${was} to ${now}.\n\n` +
-        `Users who have cloned the repository will have to change their remote setting.\n\n` +
-        `Are you sure you want to do this?`;
-      if (was !== now && !confirm(msg)) {
-        return false;
-      }
-
-      return true;
-    };
-
-    const confirm_visibility_change = (form) => {
-      const is_private = form.find("input[name='isPrivate']");
-      const was = is_private.attr('data-value') == 'true' ? 'private' : 'public';
-      const now = is_private.prop('checked') ? 'private' : 'public';
-
-      let msg = `You are about to change the visibility of the dataset from ${was} to ${now}.\n\n`;
-      if (now == 'public') {
-        msg += `Anyone will be able to view the dataset, but only users with admin or write access will be able to modify it.\n\n`;
-      } else {
-        msg += `Only users with read, write or admin access to the respository will be able to view the dataset.\n\n`;
-      }
-      msg += `Are you sure you want to do this?`;
-
-      if (was !== now && !confirm(msg)) {
-        return false;
-      }
-
-      return true;
-    };
-
-    const confirm_deletion = (form) => {
-      const delete_dataset = form.find("input[name='delete']").prop('checked');
-
-      let msg = `You are about to DELETE the dataset!.\n\n` +
-        `This cannot be undone.\n\n` +
-        `Are you sure you want to delete the dataset?`;
-
-      if (delete_dataset && !confirm(msg)) {
-        return false;
-      }
-
-      return true;
-    };
-
-    const intentional = () => {
-      const form = $("form[name='update']");
-
-      const delete_dataset = form.find("input[name='delete']").prop('checked');
-      if (delete_dataset) {
-        return confirm_deletion(form);
-      }
-
-      if (!confirm_slug_change(form)) {
-        return false;
-      }
-
-      if (!confirm_visibility_change(form)) {
-        return false;
-      }
-
-      return true;
-    };
-  </script>
 </section>
+
+<section>
+  <header>
+    <h2>User Access</h2>
+  </header>
+  <!-- TODO: Update this to use a search instead of listing all users -->
+  <form class="user_access" name="user-access" action="#">
+    <div class="message hidden">
+      <p class="error"></p>
+    </div>
+    <ul>
+      <li>
+        Doug Moore &lt;doug@39alpharesearch.org&gt;
+        <ul>
+          <li>
+            <input type="radio" name="privilege-1" id="privilege-admin-1" value="admin" />
+            <label for="privilege-admin-1">admin</label>
+          </li>
+          <li>
+            <input type="radio" name="privilege-1" id="privilege-write-1" value="write" />
+            <label for="privilege-write-1">write</label>
+          </li>
+          <li>
+            <input type="radio" name="privilege-1" id="privilege-read-1" value="read" />
+            <label for="privilege-read-1">read</label>
+          </li>
+        </ul>
+      </li>
+      <li>Tucker Ely &lt;tucker@39alpharesearch.org&gt;
+        <ul>
+          <li>
+            <input type="radio" name="privilege-2" id="privilege-admin-2" value="admin" />
+            <label for="privilege-admin-2">admin</label>
+          </li>
+          <li>
+            <input type="radio" name="privilege-2" id="privilege-write-2" value="write" />
+            <label for="privilege-write-2">write</label>
+          </li>
+          <li>
+            <input type="radio" name="privilege-2" id="privilege-read-2" value="read" />
+            <label for="privilege-read-2">read</label>
+          </li>
+        </ul>
+      </li>
+      <li>Cole Mathis &lt;cole@39alpharesearch.org&gt;
+        <ul>
+          <li>
+            <input type="radio" name="privilege-2" id="privilege-admin-2" value="admin" />
+            <label for="privilege-admin-2">admin</label>
+          </li>
+          <li>
+            <input type="radio" name="privilege-2" id="privilege-write-2" value="write" />
+            <label for="privilege-write-2">write</label>
+          </li>
+          <li>
+            <input type="radio" name="privilege-2" id="privilege-read-2" value="read" />
+            <label for="privilege-read-2">read</label>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
+    <div>
+      <button type="submit">Update User Access ▶</button>
+    </div>
+  </form>
+</section>
+
+<section>
+  <header>
+    <h2>Dataset Management</h2>
+  </header>
+  <form name="delete" onsubmit="return delete_dataset(event);">
+    <div class="message hidden">
+      <p class="error"></p>
+    </div>
+
+    <input class="hidden" name="teamId" type="number" value="{{ .Team.ID }}" readonly />
+    <input class="hidden" name="id" type="number" value="{{ .Dataset.ID }}" readonly />
+    <p>
+      <strong>Warning</strong>: When datasets are delete all data, including
+      the history and any pinned version, are removed from the server.
+      Make sure you understand the risks before deleting a dataset.
+    </p>
+    <button class="error" type="submit">Delete Dataset ▶</button>
+  </form>
+</section>
+
+{{ template "views/partials/slugify" . }}
+<script>
+  const confirm_slug_change = (form) => {
+    const dataset_slug = form.find("input[name='slug']");
+    const was = dataset_slug.attr('data-value');
+    const now = dataset_slug.prop('value');
+
+    const msg = `You are about to change the dataset slug from ${was} to ${now}.\n\n` +
+      'Users who have cloned the repository will have to change their remote setting.\n\n' +
+      'Are you sure you want to do this?';
+    if (was !== now && !confirm(msg)) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const confirm_visibility_change = (form) => {
+    const is_private = form.find("input[name='isPrivate']");
+    const was = is_private.attr('data-value') == 'true' ? 'private' : 'public';
+    const now = is_private.prop('checked') ? 'private' : 'public';
+
+    let msg = `You are about to change the visibility of the dataset from ${was} to ${now}.\n\n`;
+    if (now == 'public') {
+      msg += 'Anyone will be able to view the dataset, but only users with admin or write access will be able to modify it.\n\n';
+    } else {
+      msg += 'Only users with read, write or admin access to the respository will be able to view the dataset.\n\n';
+    }
+    msg += 'Are you sure you want to do this?';
+
+    if (was !== now && !confirm(msg)) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const confirm_settings_update = (event) => {
+    const form = $(event.target);
+
+    if (!confirm_slug_change(form)) {
+      return false;
+    }
+
+    if (!confirm_visibility_change(form)) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const parse_body = async (response) => {
+    try {
+      return {response, body: await response.json()};
+    } catch (err) {
+      return {response, body: {}};
+    }
+  };
+
+  const redirect_or_throw = (form) => {
+    return ({response, body}) => {
+      if (!response.ok) {
+        throw new Error(body.error ?? 'An unexpected error occurred; try again later');
+      }
+      form.find('.message').addClass('hidden');
+      window.location.href = "/{{ .Team.Slug }}";
+    };
+  };
+
+  const render_message = (form) => {
+    return (msg) => {
+      const message_div = form.find('.message');
+      message_div.find('.error').html(err);
+      if (message_div.hasClass('hidden')) {
+        message_div.removeClass('hidden');
+      }
+      $('body').scrollTo(message_div);
+    };
+  };
+
+  const delete_dataset = (event) => {
+    event.preventDefault();
+
+    let msg = "You are about to DELETE the /{{ .Team.Slug }}/{{ .Dataset.Slug }} dataset!.\n\n" +
+      "This cannot be undone.\n\n" +
+      "Are you sure you want to delete the dataset?";
+
+    if (confirm(msg)) {
+      const form = $(event.target);
+
+      fetch("/{{ .Team.Slug }}/{{ .Dataset.Slug }}", {
+        method: 'DELETE',
+        headers: {
+          accept: "application/json",
+        },
+      }).then(parse_body).then(redirect_or_throw(form)).catch(render_message(form));
+    }
+
+    return false;
+  };
+</script>

@@ -159,6 +159,7 @@ func (d *Server) setup() {
 	dataset := team.Group("/:dataset", d.GetDataset())
 	dataset.Get("/", d.Dataset())
 	dataset.Post("/", d.RecieveDataset())
+	dataset.Delete("/", d.DeleteDatasetHandler())
 	dataset.Get("/settings", DatasetSettingsForm)
 	dataset.Post("/settings", d.DatasetSettingsHandler())
 }
@@ -179,7 +180,7 @@ func (d *Server) UpdateDataset(update model.UpdateDataset) error {
 	return d.session.UpdateDataset(update)
 }
 
-func (d *Server) DeleteDataset(dataset *model.Dataset, update model.UpdateDataset) error {
+func (d *Server) DeleteDataset(dataset *model.Dataset) error {
 	if dataset == nil {
 		return fmt.Errorf("cannot delete the dataset; the dataset is nil")
 	} else if dataset.Manifest == nil {
@@ -189,7 +190,7 @@ func (d *Server) DeleteDataset(dataset *model.Dataset, update model.UpdateDatase
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err := d.session.DeleteDataset(update)
+	err := d.session.DeleteDataset(dataset)
 	if err != nil {
 		return err
 	}
