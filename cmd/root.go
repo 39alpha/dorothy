@@ -22,7 +22,7 @@ func HandleErrors(f CommandWithError) Command {
 
 var rootCmd = &cobra.Command{
 	Use:   "dorothy",
-	Short: "A stab at data management",
+	Short: "A dataset management tool and dataforge",
 }
 
 func init() {
