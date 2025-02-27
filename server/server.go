@@ -133,6 +133,7 @@ func (d *Server) setup() {
 	d.Use(func(c *fiber.Ctx) error {
 		c.Locals("State", fiber.Map{
 			"Title": "Dorothy",
+			"Path":  c.Path(),
 		})
 		return c.Next()
 	})
