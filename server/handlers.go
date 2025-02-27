@@ -679,7 +679,7 @@ func (d *Server) DatasetSettingsHandler() fiber.Handler {
 		}
 
 		if err := d.UpdateDataset(updated); err != nil {
-			c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
+			c.Locals("Error", team.Name+" already has a dataset with slug \""+updated.Slug+"\". Try a different name.")
 			return DatasetSettingsForm(c)
 		}
 
