@@ -1,12 +1,12 @@
+{{ $team := .Team }}
 <section>
-  {{ $team := .Team }}
   <header>
+    <h1>{{ $team.Name }} Datasets</h1>
     <nav>
-      <h1>{{ $team.Name }} Datasets</h1>
       <ul>
         {{ if .CanManage }}
         <li>
-          <a href="/{{ .Team.Slug }}/settings"><i class="fa-solid fa-gear"></i></a>
+          <a href="/{{ $team.Slug }}/settings"><i class="fa-solid fa-gear"></i></a>
         </li>
         {{ end }}
       </ul>
