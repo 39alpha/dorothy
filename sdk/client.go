@@ -213,7 +213,7 @@ func (c *Client) Login(creds UserLogin) (result Result) {
 		result.Error = err
 		return
 	} else if result.Code != 200 {
-		result.Error = fmt.Errorf(http.StatusText(result.Code))
+		result.Error = fmt.Errorf("%v", http.StatusText(result.Code))
 		return
 	}
 
@@ -244,7 +244,7 @@ func (c *Client) sendRequest(req *http.Request) (result Result) {
 		result.Error = err
 		return
 	} else if result.Code != 200 {
-		result.Error = fmt.Errorf(http.StatusText(result.Code))
+		result.Error = fmt.Errorf("%v", http.StatusText(result.Code))
 		return
 	}
 
