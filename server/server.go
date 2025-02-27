@@ -154,6 +154,8 @@ func (d *Server) setup() {
 
 	team := d.Group("/:team", GetTeam(d.session))
 	team.Get("/", Team)
+	team.Get("/settings", TeamSettingsForm)
+	team.Post("/settings", d.TeamSettingsHandler())
 	team.Get("/dataset/create", CreateDatasetForm)
 	team.Post("/dataset/create", d.CreateDatasetHandler())
 
@@ -197,4 +199,8 @@ func (d *Server) DeleteDataset(dataset *model.Dataset) error {
 	}
 
 	return d.Ipfs.UnpinManifest(ctx, dataset.Manifest, true)
+}
+
+func (d *Server) UpdateTeam(team model.UpdateTeam) error {
+	return d.session.UpdateTeam(team)
 }

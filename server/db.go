@@ -241,3 +241,18 @@ func (s *DatabaseSession) UpdateDataset(update model.UpdateDataset) error {
 func (s *DatabaseSession) DeleteDataset(dataset *model.Dataset) error {
 	return s.Delete(dataset).Error
 }
+
+func (s *DatabaseSession) UpdateTeam(update model.UpdateTeam) error {
+	values := map[string]any{
+		"Slug":        update.Slug,
+		"Name":        update.Name,
+		"Contact":     update.Contact,
+		"IsPrivate":   update.IsPrivate,
+		"Description": "",
+	}
+	if update.Description != nil {
+		values["Description"] = *update.Description
+	}
+
+	return s.Model(model.Team{ID: update.ID}).Updates(values).Error
+}

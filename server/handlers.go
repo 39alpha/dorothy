@@ -301,9 +301,88 @@ func GetTeam(db *DatabaseSession) fiber.Handler {
 }
 
 func Team(c *fiber.Ctx) error {
+	team, ok := c.Locals("Team").(*model.Team)
+	if !ok {
+		return c.Status(fiber.StatusNotFound).Redirect("/")
+	}
+
+	canRead := false
+	canWrite := false
+	canManage := false
+
+	authUser, ok := c.Locals("AuthUser").(*model.User)
+	if ok {
+		canRead = authUser.CanReadTeam(*team)
+		canWrite = authUser.CanManageTeam(*team)
+		canManage = authUser.CanManageTeam(*team)
+	}
+
 	return c.Render("views/team", bind(c, fiber.Map{
-		"AuthUser": c.Locals("AuthUser"),
+		"AuthUser":  authUser,
+		"CanRead":   canRead,
+		"CanWrite":  canWrite,
+		"CanManage": canManage,
 	}), "views/layouts/main")
+}
+
+func TeamSettingsForm(c *fiber.Ctx) error {
+	team, ok := c.Locals("Team").(*model.Team)
+	if !ok || team == nil {
+		return c.Status(fiber.StatusNotFound).Redirect("/")
+	}
+
+	user, ok := c.Locals("AuthUser").(*model.User)
+	if !ok {
+		return Redirect(c, fiber.StatusUnauthorized, "/login?Redirect="+c.Path(), fiber.Map{
+			"error": "unauthorized",
+		}, "unauthorized")
+	} else if !user.CanManageTeam(*team) {
+		return Redirect(c, fiber.StatusForbidden, "/"+team.Slug, fiber.Map{
+			"error": "forbidden",
+		}, "forbidden")
+	}
+
+	return c.Render("views/edit-team", bind(c, fiber.Map{
+		"AuthUser": user,
+		"Error":    c.Locals("Error"),
+	}), "views/layouts/main")
+}
+
+func (d *Server) TeamSettingsHandler() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authUser, ok := c.Locals("AuthUser").(*model.User)
+		if !ok || authUser == nil {
+			return c.Status(fiber.StatusUnauthorized).Redirect("/")
+		}
+
+		team, ok := c.Locals("Team").(*model.Team)
+		if !ok || team == nil {
+			return c.Status(fiber.StatusNotFound).Redirect("/")
+		}
+
+		user, ok := c.Locals("AuthUser").(*model.User)
+		if !ok {
+			return Redirect(c, fiber.StatusUnauthorized, "/login?Redirect="+c.Path(), fiber.Map{
+				"error": "unauthorized",
+			}, "unauthorized")
+		} else if !user.CanWriteTeam(*team) {
+			return Redirect(c, fiber.StatusForbidden, "/"+team.Slug, fiber.Map{
+				"error": "forbidden",
+			}, "forbidden")
+		}
+
+		var updated model.UpdateTeam
+		if err := c.BodyParser(&updated); err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
+		}
+
+		if err := d.UpdateTeam(updated); err != nil {
+			c.Locals("Error", "A team already has slag \""+updated.Slug+"\". Try a different name.")
+			return CreateDatasetForm(c)
+		}
+
+		return c.Redirect("/" + updated.Slug)
+	}
 }
 
 func CreateDatasetForm(c *fiber.Ctx) error {

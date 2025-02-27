@@ -33,3 +33,8 @@ type GetTeam struct {
 	ID   *uint   `json:"id,omitempty"`
 	Slug *string `json:"slug,omitempty"`
 }
+
+type UpdateTeam struct {
+	NewTeam
+	ID uint `json:"id"`
+}
