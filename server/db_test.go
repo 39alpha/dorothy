@@ -72,7 +72,7 @@ func TestCanCreateTeam(t *testing.T) {
 		Description: "The team that started it all",
 		IsPrivate:   true,
 	}
-	if result := session.Create(&org); result.Error != nil {
+	if result := session.Create(&team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
