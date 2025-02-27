@@ -490,13 +490,33 @@ func (d *Server) RecieveDataset() fiber.Handler {
 
 func (d *Server) Dataset() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		dataset, ok := c.Locals("Dataset").(*model.Dataset)
+		if dataset == nil || !ok {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "cannot find dataset",
+			})
+		}
+
 		if c.Accepts("text/html") != "" {
+			canRead := false
+			canWrite := false
+			canManage := false
+
+			authUser, ok := c.Locals("AuthUser").(*model.User)
+			if ok {
+				canRead = authUser.CanReadDataset(*dataset)
+				canWrite = authUser.CanManageDataset(*dataset)
+				canManage = authUser.CanManageDataset(*dataset)
+			}
+
 			return c.Render("views/dataset", bind(c, fiber.Map{
-				"AuthUser": c.Locals("AuthUser"),
+				"AuthUser":  authUser,
+				"CanRead":   canRead,
+				"CanWrite":  canWrite,
+				"CanManage": canManage,
 			}), "views/layouts/main")
 		} else if c.Accepts("application/json") != "" {
-			dataset, ok := c.Locals("Dataset").(*model.Dataset)
-			if !ok || dataset == nil || dataset.Manifest == nil {
+			if dataset.Manifest == nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error": "failed to fetch dataset manifest",
 				})
@@ -506,10 +526,8 @@ func (d *Server) Dataset() fiber.Handler {
 				PeerIdentity: d.Ipfs.Identity,
 			})
 		} else if c.Accepts("text/plain") != "" {
-			if dataset, ok := c.Locals("Dataset").(*model.Dataset); ok {
-				msg := dataset.ManifestHash + "\n" + string(d.Ipfs.Identity)
-				return c.SendString(msg)
-			}
+			msg := dataset.ManifestHash + "\n" + string(d.Ipfs.Identity)
+			return c.SendString(msg)
 		}
 		return c.Render("views/dataset", bind(c, fiber.Map{
 			"AuthUser": c.Locals("AuthUser"),
@@ -533,7 +551,7 @@ func DatasetSettingsForm(c *fiber.Ctx) error {
 		return Redirect(c, fiber.StatusUnauthorized, "/login?Redirect="+c.Path(), fiber.Map{
 			"error": "unauthorized",
 		}, "unauthorized")
-	} else if !user.CanWriteDataset(*dataset) {
+	} else if !user.CanManageDataset(*dataset) {
 		return Redirect(c, fiber.StatusForbidden, "/"+team.Slug+"/"+dataset.Slug, fiber.Map{
 			"error": "forbidden",
 		}, "forbidden")
@@ -555,6 +573,10 @@ func (d *Server) DatasetSettingsHandler() fiber.Handler {
 		dataset, ok := c.Locals("Dataset").(*model.Dataset)
 		if !ok || dataset == nil || dataset.Manifest == nil {
 			return c.Status(fiber.StatusNotFound).Redirect("/")
+		}
+
+		if team.ID != dataset.TeamID {
+			return c.Redirect("/"+team.Slug+"/dataset/create", 400)
 		}
 
 		user, ok := c.Locals("AuthUser").(*model.User)
