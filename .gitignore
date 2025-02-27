@@ -29,8 +29,11 @@ go.work
 # Configuration files
 config.toml
 
-# Generated Files
+# Generated files
 .dorothy
+
+# Manual testing
+working
 
 node_modules
 server/static/styles
