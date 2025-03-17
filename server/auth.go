@@ -91,7 +91,7 @@ func fromContext(c *fiber.Ctx) (jwt.Token, map[string]interface{}, error) {
 	return token, claims, err
 }
 
-func Authenticator(auth *Auth, db *DatabaseSession) fiber.Handler {
+func Authenticator(auth *Auth, db *DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token, claims, _ := fromContext(c)
 		if token != nil && jwt.Validate(token, auth.ValidateOptions()...) == nil {
@@ -132,7 +132,7 @@ func (d *Server) Registration(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
 	}
 
-	if err := d.session.CreateUser(&new_user); err != nil {
+	if err := d.db.CreateUser(&new_user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).RedirectBack("register")
 	}
 
@@ -168,14 +168,14 @@ func (d *Server) Login(c *fiber.Ctx) error {
 		}, "bad request")
 	}
 
-	if err := d.session.ValidateCredentials(login.Email, login.Password); err != nil {
+	if err := d.db.ValidateCredentials(login.Email, login.Password); err != nil {
 		return Redirect(c, fiber.StatusUnauthorized, "/login", fiber.Map{
 			"error": "invalid login credentials",
 		}, "invalid logic credentials")
 	}
 
 	user := &models.User{Email: login.Email}
-	err := d.session.Select("id", "email", "name", "orcid").Where(user).First(user).Error
+	err := d.db.Select("id", "email", "name", "orcid").Where(user).First(user).Error
 	if err != nil {
 		return Redirect(c, fiber.StatusInternalServerError, "/login", fiber.Map{
 			"error": "an unexpected error occurred",

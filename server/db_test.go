@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/server/model"
+	"github.com/39alpha/dorothy/server/models"
 	"gorm.io/gorm/clause"
 )
 
-var session *DatabaseSession
+var session *DB
 
 func setup(t *testing.T) {
 	var err error
 
-	session, err = NewDatabaseSession(&core.DatabaseConfig{
+	session, err = OpenDB(&core.DatabaseConfig{
 		Path: ":memory:",
 	})
 	if err != nil {
@@ -28,18 +28,18 @@ func setup(t *testing.T) {
 func TestCanCreateUser(t *testing.T) {
 	setup(t)
 
-	user := &model.User{
+	user := &models.User{
 		Email:        "39alpha@39alpharesearch.org",
 		PasswordHash: []byte{},
 		Name:         "39 Alpha Research",
 		Orcid:        nil,
-		Role:         &model.Role{Code: "admin"},
+		Role:         &models.Role{Code: "admin"},
 	}
 	if result := session.Create(&user); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
-	var fetched model.User
+	var fetched models.User
 	result := session.Preload(clause.Associations).First(&fetched, "users.email = ?", user.Email)
 	if result.Error != nil {
 		t.Fatalf("%v", result.Error)
@@ -65,7 +65,7 @@ func TestCanCreateUser(t *testing.T) {
 func TestCanCreateTeam(t *testing.T) {
 	setup(t)
 
-	team := &model.Team{
+	team := &models.Team{
 		Slug:        "team-0",
 		Name:        "Team 0",
 		Contact:     "39alpha@39alpharesearch.org",
@@ -76,7 +76,7 @@ func TestCanCreateTeam(t *testing.T) {
 		t.Fatalf("%v", result.Error)
 	}
 
-	var fetched model.Team
+	var fetched models.Team
 	result := session.First(&fetched, "teams.slug = ?", "team-0")
 	if result.Error != nil {
 		t.Fatalf("%v", result.Error)
@@ -106,7 +106,7 @@ func TestCanCreateTeam(t *testing.T) {
 func TestCanCreateDataset(t *testing.T) {
 	setup(t)
 
-	team := model.Team{Slug: "team0"}
+	team := models.Team{Slug: "team0"}
 	if result := session.Create(&team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
@@ -114,7 +114,7 @@ func TestCanCreateDataset(t *testing.T) {
 		t.Fatalf("%v", result.Error)
 	}
 
-	dataset := &model.Dataset{
+	dataset := &models.Dataset{
 		Slug:        "scotus",
 		Name:        "Supreme Court Opinion Analysis",
 		Contact:     "39alpha@39alpharesearch.org",
@@ -126,7 +126,7 @@ func TestCanCreateDataset(t *testing.T) {
 		t.Fatalf("%v", result.Error)
 	}
 
-	var fetched model.Dataset
+	var fetched models.Dataset
 	result := session.First(&fetched, "datasets.slug = ?", "scotus")
 	if result.Error != nil {
 		t.Fatalf("%v", result.Error)
@@ -156,17 +156,17 @@ func TestCanCreateDataset(t *testing.T) {
 func TestUserTeamPrivileges(t *testing.T) {
 	setup(t)
 
-	team := &model.Team{Slug: "scotus"}
+	team := &models.Team{Slug: "scotus"}
 	if result := session.Create(team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
-	users := []*model.User{
+	users := []*models.User{
 		{
 			Email:    "39alpha@39alpharesearch.org",
 			Name:     "39 Alpha Research",
 			RoleCode: "admin",
-			TeamPrivileges: []model.UserTeamPrivilege{
+			TeamPrivileges: []models.UserTeamPrivilege{
 				{Team: team, PrivilegeCode: "admin"},
 			},
 		},
@@ -174,7 +174,7 @@ func TestUserTeamPrivileges(t *testing.T) {
 			Email:    "doug@39alpharesearch.org",
 			Name:     "Doug Moore",
 			RoleCode: "user",
-			TeamPrivileges: []model.UserTeamPrivilege{
+			TeamPrivileges: []models.UserTeamPrivilege{
 				{Team: team, PrivilegeCode: "write"},
 			},
 		},
@@ -183,7 +183,7 @@ func TestUserTeamPrivileges(t *testing.T) {
 		t.Fatalf("%v", result.Error)
 	}
 
-	users = []*model.User{}
+	users = []*models.User{}
 	result := session.Preload("TeamPrivileges.Privilege").Preload("TeamPrivileges.Team").Find(&users)
 	if result.Error != nil {
 		t.Fatal(result.Error)
@@ -209,22 +209,22 @@ func TestUserTeamPrivileges(t *testing.T) {
 func TestUserDatasetPrivileges(t *testing.T) {
 	setup(t)
 
-	team := &model.Team{Slug: "team-0"}
+	team := &models.Team{Slug: "team-0"}
 	if result := session.Create(team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
-	dataset := &model.Dataset{Slug: "dataset", Team: team}
+	dataset := &models.Dataset{Slug: "dataset", Team: team}
 	if result := session.Create(dataset); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
-	users := []*model.User{
+	users := []*models.User{
 		{
 			Email:    "39alpha@39alpharesearch.org",
 			Name:     "39 Alpha Research",
 			RoleCode: "admin",
-			DatasetPrivileges: []model.UserDatasetPrivilege{
+			DatasetPrivileges: []models.UserDatasetPrivilege{
 				{Dataset: dataset, PrivilegeCode: "admin"},
 			},
 		},
@@ -232,7 +232,7 @@ func TestUserDatasetPrivileges(t *testing.T) {
 			Email:    "doug@39alpharesearch.org",
 			Name:     "Doug Moore",
 			RoleCode: "user",
-			DatasetPrivileges: []model.UserDatasetPrivilege{
+			DatasetPrivileges: []models.UserDatasetPrivilege{
 				{Dataset: dataset, PrivilegeCode: "write"},
 			},
 		},
@@ -241,7 +241,7 @@ func TestUserDatasetPrivileges(t *testing.T) {
 		t.Fatalf("%v", result.Error)
 	}
 
-	users = []*model.User{}
+	users = []*models.User{}
 	result := session.Preload("DatasetPrivileges.Privilege").Preload("DatasetPrivileges.Dataset").Find(&users)
 	if result.Error != nil {
 		t.Fatal(result.Error)

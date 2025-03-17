@@ -122,7 +122,7 @@ func (d *Server) LoadDataset(c *fiber.Ctx) error {
 		Slug:   datasetSlug,
 		TeamID: team.ID,
 	}
-	if err := d.session.Preload("Team").Where(&dataset).First(&dataset).Error; err != nil {
+	if err := d.db.Preload("Team").Where(&dataset).First(&dataset).Error; err != nil {
 		return Redirect(c, fiber.StatusNotFound, "/"+team.Slug, fiber.Map{
 			"error": "not found",
 		}, "not found")
@@ -186,7 +186,7 @@ func (d *Server) CreateDataset(c *fiber.Ctx) error {
 		return nil
 	}
 
-	if err := d.session.CreateDataset(dataset, manifest, authUser); err != nil {
+	if err := d.db.CreateDataset(dataset, manifest, authUser); err != nil {
 		c.Locals("Error", team.Name+" already has a dataset with slug \""+dataset.Slug+"\". Try a different name.")
 		return CreateDatasetForm(c)
 	}
@@ -257,7 +257,7 @@ func (d *Server) RecieveDataset(c *fiber.Ctx) error {
 	}
 
 	dataset.ManifestHash = manifest.Hash
-	if err := d.session.Save(dataset).Error; err != nil {
+	if err := d.db.Save(dataset).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to save manifest",
 		})
@@ -306,7 +306,7 @@ func (d *Server) UpdateDatasetSettings(c *fiber.Ctx) error {
 		return c.Redirect("/"+team.Slug+"/"+dataset.Slug+"/settings", 400)
 	}
 
-	if err := d.session.UpdateDataset(updated); err != nil {
+	if err := d.db.UpdateDataset(updated); err != nil {
 		c.Locals("Error", team.Name+" already has a dataset with slug \""+updated.Slug+"\". Try a different name.")
 		return DatasetSettingsForm(c)
 	}
@@ -339,7 +339,7 @@ func (d *Server) DeleteDataset(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := d.session.DeleteDataset(dataset); err != nil {
+	if err := d.db.DeleteDataset(dataset); err != nil {
 		message := "We couldn't delete the dataset for some reason. Try again later?"
 		return Respond(c, fiber.StatusInternalServerError, fiber.Map{
 			"error": message,

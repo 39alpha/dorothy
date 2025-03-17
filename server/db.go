@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/server/models"
@@ -11,15 +10,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func DorothyRoot() string {
-	return os.Getenv("DORTHY_ROOT")
-}
-
-type DatabaseSession struct {
+type DB struct {
 	*gorm.DB
 }
 
-func NewDatabaseSession(config *core.DatabaseConfig) (*DatabaseSession, error) {
+func OpenDB(config *core.DatabaseConfig) (*DB, error) {
 	if config == nil {
 		return nil, fmt.Errorf("no server database configuration provided")
 	}
@@ -30,11 +25,11 @@ func NewDatabaseSession(config *core.DatabaseConfig) (*DatabaseSession, error) {
 		return nil, err
 	}
 
-	return &DatabaseSession{db}, nil
+	return &DB{db}, nil
 }
 
-func (s *DatabaseSession) Initialize() error {
-	s.AutoMigrate(
+func (d *DB) Initialize() error {
+	d.AutoMigrate(
 		&models.Role{},
 		&models.Privilege{},
 		&models.Team{},
@@ -48,7 +43,7 @@ func (s *DatabaseSession) Initialize() error {
 		{Code: "admin", Description: "The all-powerful entity"},
 		{Code: "user", Description: "A standard user"},
 	}
-	if result := s.Save(&roles); result.Error != nil {
+	if result := d.Save(&roles); result.Error != nil {
 		return result.Error
 	}
 
@@ -57,18 +52,18 @@ func (s *DatabaseSession) Initialize() error {
 		{Code: "write", Description: "Write access"},
 		{Code: "admin", Description: "Administrative access"},
 	}
-	if result := s.Save(&privileges); result.Error != nil {
+	if result := d.Save(&privileges); result.Error != nil {
 		return result.Error
 	}
 
 	return nil
 }
 
-func (s *DatabaseSession) CreateUser(newuser *models.NewUser) error {
+func (d *DB) CreateUser(newuser *models.NewUser) error {
 	var result struct {
 		Count int
 	}
-	err := s.Raw("SELECT COUNT(*) AS count FROM users").First(&result).Error
+	err := d.Raw("SELECT COUNT(*) AS count FROM users").First(&result).Error
 	if err != nil {
 		return fmt.Errorf("failed to get user count")
 	}
@@ -91,15 +86,15 @@ func (s *DatabaseSession) CreateUser(newuser *models.NewUser) error {
 		RoleCode:     rolecode,
 	}
 
-	return s.Create(user).Error
+	return d.Create(user).Error
 }
 
-func (s *DatabaseSession) ValidateCredentials(email, password string) error {
+func (d *DB) ValidateCredentials(email, password string) error {
 	user := models.User{
 		Email: email,
 	}
 
-	err := s.Select("PasswordHash").Where("email = ?", user.Email).First(&user).Error
+	err := d.Select("PasswordHash").Where("email = ?", user.Email).First(&user).Error
 	if err != nil || user.PasswordHash == nil {
 		return fmt.Errorf("invalid email or password")
 	}
@@ -112,8 +107,8 @@ func (s *DatabaseSession) ValidateCredentials(email, password string) error {
 	return nil
 }
 
-func (s *DatabaseSession) CreateDataset(newdata models.NewDataset, manifest *core.Manifest, user *models.User) error {
-	return s.Transaction(func(tx *gorm.DB) error {
+func (d *DB) CreateDataset(newdata models.NewDataset, manifest *core.Manifest, user *models.User) error {
+	return d.Transaction(func(tx *gorm.DB) error {
 		dataset := &models.Dataset{
 			Slug:         newdata.Slug,
 			Name:         newdata.Name,
@@ -142,14 +137,14 @@ func (s *DatabaseSession) CreateDataset(newdata models.NewDataset, manifest *cor
 	})
 }
 
-func (s *DatabaseSession) GetTeams(user *models.User, loaddatasets bool) ([]models.Team, error) {
+func (d *DB) GetTeams(user *models.User, loaddatasets bool) ([]models.Team, error) {
 	allteams := []models.Team{}
 	if loaddatasets {
-		if err := s.Preload("Datasets.Team").Find(&allteams).Error; err != nil {
+		if err := d.Preload("Datasets.Team").Find(&allteams).Error; err != nil {
 			return nil, err
 		}
 	} else {
-		if err := s.Find(&allteams).Error; err != nil {
+		if err := d.Find(&allteams).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -193,9 +188,9 @@ func (s *DatabaseSession) GetTeams(user *models.User, loaddatasets bool) ([]mode
 	return teams, nil
 }
 
-func (s *DatabaseSession) GetDatasets(user *models.User) ([]models.Dataset, error) {
+func (d *DB) GetDatasets(user *models.User) ([]models.Dataset, error) {
 	alldatasets := []models.Dataset{}
-	if err := s.Preload("Team").Find(&alldatasets).Error; err != nil {
+	if err := d.Preload("Team").Find(&alldatasets).Error; err != nil {
 		return nil, err
 	}
 
@@ -220,7 +215,7 @@ func (s *DatabaseSession) GetDatasets(user *models.User) ([]models.Dataset, erro
 	return datasets, nil
 }
 
-func (s *DatabaseSession) UpdateDataset(update models.UpdateDataset) error {
+func (d *DB) UpdateDataset(update models.UpdateDataset) error {
 	values := map[string]any{
 		"ID":          update.ID,
 		"Slug":        update.Slug,
@@ -234,15 +229,15 @@ func (s *DatabaseSession) UpdateDataset(update models.UpdateDataset) error {
 		values["Description"] = *update.Description
 	}
 
-	result := s.Model(models.Dataset{ID: update.ID}).Omit("ManifestHash").Updates(values)
+	result := d.Model(models.Dataset{ID: update.ID}).Omit("ManifestHash").Updates(values)
 	return result.Error
 }
 
-func (s *DatabaseSession) DeleteDataset(dataset *models.Dataset) error {
-	return s.Delete(dataset).Error
+func (d *DB) DeleteDataset(dataset *models.Dataset) error {
+	return d.Delete(dataset).Error
 }
 
-func (s *DatabaseSession) UpdateTeam(update models.UpdateTeam) error {
+func (d *DB) UpdateTeam(update models.UpdateTeam) error {
 	values := map[string]any{
 		"Slug":        update.Slug,
 		"Name":        update.Name,
@@ -254,5 +249,5 @@ func (s *DatabaseSession) UpdateTeam(update models.UpdateTeam) error {
 		values["Description"] = *update.Description
 	}
 
-	return s.Model(models.Team{ID: update.ID}).Updates(values).Error
+	return d.Model(models.Team{ID: update.ID}).Updates(values).Error
 }

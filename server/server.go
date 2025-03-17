@@ -23,8 +23,8 @@ var staticfs embed.FS
 type Server struct {
 	*fiber.App
 	*core.Dorothy
-	auth    *Auth
-	session *DatabaseSession
+	auth *Auth
+	db   *DB
 }
 
 func NewServer(global bool) (*Server, error) {
@@ -75,7 +75,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return nil, err
 	}
 
-	session, err := NewDatabaseSession(dorothy.Config.Database)
+	session, err := OpenDB(dorothy.Config.Database)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (d *Server) setup() {
 		return c.Next()
 	})
 	d.Use(Verifier(d.auth))
-	d.Use(Authenticator(d.auth, d.session))
+	d.Use(Authenticator(d.auth, d.db))
 	d.Use(d.LoadTeams)
 
 	d.Get("/", d.Index)

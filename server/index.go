@@ -10,13 +10,13 @@ import (
 func (d *Server) Index(c *fiber.Ctx) error {
 	user, _ := c.Locals("AuthUser").(*models.User)
 
-	teams, err := d.session.GetTeams(user, false)
+	teams, err := d.db.GetTeams(user, false)
 	if err != nil {
 		teams = []models.Team{}
 	}
 	teams = teams[0:int64(math.Min(float64(len(teams)), 6))]
 
-	datasets, err := d.session.GetDatasets(user)
+	datasets, err := d.db.GetDatasets(user)
 	if err != nil {
 		datasets = []models.Dataset{}
 	}

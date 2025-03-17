@@ -70,7 +70,7 @@ func TeamSettingsForm(c *fiber.Ctx) error {
 func (d *Server) LoadTeams(c *fiber.Ctx) error {
 	user, _ := c.Locals("AuthUser").(*models.User)
 
-	teams, err := d.session.GetTeams(user, true)
+	teams, err := d.db.GetTeams(user, true)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).Redirect("/")
 	}
@@ -87,7 +87,7 @@ func (d *Server) LoadTeam(c *fiber.Ctx) error {
 	}
 
 	team := models.Team{Slug: slug}
-	if err := d.session.Preload("Datasets.Team").Where(&team).First(&team).Error; err != nil {
+	if err := d.db.Preload("Datasets.Team").Where(&team).First(&team).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).Redirect("/")
 	}
 
@@ -140,12 +140,12 @@ func (d *Server) CreateTeam(c *fiber.Ctx) error {
 	if newteam.Description != nil {
 		team.Description = *newteam.Description
 	}
-	if err := d.session.Save(team).Error; err != nil {
+	if err := d.db.Save(team).Error; err != nil {
 		c.Locals("Error", "A team with slug \""+team.Slug+"\" already exists. Try a different name.")
 		return CreateTeamForm(c)
 	}
 
-	d.session.Save(&models.UserTeamPrivilege{
+	d.db.Save(&models.UserTeamPrivilege{
 		User:          authUser,
 		Team:          team,
 		PrivilegeCode: "admin",
@@ -181,7 +181,7 @@ func (d *Server) UpdateTeamSettings(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
 	}
 
-	if err := d.session.UpdateTeam(updated); err != nil {
+	if err := d.db.UpdateTeam(updated); err != nil {
 		c.Locals("Error", "A team already has slag \""+updated.Slug+"\". Try a different name.")
 		return CreateDatasetForm(c)
 	}
