@@ -49,7 +49,7 @@ var serveCmd = &cobra.Command{
 		for {
 			select {
 			case <-sigs:
-				app.Shutdown()
+				app.ShutdownWithTimeout(0)
 				return <-c
 			}
 		}
