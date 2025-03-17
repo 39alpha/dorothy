@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/39alpha/dorothy/server/model"
+	"github.com/39alpha/dorothy/server/models"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
@@ -42,7 +42,7 @@ func generateSecret() (string, error) {
 	return base64.StdEncoding.EncodeToString(key), nil
 }
 
-func (auth *Auth) MakeToken(user *model.User) (string, error) {
+func (auth *Auth) MakeToken(user *models.User) (string, error) {
 	claims := map[string]interface{}{
 		"id":    user.ID,
 		"email": user.Email,
@@ -96,7 +96,7 @@ func Authenticator(auth *Auth, db *DatabaseSession) fiber.Handler {
 		token, claims, _ := fromContext(c)
 		if token != nil && jwt.Validate(token, auth.ValidateOptions()...) == nil {
 			if email, ok := claims["email"]; ok {
-				var user *model.User
+				var user *models.User
 				err := db.Preload("Role").
 					Preload("TeamPrivileges.Team").
 					Preload("DatasetPrivileges.Dataset.Team").
@@ -118,4 +118,101 @@ func Authenticator(auth *Auth, db *DatabaseSession) fiber.Handler {
 
 		return c.Next()
 	}
+}
+
+func RegistrationForm(c *fiber.Ctx) error {
+	return c.Render("views/register", Bind(c, fiber.Map{
+		"AuthUser": c.Locals("AuthUser"),
+	}), "views/layouts/main")
+}
+
+func (d *Server) Registration(c *fiber.Ctx) error {
+	var new_user models.NewUser
+	if err := c.BodyParser(&new_user); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
+	}
+
+	if err := d.session.CreateUser(&new_user); err != nil {
+		return c.Status(fiber.StatusInternalServerError).RedirectBack("register")
+	}
+
+	return c.Redirect("/login")
+}
+
+func LoginForm(c *fiber.Ctx) error {
+	if c.Locals("AuthUser") != nil {
+		return c.Redirect("/")
+	}
+
+	bindings := Bind(c, fiber.Map{
+		"AuthUser": c.Locals("AuthUser"),
+	})
+
+	if c.Query("Redirect") != "" {
+		bindings["Redirect"] = c.Query("Redirect")
+	}
+
+	return c.Render("views/login", bindings, "views/layouts/main")
+}
+
+func (d *Server) Login(c *fiber.Ctx) error {
+	var fields struct {
+		Redirect string
+	}
+	c.BodyParser(&fields)
+
+	var login models.UserLogin
+	if err := c.BodyParser(&login); err != nil {
+		return Redirect(c, fiber.StatusBadRequest, "/login", fiber.Map{
+			"error": "bad request",
+		}, "bad request")
+	}
+
+	if err := d.session.ValidateCredentials(login.Email, login.Password); err != nil {
+		return Redirect(c, fiber.StatusUnauthorized, "/login", fiber.Map{
+			"error": "invalid login credentials",
+		}, "invalid logic credentials")
+	}
+
+	user := &models.User{Email: login.Email}
+	err := d.session.Select("id", "email", "name", "orcid").Where(user).First(user).Error
+	if err != nil {
+		return Redirect(c, fiber.StatusInternalServerError, "/login", fiber.Map{
+			"error": "an unexpected error occurred",
+		}, "an unexpected error occurred")
+	}
+
+	token, err := d.auth.MakeToken(user)
+	if err != nil {
+		return Redirect(c, fiber.StatusInternalServerError, "/login", fiber.Map{
+			"error": "an unexpected error occurred",
+		}, "an unexpected error occurred")
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:    "jwt",
+		Value:   token,
+		Expires: time.Now().Add(72 * time.Hour),
+	})
+
+	if c.Accepts("text/html") == "" {
+		if c.Accepts("application/json") != "" {
+			return c.JSON(fiber.Map{
+				"message": "success",
+			})
+		} else if c.Accepts("text/plain") != "" {
+			return c.SendString("success")
+		}
+	}
+
+	if fields.Redirect == "" {
+		return c.Redirect("/")
+	} else {
+		return c.Redirect(fields.Redirect)
+	}
+}
+
+func Logout(c *fiber.Ctx) error {
+	c.ClearCookie("jwt")
+	return c.Redirect("/")
 }

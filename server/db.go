@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/server/model"
+	"github.com/39alpha/dorothy/server/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -35,16 +35,16 @@ func NewDatabaseSession(config *core.DatabaseConfig) (*DatabaseSession, error) {
 
 func (s *DatabaseSession) Initialize() error {
 	s.AutoMigrate(
-		&model.Role{},
-		&model.Privilege{},
-		&model.Team{},
-		&model.Dataset{},
-		&model.User{},
-		&model.UserTeamPrivilege{},
-		&model.UserDatasetPrivilege{},
+		&models.Role{},
+		&models.Privilege{},
+		&models.Team{},
+		&models.Dataset{},
+		&models.User{},
+		&models.UserTeamPrivilege{},
+		&models.UserDatasetPrivilege{},
 	)
 
-	roles := []*model.Role{
+	roles := []*models.Role{
 		{Code: "admin", Description: "The all-powerful entity"},
 		{Code: "user", Description: "A standard user"},
 	}
@@ -52,7 +52,7 @@ func (s *DatabaseSession) Initialize() error {
 		return result.Error
 	}
 
-	privileges := []*model.Privilege{
+	privileges := []*models.Privilege{
 		{Code: "read", Description: "Read access"},
 		{Code: "write", Description: "Write access"},
 		{Code: "admin", Description: "Administrative access"},
@@ -64,7 +64,7 @@ func (s *DatabaseSession) Initialize() error {
 	return nil
 }
 
-func (s *DatabaseSession) CreateUser(newuser *model.NewUser) error {
+func (s *DatabaseSession) CreateUser(newuser *models.NewUser) error {
 	var result struct {
 		Count int
 	}
@@ -83,7 +83,7 @@ func (s *DatabaseSession) CreateUser(newuser *model.NewUser) error {
 		return fmt.Errorf("failed to create user")
 	}
 
-	user := &model.User{
+	user := &models.User{
 		Email:        newuser.Email,
 		PasswordHash: password_hash,
 		Name:         newuser.Name,
@@ -95,7 +95,7 @@ func (s *DatabaseSession) CreateUser(newuser *model.NewUser) error {
 }
 
 func (s *DatabaseSession) ValidateCredentials(email, password string) error {
-	user := model.User{
+	user := models.User{
 		Email: email,
 	}
 
@@ -112,9 +112,9 @@ func (s *DatabaseSession) ValidateCredentials(email, password string) error {
 	return nil
 }
 
-func (s *DatabaseSession) CreateDataset(newdata model.NewDataset, manifest *core.Manifest, user *model.User) error {
+func (s *DatabaseSession) CreateDataset(newdata models.NewDataset, manifest *core.Manifest, user *models.User) error {
 	return s.Transaction(func(tx *gorm.DB) error {
-		dataset := &model.Dataset{
+		dataset := &models.Dataset{
 			Slug:         newdata.Slug,
 			Name:         newdata.Name,
 			TeamID:       newdata.TeamID,
@@ -131,7 +131,7 @@ func (s *DatabaseSession) CreateDataset(newdata model.NewDataset, manifest *core
 		}
 
 		if user != nil {
-			return tx.Save(&model.UserDatasetPrivilege{
+			return tx.Save(&models.UserDatasetPrivilege{
 				User:          user,
 				Dataset:       dataset,
 				PrivilegeCode: "admin",
@@ -142,8 +142,8 @@ func (s *DatabaseSession) CreateDataset(newdata model.NewDataset, manifest *core
 	})
 }
 
-func (s *DatabaseSession) GetTeams(user *model.User, loaddatasets bool) ([]model.Team, error) {
-	allteams := []model.Team{}
+func (s *DatabaseSession) GetTeams(user *models.User, loaddatasets bool) ([]models.Team, error) {
+	allteams := []models.Team{}
 	if loaddatasets {
 		if err := s.Preload("Datasets.Team").Find(&allteams).Error; err != nil {
 			return nil, err
@@ -154,7 +154,7 @@ func (s *DatabaseSession) GetTeams(user *model.User, loaddatasets bool) ([]model
 		}
 	}
 
-	teams := []model.Team{}
+	teams := []models.Team{}
 
 	if user == nil {
 		for _, team := range allteams {
@@ -162,7 +162,7 @@ func (s *DatabaseSession) GetTeams(user *model.User, loaddatasets bool) ([]model
 				continue
 			}
 
-			datasets := []model.Dataset{}
+			datasets := []models.Dataset{}
 			for _, dataset := range team.Datasets {
 				if !dataset.IsPrivate {
 					datasets = append(datasets, dataset)
@@ -178,7 +178,7 @@ func (s *DatabaseSession) GetTeams(user *model.User, loaddatasets bool) ([]model
 				continue
 			}
 
-			datasets := []model.Dataset{}
+			datasets := []models.Dataset{}
 			for _, dataset := range team.Datasets {
 				if user.CanReadDataset(dataset) {
 					datasets = append(datasets, dataset)
@@ -193,13 +193,13 @@ func (s *DatabaseSession) GetTeams(user *model.User, loaddatasets bool) ([]model
 	return teams, nil
 }
 
-func (s *DatabaseSession) GetDatasets(user *model.User) ([]model.Dataset, error) {
-	alldatasets := []model.Dataset{}
+func (s *DatabaseSession) GetDatasets(user *models.User) ([]models.Dataset, error) {
+	alldatasets := []models.Dataset{}
 	if err := s.Preload("Team").Find(&alldatasets).Error; err != nil {
 		return nil, err
 	}
 
-	datasets := []model.Dataset{}
+	datasets := []models.Dataset{}
 
 	if user == nil {
 		for _, dataset := range alldatasets {
@@ -220,7 +220,7 @@ func (s *DatabaseSession) GetDatasets(user *model.User) ([]model.Dataset, error)
 	return datasets, nil
 }
 
-func (s *DatabaseSession) UpdateDataset(update model.UpdateDataset) error {
+func (s *DatabaseSession) UpdateDataset(update models.UpdateDataset) error {
 	values := map[string]any{
 		"ID":          update.ID,
 		"Slug":        update.Slug,
@@ -234,15 +234,15 @@ func (s *DatabaseSession) UpdateDataset(update model.UpdateDataset) error {
 		values["Description"] = *update.Description
 	}
 
-	result := s.Model(model.Dataset{ID: update.ID}).Omit("ManifestHash").Updates(values)
+	result := s.Model(models.Dataset{ID: update.ID}).Omit("ManifestHash").Updates(values)
 	return result.Error
 }
 
-func (s *DatabaseSession) DeleteDataset(dataset *model.Dataset) error {
+func (s *DatabaseSession) DeleteDataset(dataset *models.Dataset) error {
 	return s.Delete(dataset).Error
 }
 
-func (s *DatabaseSession) UpdateTeam(update model.UpdateTeam) error {
+func (s *DatabaseSession) UpdateTeam(update models.UpdateTeam) error {
 	values := map[string]any{
 		"Slug":        update.Slug,
 		"Name":        update.Name,
@@ -254,5 +254,5 @@ func (s *DatabaseSession) UpdateTeam(update model.UpdateTeam) error {
 		values["Description"] = *update.Description
 	}
 
-	return s.Model(model.Team{ID: update.ID}).Updates(values).Error
+	return s.Model(models.Team{ID: update.ID}).Updates(values).Error
 }

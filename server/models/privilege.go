@@ -1,4 +1,4 @@
-package model
+package models
 
 type Role struct {
 	Code        string `json:"code" gorm:"primaryKey"`

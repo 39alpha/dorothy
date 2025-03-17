@@ -1,14 +1,12 @@
 package server
 
 import (
-	"context"
 	"embed"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/server/model"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
@@ -139,68 +137,30 @@ func (d *Server) setup() {
 	})
 	d.Use(Verifier(d.auth))
 	d.Use(Authenticator(d.auth, d.session))
-	d.Use(GetTeams(d.session))
+	d.Use(d.LoadTeams)
 
 	d.Get("/", d.Index)
 
 	d.Get("/register", RegistrationForm)
-	d.Post("/register", Registration(d.session))
+	d.Post("/register", d.Registration)
 	d.Get("/login", LoginForm)
-	d.Post("/login", Login(d.auth, d.session))
+	d.Post("/login", d.Login)
 	d.Get("/logout", Logout)
 
 	d.Get("/team/create", CreateTeamForm)
-	d.Post("/team/create", CreateTeam(d.session))
+	d.Post("/team/create", d.CreateTeam)
 
-	team := d.Group("/:team", GetTeam(d.session))
-	team.Get("/", Team)
+	team := d.Group("/:team", d.LoadTeam)
+	team.Get("/", GetTeam)
 	team.Get("/settings", TeamSettingsForm)
-	team.Post("/settings", d.TeamSettingsHandler())
+	team.Post("/settings", d.UpdateTeamSettings)
 	team.Get("/dataset/create", CreateDatasetForm)
-	team.Post("/dataset/create", d.CreateDatasetHandler())
+	team.Post("/dataset/create", d.CreateDataset)
 
-	dataset := team.Group("/:dataset", d.GetDataset())
-	dataset.Get("/", d.Dataset())
-	dataset.Post("/", d.RecieveDataset())
-	dataset.Delete("/", d.DeleteDatasetHandler())
+	dataset := team.Group("/:dataset", d.LoadDataset)
+	dataset.Get("/", GetDataset(d.Ipfs.Identity))
+	dataset.Post("/", d.RecieveDataset)
+	dataset.Delete("/", d.DeleteDataset)
 	dataset.Get("/settings", DatasetSettingsForm)
-	dataset.Post("/settings", d.DatasetSettingsHandler())
-}
-
-func (d *Server) CreateDataset(dataset model.NewDataset, authUser *model.User) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	manifest, err := d.Ipfs.CreateEmptyManifest(ctx)
-	if err != nil {
-		return nil
-	}
-
-	return d.session.CreateDataset(dataset, manifest, authUser)
-}
-
-func (d *Server) UpdateDataset(update model.UpdateDataset) error {
-	return d.session.UpdateDataset(update)
-}
-
-func (d *Server) DeleteDataset(dataset *model.Dataset) error {
-	if dataset == nil {
-		return fmt.Errorf("cannot delete the dataset; the dataset is nil")
-	} else if dataset.Manifest == nil {
-		return fmt.Errorf("cannot delete the dataset; no manifest loaded")
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	err := d.session.DeleteDataset(dataset)
-	if err != nil {
-		return err
-	}
-
-	return d.Ipfs.UnpinManifest(ctx, dataset.Manifest, true)
-}
-
-func (d *Server) UpdateTeam(team model.UpdateTeam) error {
-	return d.session.UpdateTeam(team)
+	dataset.Post("/settings", d.UpdateDatasetSettings)
 }
