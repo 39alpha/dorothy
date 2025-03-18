@@ -4,6 +4,13 @@
   </header>
 
   <form method="POST">
+    {{ with .Error }}
+    <div class="message">
+      <p class="error">
+        {{ . }}
+      </p>
+    </div>
+    {{ end }}
     <div>
       <label for="email">Email</label>
       <input name="email" type="email" autocomplete="email" placeholder="Enter Email" required />

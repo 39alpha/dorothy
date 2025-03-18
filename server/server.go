@@ -139,16 +139,16 @@ func (d *Server) setup() {
 	d.Use(Authenticator(d.auth, d.db))
 	d.Use(d.LoadTeams)
 
-	d.Get("/", d.Index)
+	d.Get("/", &Index{})
 
-	d.Get("/register", RegistrationForm)
-	d.Post("/register", d.Registration)
-	d.Get("/login", LoginForm)
-	d.Post("/login", d.Login)
-	d.Get("/logout", Logout)
+	d.Get("/register", &RegistrationForm{})
+	d.Post("/register", &Registration{})
+	d.Get("/login", &LoginForm{})
+	d.Post("/login", &Login{})
+	d.Get("/logout", &Logout{})
 
-	d.Get("/team/create", CreateTeamForm)
-	d.Post("/team/create", d.CreateTeam)
+	d.Get("/team/create", &CreateTeamForm{})
+	d.Post("/team/create", &CreateTeam{})
 
 	team := d.Group("/:team", d.LoadTeam)
 	team.Get("/", GetTeam)
@@ -163,4 +163,22 @@ func (d *Server) setup() {
 	dataset.Delete("/", d.DeleteDataset)
 	dataset.Get("/settings", DatasetSettingsForm)
 	dataset.Post("/settings", d.UpdateDatasetSettings)
+}
+
+func (d *Server) Get(path string, endpoints ...Endpoint) fiber.Router {
+	handlers := []fiber.Handler{}
+	for _, endpoint := range endpoints {
+		handlers = append(handlers, d.RenderEndpoint(endpoint))
+	}
+
+	return d.App.Get(path, handlers...)
+}
+
+func (d *Server) Post(path string, endpoints ...Endpoint) fiber.Router {
+	handlers := []fiber.Handler{}
+	for _, endpoint := range endpoints {
+		handlers = append(handlers, d.RenderEndpoint(endpoint))
+	}
+
+	return d.App.Post(path, handlers...)
 }

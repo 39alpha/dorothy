@@ -5,7 +5,103 @@ import (
 
 	"github.com/39alpha/dorothy/server/models"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
+
+type CreateTeamForm struct {
+	authUser *models.User
+}
+
+func (form *CreateTeamForm) Preprocess(c *fiber.Ctx) error {
+	form.authUser = c.Locals("AuthUser").(*models.User)
+	return nil
+}
+
+func (form *CreateTeamForm) RenderHtml(c *fiber.Ctx) error {
+	if form.authUser == nil {
+		return c.Redirect("/login?Redirect=" + c.Path())
+	} else {
+		return c.Render("views/create-team", Bind(c, fiber.Map{
+			"AuthUser": c.Locals("AuthUser"),
+			"Error":    c.Locals("Error"),
+		}), "views/layouts/main")
+	}
+}
+
+type CreateTeam struct {
+	authUser models.User
+	newTeam  models.NewTeam
+	team     *models.Team
+}
+
+func (page *CreateTeam) Preprocess(c *fiber.Ctx) error {
+	authUser, ok := c.Locals("AuthUser").(*models.User)
+	if !ok || authUser == nil {
+		return c.Status(fiber.StatusUnauthorized).Redirect("/")
+	}
+
+	var newTeam models.NewTeam
+	if err := c.BodyParser(&newTeam); err != nil {
+		// return fmt.Errorf()
+		// return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
+	}
+
+	page.authUser = *authUser
+	page.newTeam = newTeam
+
+	return nil
+}
+
+func (page *CreateTeam) Run(d *Server) error {
+	team := &models.Team{
+		Slug:      page.newTeam.Slug,
+		Name:      page.newTeam.Name,
+		Contact:   page.newTeam.Contact,
+		IsPrivate: page.newTeam.IsPrivate,
+	}
+	if page.newTeam.Description != nil {
+		team.Description = *page.newTeam.Description
+	}
+
+	return d.db.Transaction(func(tx *gorm.DB) error {
+		if err := d.db.Save(team).Error; err != nil {
+			return fmt.Errorf(
+				"%w: A team with slug \"%s\" already exists. Try a different name.",
+				fiber.ErrBadRequest,
+				team.Slug,
+			)
+		}
+
+		err := d.db.Save(&models.UserTeamPrivilege{
+			User:          &page.authUser,
+			Team:          team,
+			PrivilegeCode: "admin",
+		})
+
+		if err != nil {
+			return fmt.Errorf(
+				"%w: We could not create you team at this time. Try again later?",
+				fiber.ErrInternalServerError,
+			)
+		}
+
+		page.team = team
+
+		return nil
+	})
+}
+
+func (page *CreateTeam) RenderHtml(c *fiber.Ctx) error {
+	return c.Redirect("/" + page.team.Slug)
+}
+
+func (page *CreateTeam) RenderJson(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"message": "success"})
+}
+
+func (page *CreateTeam) RenderText(c *fiber.Ctx) error {
+	return c.SendString("success")
+}
 
 func GetTeam(c *fiber.Ctx) error {
 	team, ok := c.Locals("Team").(*models.Team)
@@ -30,18 +126,6 @@ func GetTeam(c *fiber.Ctx) error {
 		"CanWrite":  canWrite,
 		"CanManage": canManage,
 	}), "views/layouts/main")
-}
-
-func CreateTeamForm(c *fiber.Ctx) error {
-	authUser := c.Locals("AuthUser")
-	if authUser == nil {
-		return c.Redirect("/login?Redirect=" + c.Path())
-	} else {
-		return c.Render("views/create-team", Bind(c, fiber.Map{
-			"AuthUser": c.Locals("AuthUser"),
-			"Error":    c.Locals("Error"),
-		}), "views/layouts/main")
-	}
 }
 
 func TeamSettingsForm(c *fiber.Ctx) error {
@@ -117,41 +201,6 @@ func (d *Server) LoadTeam(c *fiber.Ctx) error {
 	AddState(c, "Team", &team)
 
 	return c.Next()
-}
-
-func (d *Server) CreateTeam(c *fiber.Ctx) error {
-	authUser, ok := c.Locals("AuthUser").(*models.User)
-
-	if !ok || authUser == nil {
-		return c.Status(fiber.StatusUnauthorized).Redirect("/")
-	}
-
-	var newteam models.NewTeam
-	if err := c.BodyParser(&newteam); err != nil {
-		return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
-	}
-
-	team := &models.Team{
-		Slug:      newteam.Slug,
-		Name:      newteam.Name,
-		Contact:   newteam.Contact,
-		IsPrivate: newteam.IsPrivate,
-	}
-	if newteam.Description != nil {
-		team.Description = *newteam.Description
-	}
-	if err := d.db.Save(team).Error; err != nil {
-		c.Locals("Error", "A team with slug \""+team.Slug+"\" already exists. Try a different name.")
-		return CreateTeamForm(c)
-	}
-
-	d.db.Save(&models.UserTeamPrivilege{
-		User:          authUser,
-		Team:          team,
-		PrivilegeCode: "admin",
-	})
-
-	return c.Redirect("/" + team.Slug)
 }
 
 func (d *Server) UpdateTeamSettings(c *fiber.Ctx) error {

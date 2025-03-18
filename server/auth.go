@@ -43,7 +43,7 @@ func generateSecret() (string, error) {
 }
 
 func (auth *Auth) MakeToken(user *models.User) (string, error) {
-	claims := map[string]interface{}{
+	claims := map[string]any{
 		"id":    user.ID,
 		"email": user.Email,
 		"name":  user.Name,
@@ -66,16 +66,15 @@ func Verifier(auth *Auth) fiber.Handler {
 
 		token, err := jwtauth.VerifyRequest(auth.JWTAuth, req, jwtauth.TokenFromCookie)
 		c.Locals("Token", token)
-		c.Locals("Error", err)
 		return c.Next()
 	}
 }
 
-func fromContext(c *fiber.Ctx) (jwt.Token, map[string]interface{}, error) {
+func fromContext(c *fiber.Ctx) (jwt.Token, map[string]any, error) {
 	token, _ := c.Locals("Token").(jwt.Token)
 
 	var err error
-	var claims map[string]interface{}
+	var claims map[string]any
 
 	if token != nil {
 		claims, err = token.AsMap(context.Background())
@@ -83,7 +82,7 @@ func fromContext(c *fiber.Ctx) (jwt.Token, map[string]interface{}, error) {
 			return token, nil, err
 		}
 	} else {
-		claims = map[string]interface{}{}
+		claims = map[string]any{}
 	}
 
 	err, _ = c.Locals("Error").(error)
@@ -120,32 +119,49 @@ func Authenticator(auth *Auth, db *DB) fiber.Handler {
 	}
 }
 
-func RegistrationForm(c *fiber.Ctx) error {
+type RegistrationForm struct{}
+
+func (r *RegistrationForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("views/register", Bind(c, fiber.Map{
 		"AuthUser": c.Locals("AuthUser"),
 	}), "views/layouts/main")
 }
 
-func (d *Server) Registration(c *fiber.Ctx) error {
+type Registration struct {
+	newUser models.NewUser
+}
+
+func (r *Registration) Preprocess(c *fiber.Ctx) error {
 	var new_user models.NewUser
 	if err := c.BodyParser(&new_user); err != nil {
-		return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("%v", err))
+		return fiber.ErrBadRequest
 	}
+	return nil
+}
 
-	if err := d.db.CreateUser(&new_user); err != nil {
-		return c.Status(fiber.StatusInternalServerError).RedirectBack("register")
-	}
+func (r *Registration) Run(d *Server) error {
+	return d.db.CreateUser(&r.newUser)
+	// return c.Status(fiber.StatusInternalServerError).RedirectBack("register")
+}
 
+func (r *Registration) RenderHtml(c *fiber.Ctx) error {
 	return c.Redirect("/login")
 }
 
-func LoginForm(c *fiber.Ctx) error {
+func (r *Registration) RenderJson(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"message": "success"})
+}
+
+type LoginForm struct{}
+
+func (form *LoginForm) RenderHtml(c *fiber.Ctx) error {
 	if c.Locals("AuthUser") != nil {
 		return c.Redirect("/")
 	}
 
 	bindings := Bind(c, fiber.Map{
 		"AuthUser": c.Locals("AuthUser"),
+		"Error":    c.Locals("Error"),
 	})
 
 	if c.Query("Redirect") != "" {
@@ -155,64 +171,109 @@ func LoginForm(c *fiber.Ctx) error {
 	return c.Render("views/login", bindings, "views/layouts/main")
 }
 
-func (d *Server) Login(c *fiber.Ctx) error {
-	var fields struct {
+type Login struct {
+	fields struct {
 		Redirect string
 	}
-	c.BodyParser(&fields)
+	userLogin models.UserLogin
+	token     string
+}
 
-	var login models.UserLogin
-	if err := c.BodyParser(&login); err != nil {
-		return Redirect(c, fiber.StatusBadRequest, "/login", fiber.Map{
-			"error": "bad request",
-		}, "bad request")
-	}
+func (page *Login) Preprocess(c *fiber.Ctx) error {
+	c.BodyParser(&page.fields)
 
-	if err := d.db.ValidateCredentials(login.Email, login.Password); err != nil {
-		return Redirect(c, fiber.StatusUnauthorized, "/login", fiber.Map{
-			"error": "invalid login credentials",
-		}, "invalid logic credentials")
-	}
-
-	user := &models.User{Email: login.Email}
-	err := d.db.Select("id", "email", "name", "orcid").Where(user).First(user).Error
-	if err != nil {
-		return Redirect(c, fiber.StatusInternalServerError, "/login", fiber.Map{
-			"error": "an unexpected error occurred",
-		}, "an unexpected error occurred")
-	}
-
-	token, err := d.auth.MakeToken(user)
-	if err != nil {
-		return Redirect(c, fiber.StatusInternalServerError, "/login", fiber.Map{
-			"error": "an unexpected error occurred",
-		}, "an unexpected error occurred")
-	}
-
-	c.Cookie(&fiber.Cookie{
-		Name:    "jwt",
-		Value:   token,
-		Expires: time.Now().Add(72 * time.Hour),
-	})
-
-	if c.Accepts("text/html") == "" {
-		if c.Accepts("application/json") != "" {
-			return c.JSON(fiber.Map{
-				"message": "success",
-			})
-		} else if c.Accepts("text/plain") != "" {
-			return c.SendString("success")
+	if err := c.BodyParser(&page.userLogin); err != nil {
+		return &RedirectError{
+			error: fiber.ErrBadRequest,
+			Path:  "/login",
 		}
 	}
 
-	if fields.Redirect == "" {
+	return nil
+}
+
+func (page *Login) Run(d *Server) error {
+	if err := d.db.ValidateCredentials(page.userLogin.Email, page.userLogin.Password); err != nil {
+		return &RedirectError{
+			error: fmt.Errorf("%w: invalid login credentials", fiber.ErrUnauthorized),
+			Path:  "/login",
+		}
+	}
+
+	user := &models.User{Email: page.userLogin.Email}
+	err := d.db.Select("id", "email", "name", "orcid").Where(user).First(user).Error
+	if err != nil {
+		return &RedirectError{
+			error: fmt.Errorf("%w: an unexpected error occurred", fiber.ErrInternalServerError),
+			Path:  "/login",
+		}
+	}
+
+	page.token, err = d.auth.MakeToken(user)
+	if err != nil {
+		return &RedirectError{
+			error: fmt.Errorf("%w: an unexpected error occurred", fiber.ErrInternalServerError),
+			Path:  "/login",
+		}
+	}
+
+	return nil
+}
+
+func (page *Login) Postprocess(c *fiber.Ctx) error {
+	c.Cookie(&fiber.Cookie{
+		Name:    "jwt",
+		Value:   page.token,
+		Expires: time.Now().Add(72 * time.Hour),
+	})
+
+	return nil
+}
+
+func (page *Login) HandleError(d *Server, c *fiber.Ctx, err error) error {
+	handler := &ErrorHandler{err}
+	handler.Preprocess(c)
+
+	if c.Accepts("text/html") != "" {
+		return d.RenderEndpoint(&LoginForm{})(c)
+	} else if c.Accepts("application/json") != "" || c.Accepts("text/plain") != "" {
+		return d.RenderEndpoint(&ErrorHandler{err})(c)
+	}
+
+	return d.RenderEndpoint(&LoginForm{})(c)
+}
+
+func (page *Login) RenderHtml(c *fiber.Ctx) error {
+	if page.fields.Redirect == "" {
 		return c.Redirect("/")
 	} else {
-		return c.Redirect(fields.Redirect)
+		return c.Redirect(page.fields.Redirect)
 	}
 }
 
-func Logout(c *fiber.Ctx) error {
+func (page *Login) RenderJson(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"message": "success"})
+}
+
+func (page *Login) RenderText(c *fiber.Ctx) error {
+	return c.SendString("success")
+}
+
+type Logout struct{}
+
+func (page *Logout) Postprocess(c *fiber.Ctx) error {
 	c.ClearCookie("jwt")
+	return nil
+}
+
+func (page *Logout) RenderHtml(c *fiber.Ctx) error {
 	return c.Redirect("/")
+}
+
+func (page *Logout) RenderJson(c *fiber.Ctx) error {
+	return c.SendString("success")
+}
+
+func (page *Logout) RenderText(c *fiber.Ctx) error {
+	return c.SendString("success")
 }
