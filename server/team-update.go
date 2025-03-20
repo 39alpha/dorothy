@@ -39,10 +39,8 @@ func (form *UpdateTeamForm) Preprocess(d *Server, c *fiber.Ctx) error {
 func (form *UpdateTeamForm) HandleError(d *Server, c *fiber.Ctx, err error) error {
 	var e *fiber.Error
 
-	if errors.As(err, &e) {
-		if e == fiber.ErrUnauthorized {
-			return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
-		}
+	if errors.As(err, &e) && e == fiber.ErrUnauthorized && Redirectable(c) {
+		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
 	}
 
 	return d.ErrorFallback(c, err)

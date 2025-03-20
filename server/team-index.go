@@ -43,7 +43,7 @@ func (page *GetTeam) Preprocess(d *Server, c *fiber.Ctx) (err error) {
 
 func (page *GetTeam) HandleError(d *Server, c *fiber.Ctx, err error) error {
 	var e *fiber.Error
-	if errors.As(err, &e) && e == fiber.ErrUnauthorized {
+	if errors.As(err, &e) && e == fiber.ErrUnauthorized && Redirectable(c) {
 		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
 	}
 

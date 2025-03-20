@@ -17,3 +17,19 @@ func Bind(c *fiber.Ctx, local fiber.Map) fiber.Map {
 
 	return bind
 }
+
+func AcceptsHtml(c *fiber.Ctx) bool {
+	return c.Accepts("text/html") != ""
+}
+
+func AcceptsJson(c *fiber.Ctx) bool {
+	return c.Accepts("application/json") != ""
+}
+
+func AcceptsText(c *fiber.Ctx) bool {
+	return c.Accepts("text/plain") != ""
+}
+
+func Redirectable(c *fiber.Ctx) bool {
+	return AcceptsHtml(c) || (!AcceptsJson(c) && !AcceptsText(c))
+}
