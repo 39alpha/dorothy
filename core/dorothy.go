@@ -747,7 +747,7 @@ func (d *Dorothy) ReadFromEditor(filename string) (string, error) {
 	return string(body), nil
 }
 
-func (d *Dorothy) Recieve(old *Manifest, hash string) (*Manifest, []Conflict, error) {
+func (d *Dorothy) Receive(old *Manifest, hash string) (*Manifest, []Conflict, error) {
 	if !d.Ipfs.IsConnected() {
 		return nil, nil, fmt.Errorf("not connected to IPFS")
 	}

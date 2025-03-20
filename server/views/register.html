@@ -4,6 +4,13 @@
   </header>
 
   <form method="POST">
+    {{ with .Error }}
+    <div class="message">
+      <p class="error">
+        {{ . }}
+      </p>
+    </div>
+    {{ end }}
     <div>
       <label for="name">Name</label>
       <input name="name" type="text" placeholder="Enter Name" required />

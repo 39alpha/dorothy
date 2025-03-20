@@ -188,6 +188,36 @@ func (d *DB) GetTeams(user *models.User, loaddatasets bool) ([]models.Team, erro
 	return teams, nil
 }
 
+func (db *DB) GetTeam(authUser *models.User, slug string) (*models.Team, error) {
+	if slug == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	team := &models.Team{Slug: slug}
+	if err := db.Preload("Datasets.Team").Where(team).First(team).Error; err != nil {
+		return nil, err
+	}
+
+	datasets := []models.Dataset{}
+	if authUser == nil {
+		for _, dataset := range team.Datasets {
+			if !dataset.IsPrivate {
+				datasets = append(datasets, dataset)
+			}
+		}
+	} else {
+		for _, dataset := range team.Datasets {
+			if authUser.CanReadDataset(dataset) {
+				datasets = append(datasets, dataset)
+			}
+		}
+	}
+
+	team.Datasets = datasets
+
+	return team, nil
+}
+
 func (d *DB) GetDatasets(user *models.User) ([]models.Dataset, error) {
 	alldatasets := []models.Dataset{}
 	if err := d.Preload("Team").Find(&alldatasets).Error; err != nil {
@@ -213,6 +243,36 @@ func (d *DB) GetDatasets(user *models.User) ([]models.Dataset, error) {
 	}
 
 	return datasets, nil
+}
+
+func (db *DB) GetDatasetById(authUser *models.User, id uint) (*models.Dataset, error) {
+	dataset := models.Dataset{ID: id}
+	if err := db.Preload("Team").Where(&dataset).First(&dataset).Error; err != nil {
+		return nil, err
+	}
+
+	return &dataset, nil
+}
+
+func (db *DB) GetDataset(authUser *models.User, teamSlug string, datasetSlug string) (*models.Dataset, error) {
+	if datasetSlug == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	team, err := db.GetTeam(authUser, teamSlug)
+	if err != nil {
+		return nil, err
+	}
+
+	dataset := &models.Dataset{
+		Slug:   datasetSlug,
+		TeamID: team.ID,
+	}
+	if err := db.Preload("Team").Where(dataset).First(dataset).Error; err != nil {
+		return nil, err
+	}
+
+	return dataset, nil
 }
 
 func (d *DB) UpdateDataset(update models.UpdateDataset) error {

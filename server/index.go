@@ -13,12 +13,9 @@ type Index struct {
 	datasets []models.Dataset
 }
 
-func (index *Index) Preprocess(c *fiber.Ctx) error {
+func (index *Index) Preprocess(d *Server, c *fiber.Ctx) error {
 	index.user, _ = c.Locals("AuthUser").(*models.User)
-	return nil
-}
 
-func (index *Index) Run(d *Server) error {
 	teams, err := d.db.GetTeams(index.user, false)
 	if err != nil {
 		index.teams = []models.Team{}

@@ -137,48 +137,118 @@ func (d *Server) setup() {
 	})
 	d.Use(Verifier(d.auth))
 	d.Use(Authenticator(d.auth, d.db))
-	d.Use(d.LoadTeams)
 
-	d.Get("/", &Index{})
+	d.Get("/", PerRequest[Index]())
 
-	d.Get("/register", &RegistrationForm{})
-	d.Post("/register", &Registration{})
-	d.Get("/login", &LoginForm{})
-	d.Post("/login", &Login{})
-	d.Get("/logout", &Logout{})
+	d.Get("/register", PerRequest[RegistrationForm]())
+	d.Post("/register", PerRequest[Registration]())
+	d.Get("/login", PerRequest[LoginForm]())
+	d.Post("/login", PerRequest[Login]())
+	d.Get("/logout", PerRequest[Logout]())
 
-	d.Get("/team/create", &CreateTeamForm{})
-	d.Post("/team/create", &CreateTeam{})
+	d.Get("/team/create", PerRequest[CreateTeamForm]())
+	d.Post("/team/create", PerRequest[CreateTeam]())
 
-	team := d.Group("/:team", d.LoadTeam)
-	team.Get("/", GetTeam)
-	team.Get("/settings", TeamSettingsForm)
-	team.Post("/settings", d.UpdateTeamSettings)
-	team.Get("/dataset/create", CreateDatasetForm)
-	team.Post("/dataset/create", d.CreateDataset)
+	team := d.Group("/:team")
+	team.Get("/", PerRequest[GetTeam]())
+	team.Get("/settings", PerRequest[UpdateTeamForm]())
+	team.Post("/settings", PerRequest[UpdateTeam]())
+	team.Get("/dataset/create", PerRequest[CreateDatasetForm]())
+	team.Post("/dataset/create", PerRequest[CreateDataset]())
 
-	dataset := team.Group("/:dataset", d.LoadDataset)
-	dataset.Get("/", GetDataset(d.Ipfs.Identity))
-	dataset.Post("/", d.RecieveDataset)
-	dataset.Delete("/", d.DeleteDataset)
-	dataset.Get("/settings", DatasetSettingsForm)
-	dataset.Post("/settings", d.UpdateDatasetSettings)
+	dataset := team.Group("/:dataset")
+	dataset.Get("/", PerRequest[GetDataset]())
+	dataset.Post("/", PerRequest[ReceiveDataset]())
+	dataset.Delete("/", PerRequest[DeleteDataset]())
+	dataset.Get("/settings", PerRequest[UpdateDatasetForm]())
+	dataset.Post("/settings", PerRequest[UpdateDataset]())
 }
 
-func (d *Server) Get(path string, endpoints ...Endpoint) fiber.Router {
+func (d *Server) Get(path string, ctors ...EndpointCtor) Router {
 	handlers := []fiber.Handler{}
-	for _, endpoint := range endpoints {
-		handlers = append(handlers, d.RenderEndpoint(endpoint))
+	for _, ctor := range ctors {
+		handlers = append(handlers, d.RenderEndpointCtor(ctor))
 	}
 
-	return d.App.Get(path, handlers...)
+	return Router{
+		Router: d.App.Get(path, handlers...),
+		Server: d,
+	}
 }
 
-func (d *Server) Post(path string, endpoints ...Endpoint) fiber.Router {
+func (d *Server) Post(path string, ctors ...EndpointCtor) Router {
 	handlers := []fiber.Handler{}
-	for _, endpoint := range endpoints {
-		handlers = append(handlers, d.RenderEndpoint(endpoint))
+	for _, ctor := range ctors {
+		handlers = append(handlers, d.RenderEndpointCtor(ctor))
 	}
 
-	return d.App.Post(path, handlers...)
+	return Router{
+		Router: d.App.Post(path, handlers...),
+		Server: d,
+	}
+}
+
+type Router struct {
+	fiber.Router
+	Server *Server
+}
+
+func (d *Server) Group(path string, ctors ...EndpointCtor) Router {
+	handlers := []fiber.Handler{}
+	for _, ctor := range ctors {
+		handlers = append(handlers, d.RenderEndpointCtor(ctor))
+	}
+
+	return Router{
+		Router: d.App.Group(path, handlers...),
+		Server: d,
+	}
+}
+
+func (r *Router) Get(path string, ctors ...EndpointCtor) Router {
+	handlers := []fiber.Handler{}
+	for _, ctor := range ctors {
+		handlers = append(handlers, r.Server.RenderEndpointCtor(ctor))
+	}
+
+	return Router{
+		Router: r.Router.Get(path, handlers...),
+		Server: r.Server,
+	}
+}
+
+func (r *Router) Post(path string, ctors ...EndpointCtor) Router {
+	handlers := []fiber.Handler{}
+	for _, ctor := range ctors {
+		handlers = append(handlers, r.Server.RenderEndpointCtor(ctor))
+	}
+
+	return Router{
+		Router: r.Router.Post(path, handlers...),
+		Server: r.Server,
+	}
+}
+
+func (r *Router) Delete(path string, ctors ...EndpointCtor) Router {
+	handlers := []fiber.Handler{}
+	for _, ctor := range ctors {
+		handlers = append(handlers, r.Server.RenderEndpointCtor(ctor))
+	}
+
+	return Router{
+		Router: r.Router.Delete(path, handlers...),
+		Server: r.Server,
+	}
+}
+
+func (r *Router) Group(path string, ctors ...EndpointCtor) Router {
+	handlers := []fiber.Handler{}
+	for _, ctor := range ctors {
+		handlers = append(handlers, r.Server.RenderEndpointCtor(ctor))
+	}
+
+	return Router{
+		Router: r.Router.Group(path, handlers...),
+		Server: r.Server,
+	}
 }

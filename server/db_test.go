@@ -263,3 +263,21 @@ func TestUserDatasetPrivileges(t *testing.T) {
 		t.Fatalf("expected \"write\" team privilege, got %q", users[1].DatasetPrivileges[0].Privilege.Code)
 	}
 }
+
+func TestGetTeamEmptySlug(t *testing.T) {
+	setup(t)
+
+	team := &models.Team{Slug: "team-0"}
+	if result := session.Create(team); result.Error != nil {
+		t.Fatalf("%v", result.Error)
+	}
+
+	team, err := session.GetTeam(nil, "")
+
+	if err == nil {
+		t.Fatalf("expected non-nill error")
+	}
+	if team != nil {
+		t.Fatalf("expected no team found")
+	}
+}

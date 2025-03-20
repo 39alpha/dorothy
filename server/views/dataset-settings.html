@@ -1,5 +1,5 @@
 <header>
-  <h1>{{ .Team.Slug }}/{{ .Dataset.Slug }} Settings</h1>
+  <h1>{{ .Dataset.Team.Slug }}/{{ .Dataset.Slug }} Settings</h1>
 </header>
 
 <section>
@@ -13,7 +13,7 @@
       <p class="error"></p>
     </div>
 
-    <input class="hidden" name="teamId" type="number" value="{{ .Team.ID }}" readonly />
+    <input class="hidden" name="teamId" type="number" value="{{ .Dataset.Team.ID }}" readonly />
 
     <input class="hidden" name="id" type="number" value="{{ .Dataset.ID }}" readonly />
 
@@ -128,7 +128,7 @@
       <p class="error"></p>
     </div>
 
-    <input class="hidden" name="teamId" type="number" value="{{ .Team.ID }}" readonly />
+    <input class="hidden" name="teamId" type="number" value="{{ .Dataset.Team.ID }}" readonly />
     <input class="hidden" name="id" type="number" value="{{ .Dataset.ID }}" readonly />
     <p>
       <strong>Warning</strong>: When datasets are delete all data, including
@@ -204,7 +204,7 @@
         throw new Error(body.error ?? 'An unexpected error occurred; try again later');
       }
       form.find('.message').addClass('hidden');
-      window.location.href = "/{{ .Team.Slug }}";
+      window.location.href = "/{{ .Dataset.Team.Slug }}";
     };
   };
 
@@ -222,14 +222,14 @@
   const delete_dataset = (event) => {
     event.preventDefault();
 
-    let msg = "You are about to DELETE the /{{ .Team.Slug }}/{{ .Dataset.Slug }} dataset!.\n\n" +
+    let msg = "You are about to DELETE the /{{ .Dataset.Team.Slug }}/{{ .Dataset.Slug }} dataset!.\n\n" +
       "This cannot be undone.\n\n" +
       "Are you sure you want to delete the dataset?";
 
     if (confirm(msg)) {
       const form = $(event.target);
 
-      fetch("/{{ .Team.Slug }}/{{ .Dataset.Slug }}", {
+      fetch("/{{ .Dataset.Team.Slug }}/{{ .Dataset.Slug }}", {
         method: 'DELETE',
         headers: {
           accept: "application/json",
