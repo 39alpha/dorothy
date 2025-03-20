@@ -70,7 +70,6 @@ type UpdateDataset struct {
 	authUser models.User
 	dataset  models.Dataset
 	update   models.UpdateDataset
-	err      error
 }
 
 func (page *UpdateDataset) Preprocess(d *Server, c *fiber.Ctx) error {

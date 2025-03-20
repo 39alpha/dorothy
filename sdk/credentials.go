@@ -14,13 +14,11 @@ import (
 var (
 	focused = lipgloss.NewStyle()
 	blurred = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-	none    = lipgloss.NewStyle()
 )
 
 type model struct {
 	focusIndex int
 	inputs     []textinput.Model
-	cursorMode cursor.Mode
 	submitted  bool
 }
 

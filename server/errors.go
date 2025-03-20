@@ -103,7 +103,7 @@ func (d *Server) ErrorFallback(c *fiber.Ctx, err error) error {
 
 func (d *Server) HandleFormError(form Endpoint, c *fiber.Ctx, err error) error {
 	handler := &ErrorHandler{err}
-	handler.Preprocess(d, c)
+	_ = handler.Preprocess(d, c)
 
 	if c.Accepts("text/html") != "" {
 		return d.RenderEndpoint(form)(c)

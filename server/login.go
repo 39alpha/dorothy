@@ -46,7 +46,7 @@ type Login struct {
 }
 
 func (page *Login) Preprocess(d *Server, c *fiber.Ctx) error {
-	c.BodyParser(&page.fields)
+	_ = c.BodyParser(&page.fields)
 
 	if err := c.BodyParser(&page.userLogin); err != nil {
 		return fiber.ErrBadRequest

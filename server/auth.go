@@ -64,7 +64,7 @@ func Verifier(auth *Auth) fiber.Handler {
 			return err
 		}
 
-		token, err := jwtauth.VerifyRequest(auth.JWTAuth, req, jwtauth.TokenFromCookie)
+		token, _ := jwtauth.VerifyRequest(auth.JWTAuth, req, jwtauth.TokenFromCookie)
 		c.Locals("Token", token)
 		return c.Next()
 	}

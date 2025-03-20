@@ -64,7 +64,10 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		} else {
 			dorothy.Config.Ipfs.Global = true
 		}
-		dorothy.ReloadIpfs()
+		err := dorothy.ReloadIpfs()
+		if err != nil {
+			return nil, err
+		}
 	}
 	if err := dorothy.ConnectIpfs(); err != nil {
 		return nil, err
@@ -79,7 +82,10 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	session.Initialize()
+
+	if err = session.Initialize(); err != nil {
+		return nil, err
+	}
 
 	engine := html.NewFileSystem(http.FS(viewsfs), ".html")
 	engine.AddFunc("TimeFmt", func(t time.Time) string {

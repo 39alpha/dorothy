@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -133,22 +134,18 @@ func (old *Manifest) Diff(new *Manifest) ([]*Version, error) {
 		return nil, fmt.Errorf("merge conflict")
 	}
 
-	var verisons []*Version
-	for _, newverison := range new.Versions {
-		found := false
-		for _, oldverison := range old.Versions {
-			if newverison.Equal(oldverison) {
-				found = true
-				break
-			}
-		}
+	var versions []*Version
+	for _, newversion := range new.Versions {
+		found := slices.ContainsFunc(old.Versions, func(oldVersion *Version) bool {
+			return newversion.Equal(oldVersion)
+		})
 
 		if !found {
-			verisons = append(verisons, newverison)
+			versions = append(versions, newversion)
 		}
 	}
 
-	return verisons, nil
+	return versions, nil
 }
 
 func (old *Manifest) Merge(new *Manifest) (*Manifest, []Conflict, error) {
@@ -156,21 +153,15 @@ func (old *Manifest) Merge(new *Manifest) (*Manifest, []Conflict, error) {
 		return nil, conflicts, fmt.Errorf("merge conflict")
 	}
 
-	var updated []*Version
+	var updated []*Version = slices.Clone(old.Versions)
 
-	for _, verison := range old.Versions {
-		updated = append(updated, verison)
-	}
-	for _, newverison := range new.Versions {
-		found := false
-		for _, oldverison := range old.Versions {
-			if newverison.Equal(oldverison) {
-				found = true
-				break
-			}
-		}
+	for _, newversion := range new.Versions {
+		found := slices.ContainsFunc(old.Versions, func(oldVersion *Version) bool {
+			return newversion.Equal(oldVersion)
+		})
+
 		if !found {
-			updated = append(updated, newverison)
+			updated = append(updated, newversion)
 		}
 	}
 

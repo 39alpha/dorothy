@@ -340,7 +340,10 @@ func (c *Client) LoginGuard(req SendRequestHandler) Result {
 	}
 
 	if c.CookieFilename != "" {
-		c.WriteCookies(c.CookieFilename)
+		err := c.WriteCookies(c.CookieFilename)
+		if err != nil {
+			result.Error = err
+		}
 	}
 
 	return result

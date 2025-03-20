@@ -326,12 +326,17 @@ func (d *Dorothy) SetConfig(props []string, value string, global bool) (string, 
 			if err := os.MkdirAll(filepath.Dir(configpath), 0755); err != nil {
 				return "", err
 			}
+
 			handle, err := os.Create(configpath)
 			if err != nil {
 				return "", err
 			}
+
 			handle.Close()
-			err = config.WriteFile(configpath)
+
+			if err = config.WriteFile(configpath); err != nil {
+				return "", err
+			}
 		} else {
 			return "", err
 		}
@@ -432,12 +437,17 @@ func (d *Dorothy) DelConfig(props []string, global bool) (string, error) {
 			if err := os.MkdirAll(filepath.Dir(configpath), 0755); err != nil {
 				return "", err
 			}
+
 			handle, err := os.Create(configpath)
 			if err != nil {
 				return "", err
 			}
+
 			handle.Close()
-			err = config.WriteFile(configpath)
+
+			if err = config.WriteFile(configpath); err != nil {
+				return "", err
+			}
 		} else {
 			return "", err
 		}
@@ -486,7 +496,9 @@ func (d *Dorothy) Fetch() ([]Conflict, error) {
 	}
 
 	if result.RequiredLogin {
-		client.WriteCookies(d.CookiesPath())
+		if err := client.WriteCookies(d.CookiesPath()); err != nil {
+			fmt.Fprintf(os.Stderr, "WARNING: failed to write cookies - %v", err)
+		}
 	}
 
 	payload := result.Payload
@@ -534,7 +546,9 @@ func Clone(remote, dest string, global bool) (*Dorothy, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer os.Chdir(cwd)
+	defer func() {
+		_ = os.Chdir(cwd)
+	}()
 
 	d, err := NewDorothy()
 	if err != nil {
@@ -621,7 +635,9 @@ func (d *Dorothy) Push() ([]Conflict, error) {
 	}
 
 	if result.RequiredLogin {
-		client.WriteCookies(d.CookiesPath())
+		if err := client.WriteCookies(d.CookiesPath()); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to write cookies - %v", err)
+		}
 	}
 
 	payload := result.Payload
@@ -739,7 +755,9 @@ func (d *Dorothy) ReadFromEditor(filename string) (string, error) {
 	}
 
 	body, err := os.ReadFile(path)
-	if len(body) == 0 {
+	if err != nil {
+		return "", err
+	} else if len(body) == 0 {
 		return "", fmt.Errorf("no content found in %q", path)
 	}
 	body = bytes.TrimRight(body, "\n\r")

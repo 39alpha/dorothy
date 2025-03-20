@@ -29,7 +29,7 @@ func OpenDB(config *core.DatabaseConfig) (*DB, error) {
 }
 
 func (d *DB) Initialize() error {
-	d.AutoMigrate(
+	err := d.AutoMigrate(
 		&models.Role{},
 		&models.Privilege{},
 		&models.Team{},
@@ -38,6 +38,9 @@ func (d *DB) Initialize() error {
 		&models.UserTeamPrivilege{},
 		&models.UserDatasetPrivilege{},
 	)
+	if err != nil {
+		return err
+	}
 
 	roles := []*models.Role{
 		{Code: "admin", Description: "The all-powerful entity"},

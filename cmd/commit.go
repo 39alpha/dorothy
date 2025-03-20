@@ -10,6 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var isYes, isNo *regexp.Regexp
+
+func init() {
+	isYes = regexp.MustCompile("(?i)^y(es)?$")
+	isNo = regexp.MustCompile("(?i)^n(o)?$")
+}
+
 func checkParentage(d *core.Dorothy, parents []string, pick bool) ([]string, bool, error) {
 	if !d.Manifest.IsEmpty() && (pick || len(parents) == 0) {
 		var picked []string
@@ -25,8 +32,8 @@ func checkParentage(d *core.Dorothy, parents []string, pick bool) ([]string, boo
 			} else if len(picked) == 0 {
 				fmt.Print("No parents selected. Do you want to continue (y/N) ")
 				var res string
-				fmt.Scanln(&res)
-				if ok, err := regexp.MatchString("(?i)^y(es)?$", res); err == nil && ok {
+				_, _ = fmt.Scanln(&res)
+				if isYes.MatchString(res) {
 					break
 				}
 			} else {
@@ -46,10 +53,10 @@ func checkParentage(d *core.Dorothy, parents []string, pick bool) ([]string, boo
 		for {
 			fmt.Print("Do you want to continue (y/N) ")
 			var res string
-			fmt.Scanln(&res)
-			if ok, err := regexp.MatchString("(?i)^y(es)?$", res); err == nil && ok {
+			_, _ = fmt.Scanln(&res)
+			if isYes.MatchString(res) {
 				return parents, true, nil
-			} else if ok, err := regexp.MatchString("(?i)^n(o)?$", res); err == nil && ok {
+			} else if isNo.MatchString(res) {
 				return nil, false, nil
 			}
 		}

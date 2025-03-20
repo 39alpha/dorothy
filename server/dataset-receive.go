@@ -84,7 +84,7 @@ func (page *ReceiveDataset) Run(d *Server) error {
 
 func (page *ReceiveDataset) HandleError(d *Server, c *fiber.Ctx, err error) error {
 	handler := ErrorHandler{err}
-	handler.Preprocess(d, c)
+	_ = handler.Preprocess(d, c)
 
 	var conflict *MergeConflict
 	if errors.As(err, &conflict) {

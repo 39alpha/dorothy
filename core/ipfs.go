@@ -127,19 +127,19 @@ func setupPlugins() error {
 	var err error
 
 	loadPluginsOnce.Do(func() {
-		plugins, err := loader.NewPluginLoader("plugins")
-		if err != nil {
-			err = fmt.Errorf("error loading IPFS plugins: %v", err)
+		plugins, e := loader.NewPluginLoader("plugins")
+		if e != nil {
+			err = fmt.Errorf("error loading IPFS plugins: %v", e)
 			return
 		}
 
-		if err := plugins.Initialize(); err != nil {
-			err = fmt.Errorf("error initializing IPFS plugins: %v", err)
+		if e = plugins.Initialize(); e != nil {
+			err = fmt.Errorf("error initializing IPFS plugins: %v", e)
 			return
 		}
 
-		if err := plugins.Inject(); err != nil {
-			err = fmt.Errorf("error injecting IPFS plugins: %v", err)
+		if e := plugins.Inject(); e != nil {
+			err = fmt.Errorf("error injecting IPFS plugins: %v", e)
 			return
 		}
 	})
@@ -397,7 +397,8 @@ func (s Ipfs) UnpinManifest(ctx context.Context, manifest *Manifest, recursive b
 	if len(errs) != 0 {
 		return errors.Join(errs...)
 	}
-	s.Pin().Rm(ctx, versionPath, options.Pin.RmRecursive(true))
+
+	_ = s.Pin().Rm(ctx, versionPath, options.Pin.RmRecursive(true))
 
 	return nil
 }

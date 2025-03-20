@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 
@@ -46,13 +47,13 @@ var serveCmd = &cobra.Command{
 
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, os.Interrupt)
-		for {
-			select {
-			case <-sigs:
-				app.ShutdownWithTimeout(0)
-				return <-c
-			}
+
+		<-sigs
+		if err = app.ShutdownWithTimeout(0); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: failed to shutdown server - %v", err)
 		}
+
+		return <-c
 	}),
 }
 
