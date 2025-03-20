@@ -17,9 +17,6 @@ import (
 //go:embed views
 var viewsfs embed.FS
 
-//go:embed static
-var staticfs embed.FS
-
 type Server struct {
 	*fiber.App
 	*core.Dorothy
@@ -125,13 +122,13 @@ func (d *Server) setup() {
 	}))
 
 	d.Use("/static", filesystem.New(filesystem.Config{
-		Root:       http.FS(staticfs),
-		PathPrefix: "/static",
+		Root:       http.FS(viewsfs),
+		PathPrefix: "/views/static",
 		Browse:     true,
 	}))
 	d.Use(favicon.New(favicon.Config{
-		FileSystem: http.FS(staticfs),
-		File:       "/static/favicon.ico",
+		FileSystem: http.FS(viewsfs),
+		File:       "/views/static/favicon.ico",
 	}))
 
 	d.Use(func(c *fiber.Ctx) error {

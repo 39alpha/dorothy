@@ -52,7 +52,7 @@ func (form *CreateDatasetForm) HandleError(d *Server, c *fiber.Ctx, err error) e
 }
 
 func (form *CreateDatasetForm) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("views/create-dataset", Bind(c, fiber.Map{
+	return c.Render("views/dataset/create", Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
 		"Team":     form.team,
 		"Error":    form.err,

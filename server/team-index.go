@@ -51,7 +51,7 @@ func (page *GetTeam) HandleError(d *Server, c *fiber.Ctx, err error) error {
 }
 
 func (page *GetTeam) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("views/team", Bind(c, fiber.Map{
+	return c.Render("views/team/index", Bind(c, fiber.Map{
 		"AuthUser":  page.authUser,
 		"CanRead":   page.canRead,
 		"CanWrite":  page.canWrite,

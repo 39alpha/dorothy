@@ -49,7 +49,7 @@ func (form *UpdateTeamForm) HandleError(d *Server, c *fiber.Ctx, err error) erro
 }
 
 func (form *UpdateTeamForm) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("views/edit-team", Bind(c, fiber.Map{
+	return c.Render("views/team/settings", Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
 		"Team":     form.team,
 		"Error":    form.err,

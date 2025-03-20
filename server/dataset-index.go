@@ -69,7 +69,7 @@ func (page *GetDataset) HandleError(d *Server, c *fiber.Ctx, err error) error {
 }
 
 func (page *GetDataset) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("views/dataset", Bind(c, fiber.Map{
+	return c.Render("views/dataset/index", Bind(c, fiber.Map{
 		"AuthUser":  page.authUser,
 		"Dataset":   page.dataset,
 		"CanRead":   page.canRead,

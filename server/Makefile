@@ -1,11 +1,11 @@
-STYLES := $(wildcard assets/styles/*.scss)
+STYLES := $(wildcard views/assets/styles/*.scss)
 
-all: static/styles/main.css
+all: views/static/styles/main.css
 
-static/styles/main.css: $(STYLES)
+views/static/styles/main.css: $(STYLES)
 	npm run sass:prod
 
 clean:
-	rm -f static/styles/*.css
+	rm -f views/static/styles/*.css
 
 .PHONY: clean
