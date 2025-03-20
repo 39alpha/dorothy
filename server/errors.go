@@ -8,16 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type RedirectError struct {
-	error
-	Path string
-	Back bool
-}
-
-func (err *RedirectError) Unwrap() error {
-	return err.error
-}
-
 type MergeConflict struct {
 	error
 	conflicts []core.Conflict
@@ -76,14 +66,6 @@ func (handler *ErrorHandler) HandleError(d *Server, c *fiber.Ctx, err error) err
 }
 
 func (handler *ErrorHandler) RenderHtml(c *fiber.Ctx) error {
-	var err *RedirectError
-	if errors.As(handler.err, &err) {
-		if err.Back {
-			return c.RedirectBack(err.Path)
-		}
-		return c.Redirect(err.Path)
-	}
-
 	return c.SendString(handler.err.Error())
 }
 
