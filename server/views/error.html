@@ -1,0 +1,14 @@
+<section>
+  <header>
+    <h1>Something wicked this way comes...</h1>
+  </header>
+  <main>
+    <p>An unexpected error occured. You should probably complain about it.</p>
+
+    <div>
+      {{ with .Error }}
+      <code>{{ . }}</code>
+      {{ end }}
+    </div>
+  </main>
+</section>

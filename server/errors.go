@@ -66,7 +66,19 @@ func (handler *ErrorHandler) HandleError(d *Server, c *fiber.Ctx, err error) err
 }
 
 func (handler *ErrorHandler) RenderHtml(c *fiber.Ctx) error {
-	return c.SendString(handler.err.Error())
+	var err *fiber.Error
+	if errors.As(handler.err, &err) {
+		switch err {
+		case fiber.ErrNotFound:
+			return c.Render("views/404", Bind(c), "views/layouts/main")
+		case fiber.ErrForbidden:
+			return c.Render("views/403", Bind(c), "views/layouts/main")
+		}
+	}
+
+	return c.Render("views/error", Bind(c, fiber.Map{
+		"Error": handler.err,
+	}), "views/layouts/main")
 }
 
 func (handler *ErrorHandler) RenderJson(c *fiber.Ctx) error {
