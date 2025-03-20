@@ -28,7 +28,7 @@ func (page *GetDataset) Preprocess(d *Server, c *fiber.Ctx) error {
 
 	dataset, err := d.db.GetDataset(page.authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
-		return err
+		return GormToFiber(err)
 	}
 
 	dataset.Manifest, err = d.Ipfs.GetManifest(ctx, dataset.ManifestHash)
