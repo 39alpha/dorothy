@@ -1,4 +1,4 @@
-package server
+package db
 
 import (
 	"testing"
@@ -13,7 +13,7 @@ var session *DB
 func setup(t *testing.T) {
 	var err error
 
-	session, err = OpenDB(&core.DatabaseConfig{
+	session, err = Open(&core.DatabaseConfig{
 		Path: ":memory:",
 	})
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/39alpha/dorothy/server/db"
 	"github.com/39alpha/dorothy/server/models"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/gofiber/fiber/v2"
@@ -90,7 +91,7 @@ func fromContext(c *fiber.Ctx) (jwt.Token, map[string]any, error) {
 	return token, claims, err
 }
 
-func Authenticator(auth *Auth, db *DB) fiber.Handler {
+func Authenticator(auth *Auth, db *db.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token, claims, _ := fromContext(c)
 		if token != nil && jwt.Validate(token, auth.ValidateOptions()...) == nil {

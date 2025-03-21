@@ -1,4 +1,4 @@
-package server
+package db
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ type DB struct {
 	*gorm.DB
 }
 
-func OpenDB(config *core.DatabaseConfig) (*DB, error) {
+func Open(config *core.DatabaseConfig) (*DB, error) {
 	if config == nil {
 		return nil, fmt.Errorf("no server database configuration provided")
 	}

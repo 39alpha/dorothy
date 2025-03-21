@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/server/db"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
@@ -22,7 +23,7 @@ type Server struct {
 	*fiber.App
 	*core.Dorothy
 	auth    *Auth
-	db      *DB
+	db      *db.DB
 	viewsfs http.FileSystem
 }
 
@@ -77,7 +78,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return nil, err
 	}
 
-	session, err := OpenDB(dorothy.Config.Database)
+	session, err := db.Open(dorothy.Config.Database)
 	if err != nil {
 		return nil, err
 	}
