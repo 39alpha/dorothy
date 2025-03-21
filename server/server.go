@@ -154,8 +154,8 @@ func (d *Server) setup() {
 		})
 		return c.Next()
 	})
-	d.Use(Verifier(d.auth))
-	d.Use(Authenticator(d.auth, d.db))
+	d.Use(d.Verifier())
+	d.Use(d.Authenticator())
 
 	d.Get("/", PerRequest[Index]())
 
