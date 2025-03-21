@@ -113,7 +113,6 @@ func (d *DB) ValidateCredentials(email, password string) error {
 func (d *DB) CreateDataset(newdata models.NewDataset, manifest *core.Manifest, user *models.User) error {
 	return d.Transaction(func(tx *gorm.DB) error {
 		dataset := &models.Dataset{
-			Slug:         newdata.Slug,
 			Name:         newdata.Name,
 			TeamID:       newdata.TeamID,
 			Contact:      newdata.Contact,
@@ -191,12 +190,26 @@ func (d *DB) GetTeams(user *models.User, loaddatasets bool) ([]models.Team, erro
 	return teams, nil
 }
 
-func (db *DB) GetTeam(authUser *models.User, slug string) (*models.Team, error) {
-	if slug == "" {
+func (db *DB) IsTeamNameAvailable(name string) (bool, error) {
+	if name == "" {
+		return false, gorm.ErrInvalidValue
+	}
+
+	var count int64
+	team := &models.Team{Name: name}
+	if err := db.Model(team).Where(team).Count(&count).Error; err != nil {
+		return false, err
+	}
+
+	return count == 0, nil
+}
+
+func (db *DB) GetTeam(authUser *models.User, name string) (*models.Team, error) {
+	if name == "" {
 		return nil, gorm.ErrRecordNotFound
 	}
 
-	team := &models.Team{Slug: slug}
+	team := &models.Team{Name: name}
 	if err := db.Preload("Datasets.Team").Where(team).First(team).Error; err != nil {
 		return nil, err
 	}
@@ -257,18 +270,18 @@ func (db *DB) GetDatasetById(authUser *models.User, id uint) (*models.Dataset, e
 	return &dataset, nil
 }
 
-func (db *DB) GetDataset(authUser *models.User, teamSlug string, datasetSlug string) (*models.Dataset, error) {
-	if datasetSlug == "" {
+func (db *DB) GetDataset(authUser *models.User, teamName string, datasetName string) (*models.Dataset, error) {
+	if datasetName == "" {
 		return nil, gorm.ErrRecordNotFound
 	}
 
-	team, err := db.GetTeam(authUser, teamSlug)
+	team, err := db.GetTeam(authUser, teamName)
 	if err != nil {
 		return nil, err
 	}
 
 	dataset := &models.Dataset{
-		Slug:   datasetSlug,
+		Name:   datasetName,
 		TeamID: team.ID,
 	}
 	if err := db.Preload("Team").Where(dataset).First(dataset).Error; err != nil {
@@ -281,7 +294,6 @@ func (db *DB) GetDataset(authUser *models.User, teamSlug string, datasetSlug str
 func (d *DB) UpdateDataset(update models.UpdateDataset) error {
 	values := map[string]any{
 		"ID":          update.ID,
-		"Slug":        update.Slug,
 		"Name":        update.Name,
 		"TeamID":      update.TeamID,
 		"Contact":     update.Contact,
@@ -302,7 +314,6 @@ func (d *DB) DeleteDataset(dataset *models.Dataset) error {
 
 func (d *DB) UpdateTeam(update models.UpdateTeam) error {
 	values := map[string]any{
-		"Slug":        update.Slug,
 		"Name":        update.Name,
 		"Contact":     update.Contact,
 		"IsPrivate":   update.IsPrivate,
@@ -313,4 +324,22 @@ func (d *DB) UpdateTeam(update models.UpdateTeam) error {
 	}
 
 	return d.Model(models.Team{ID: update.ID}).Updates(values).Error
+}
+
+func (db *DB) IsDatasetNameAvailable(team, name string) (bool, error) {
+	if name == "" {
+		return false, gorm.ErrInvalidValue
+	}
+
+	var count int64 = -1
+	dataset := &models.Dataset{Name: name}
+
+	err := db.Model(dataset).
+		Joins("join teams on teams.id = datasets.team_id").
+		Where("teams.name = ?", team).
+		Where(dataset).
+		Count(&count).
+		Error
+
+	return count == 0, err
 }

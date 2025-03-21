@@ -14,14 +14,10 @@
 
     <input class="hidden" name="teamId" type="number" value="{{ .Team.ID }}" readonly />
 
-    <div class="automatic">
-      <label for="slug">Slug</label>
-      <input class="disabled" id="slug" name="slug" type="text" readonly />
-    </div>
-
     <div>
       <label for="name">Name</label>
       <input id="name" name="name" type="text" placeholder="Dataset Name" />
+      <p id="availability" class="hidden"></p>
     </div>
 
     <div>
@@ -43,6 +39,11 @@
       <button type="submit">Create Dataset ▶</button>
     </div>
   </form>
-
-  {{ template "partials/slugify" . }}
 </section>
+
+<script>
+  checkAvailability("dataset", "/{{.Team.Name}}/dataset/availability", {
+    startDisabled: true,
+    trigger: 'button[type="submit"]'
+  });
+</script>

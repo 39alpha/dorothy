@@ -66,8 +66,7 @@ func TestCanCreateTeam(t *testing.T) {
 	setup(t)
 
 	team := &models.Team{
-		Slug:        "team-0",
-		Name:        "Team 0",
+		Name:        "team-0",
 		Contact:     "39alpha@39alpharesearch.org",
 		Description: "The team that started it all",
 		IsPrivate:   true,
@@ -80,10 +79,6 @@ func TestCanCreateTeam(t *testing.T) {
 	result := session.First(&fetched, "teams.slug = ?", "team-0")
 	if result.Error != nil {
 		t.Fatalf("%v", result.Error)
-	}
-
-	if fetched.Slug != team.Slug {
-		t.Errorf("expected team.Slug = %q; got %q", team.Slug, fetched.Slug)
 	}
 
 	if fetched.Name != team.Name {
@@ -106,7 +101,7 @@ func TestCanCreateTeam(t *testing.T) {
 func TestCanCreateDataset(t *testing.T) {
 	setup(t)
 
-	team := models.Team{Slug: "team0"}
+	team := models.Team{Name: "team0"}
 	if result := session.Create(&team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
@@ -115,8 +110,7 @@ func TestCanCreateDataset(t *testing.T) {
 	}
 
 	dataset := &models.Dataset{
-		Slug:        "scotus",
-		Name:        "Supreme Court Opinion Analysis",
+		Name:        "scotus",
 		Contact:     "39alpha@39alpharesearch.org",
 		Description: "Some kind of crazy analysis of SCOTUS opinions",
 		IsPrivate:   true,
@@ -130,10 +124,6 @@ func TestCanCreateDataset(t *testing.T) {
 	result := session.First(&fetched, "datasets.slug = ?", "scotus")
 	if result.Error != nil {
 		t.Fatalf("%v", result.Error)
-	}
-
-	if fetched.Slug != dataset.Slug {
-		t.Errorf("expected dataset.Slug = %q; got %q", dataset.Slug, fetched.Slug)
 	}
 
 	if fetched.Name != dataset.Name {
@@ -156,7 +146,7 @@ func TestCanCreateDataset(t *testing.T) {
 func TestUserTeamPrivileges(t *testing.T) {
 	setup(t)
 
-	team := &models.Team{Slug: "scotus"}
+	team := &models.Team{Name: "scotus"}
 	if result := session.Create(team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
@@ -209,12 +199,12 @@ func TestUserTeamPrivileges(t *testing.T) {
 func TestUserDatasetPrivileges(t *testing.T) {
 	setup(t)
 
-	team := &models.Team{Slug: "team-0"}
+	team := &models.Team{Name: "team-0"}
 	if result := session.Create(team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
 
-	dataset := &models.Dataset{Slug: "dataset", Team: team}
+	dataset := &models.Dataset{Name: "dataset", Team: team}
 	if result := session.Create(dataset); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}
@@ -264,10 +254,10 @@ func TestUserDatasetPrivileges(t *testing.T) {
 	}
 }
 
-func TestGetTeamEmptySlug(t *testing.T) {
+func TestGetTeamEmptyName(t *testing.T) {
 	setup(t)
 
-	team := &models.Team{Slug: "team-0"}
+	team := &models.Team{Name: "team-0"}
 	if result := session.Create(team); result.Error != nil {
 		t.Fatalf("%v", result.Error)
 	}

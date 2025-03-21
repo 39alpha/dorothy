@@ -6,15 +6,19 @@
     <div class="featured_items">
       {{ range .Teams }}
       <div class="featured_item">
-        <a class="featured_item_link" href="/{{ .Slug }}">
+        <a class="featured_item_link" href="/{{ .Name }}">
           <div class="featured_item_body">
             <div class="featured_item_titlebar">
-              <span class="featured_item_title">{{ .Slug }} &mdash; {{ .Name }}</span>
+              <span class="featured_item_title">{{ .Name }}</span>
               {{ if .IsPrivate }}
               <i class="fa-solid fa-lock-open"></i>
               {{ end }}
             </div>
-            <p class="featured_item_description">{{ .Description }}</p>
+            {{ with .Description }}
+            <p class="featured_item_description">{{ . }}</p>
+            {{ else }}
+            <p class="featured_item_description featured_item_description-empty">No description...</p>
+            {{ end }}
           </div>
         </a>
       </div>
@@ -56,10 +60,10 @@
     <div class="featured_items">
       {{ range .Datasets }}
       <div class="featured_item">
-        <a class="featured_item_link" href="/{{ .Team.Slug }}/{{ .Slug }}">
+        <a class="featured_item_link" href="/{{ .Team.Name }}/{{ .Name }}">
           <div class="featured_item_body">
             <div class="featured_item_titlebar">
-              <span class="featured_item_title">{{ .Team.Slug }}/{{ .Slug }} &mdash; {{ .Name }}</span>
+              <span class="featured_item_title">{{ .Team.Name }}/{{ .Name }}</span>
               {{ if .IsPrivate }}
               <i class="fa-solid fa-lock-open"></i>
               {{ end }}

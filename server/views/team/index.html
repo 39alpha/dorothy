@@ -6,7 +6,7 @@
       <ul>
         {{ if .CanManage }}
         <li>
-          <a href="/{{ $team.Slug }}/settings"><i class="fa-solid fa-gear"></i></a>
+          <a href="/{{ $team.Name }}/settings"><i class="fa-solid fa-gear"></i></a>
         </li>
         {{ end }}
       </ul>
@@ -16,7 +16,7 @@
     <div class="featured_buttons">
       {{ if .AuthUser }}
       <div class="button">
-        <a class="button_link" href="/{{ $team.Slug }}/dataset/create">
+        <a class="button_link" href="/{{ $team.Name }}/dataset/create">
           <div class="button_body">
             <span class="button_text">Create Dataset ▶</span>
           </div>
@@ -27,10 +27,10 @@
     <div class="featured_items">
       {{ range $team.Datasets }}
       <div class="featured_item">
-        <a class="featured_item_link" href="/{{ $team.Slug }}/{{ .Slug }}">
+        <a class="featured_item_link" href="/{{ $team.Name }}/{{ .Name }}">
           <div class="featured_item_body">
             <div class="featured_item_titlebar">
-              <span class="featured_item_title">{{ $team.Slug }} / {{ .Slug }} &mdash; {{ .Name }}</span>
+              <span class="featured_item_title">{{ $team.Name }} / {{ .Name }}</span>
               {{ if .IsPrivate }}
               <i class="fa-solid fa-lock-open"></i>
               {{ end }}

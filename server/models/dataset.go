@@ -8,8 +8,7 @@ import (
 
 type Dataset struct {
 	ID           uint           `json:"id" gorm:"primaryKey"`
-	Slug         string         `json:"slug" gorm:"uniqueIndex:dataset"`
-	Name         string         `json:"name"`
+	Name         string         `json:"name" gorm:"uniqueIndex:dataset"`
 	Contact      string         `json:"contact"`
 	Description  string         `json:"description"`
 	IsPrivate    bool           `json:"private"`
@@ -24,7 +23,6 @@ type Dataset struct {
 }
 
 type NewDataset struct {
-	Slug        string  `json:"slug"`
 	Name        string  `json:"name"`
 	TeamID      uint    `json:"teamId"`
 	Contact     string  `json:"contact"`

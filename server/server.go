@@ -166,6 +166,7 @@ func (d *Server) setup() {
 
 	d.Get("/team/create", PerRequest[CreateTeamForm]())
 	d.Post("/team/create", PerRequest[CreateTeam]())
+	d.Post("/team/availability", PerRequest[TeamAvailability]())
 
 	team := d.Group("/:team")
 	team.Get("/", PerRequest[GetTeam]())
@@ -173,6 +174,7 @@ func (d *Server) setup() {
 	team.Post("/settings", PerRequest[UpdateTeam]())
 	team.Get("/dataset/create", PerRequest[CreateDatasetForm]())
 	team.Post("/dataset/create", PerRequest[CreateDataset]())
+	team.Post("/dataset/availability", PerRequest[DatasetAvailability]())
 
 	dataset := team.Group("/:dataset")
 	dataset.Get("/", PerRequest[GetDataset]())

@@ -62,7 +62,7 @@ func (page *DeleteDataset) Run(d *Server) error {
 }
 
 func (page *DeleteDataset) RenderHtml(c *fiber.Ctx) error {
-	return c.Redirect("/" + page.dataset.Team.Slug)
+	return c.Redirect("/" + page.dataset.Team.Name)
 }
 
 func (page *DeleteDataset) RenderJson(c *fiber.Ctx) error {

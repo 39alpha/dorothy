@@ -8,8 +8,7 @@ import (
 
 type Team struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
-	Slug        string         `json:"slug" gorm:"uniqueIndex"`
-	Name        string         `json:"name"`
+	Name        string         `json:"name" gorm:"uniqueIndex"`
 	Contact     string         `json:"contact" gorm:"index"`
 	Description string         `json:"description"`
 	IsPrivate   bool           `json:"private"`
@@ -22,7 +21,6 @@ type Team struct {
 }
 
 type NewTeam struct {
-	Slug        string  `json:"slug"`
 	Name        string  `json:"name"`
 	Contact     string  `json:"contact"`
 	Description *string `json:"description,omitempty"`
@@ -31,7 +29,7 @@ type NewTeam struct {
 
 type GetTeam struct {
 	ID   *uint   `json:"id,omitempty"`
-	Slug *string `json:"slug,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 type UpdateTeam struct {

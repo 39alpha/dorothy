@@ -1,5 +1,5 @@
 <header>
-  <h1>{{ .Dataset.Team.Slug }}/{{ .Dataset.Slug }} Settings</h1>
+  <h1>{{ .Dataset.Team.Name }}/{{ .Dataset.Name }} Settings</h1>
 </header>
 
 <section>
@@ -17,15 +17,10 @@
 
     <input class="hidden" name="id" type="number" value="{{ .Dataset.ID }}" readonly />
 
-    <div class="automatic">
-      <label for="slug">Slug</label>
-      <input class="disabled" id="slug" name="slug" data-value="{{ .Dataset.Slug }}" value="{{ .Dataset.Slug }}"
-        type=" text" readonly />
-    </div>
-
     <div>
       <label for="name">Name</label>
       <input id="name" name="name" type="text" data-value="{{ .Dataset.Name }}" value="{{ .Dataset.Name }}" />
+      <p id="availability" class="hidden"></p>
     </div>
 
     <div>
@@ -139,9 +134,12 @@
   </form>
 </section>
 
-{{ template "partials/slugify" . }}
-
 <script>
+  checkAvailability("dataset", "/{{.Dataset.Team.Name}}/dataset/availability", {
+    original: "{{.Dataset.Name}}",
+    trigger: 'form[name="update"] button[type="submit"]',
+  });
+
   const confirm_slug_change = (form) => {
     const dataset_slug = form.find("input[name='slug']");
     const was = dataset_slug.attr('data-value');
@@ -205,7 +203,7 @@
         throw new Error(body.error ?? 'An unexpected error occurred; try again later');
       }
       form.find('.message').addClass('hidden');
-      window.location.href = "/{{ .Dataset.Team.Slug }}";
+      window.location.href = "/{{ .Dataset.Team.Name }}";
     };
   };
 
@@ -223,14 +221,14 @@
   const delete_dataset = (event) => {
     event.preventDefault();
 
-    let msg = "You are about to DELETE the /{{ .Dataset.Team.Slug }}/{{ .Dataset.Slug }} dataset!.\n\n" +
+    let msg = "You are about to DELETE the /{{ .Dataset.Team.Name }}/{{ .Dataset.Name }} dataset!.\n\n" +
       "This cannot be undone.\n\n" +
       "Are you sure you want to delete the dataset?";
 
     if (confirm(msg)) {
       const form = $(event.target);
 
-      fetch("/{{ .Dataset.Team.Slug }}/{{ .Dataset.Slug }}", {
+      fetch("/{{ .Dataset.Team.Name }}/{{ .Dataset.Name }}", {
         method: 'DELETE',
         headers: {
           accept: "application/json",

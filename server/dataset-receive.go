@@ -103,7 +103,7 @@ func (page *ReceiveDataset) HandleError(d *Server, c *fiber.Ctx, err error) erro
 }
 
 func (page *ReceiveDataset) RenderHtml(c *fiber.Ctx) error {
-	return c.Redirect("/" + page.dataset.Team.Slug + "/" + page.dataset.Slug)
+	return c.Redirect("/" + page.dataset.Team.Name + "/" + page.dataset.Name)
 }
 
 func (page *ReceiveDataset) RenderJson(c *fiber.Ctx) error {

@@ -64,8 +64,7 @@ func (page *CreateTeam) Preprocess(d *Server, c *fiber.Ctx) error {
 
 func (page *CreateTeam) Run(d *Server) error {
 	team := &models.Team{
-		Slug:      page.newTeam.Slug,
-		Name:      page.newTeam.Name,
+		Name:      models.Slugify(page.newTeam.Name),
 		Contact:   page.newTeam.Contact,
 		IsPrivate: page.newTeam.IsPrivate,
 	}
@@ -99,7 +98,7 @@ func (page *CreateTeam) Run(d *Server) error {
 
 func (page *CreateTeam) Postprocess(d *Server, c *fiber.Ctx) error {
 	var err error
-	page.team, err = d.db.GetTeam(&page.authUser, page.team.Slug)
+	page.team, err = d.db.GetTeam(&page.authUser, page.team.Name)
 	return GormToFiber(err)
 }
 
@@ -108,7 +107,7 @@ func (page *CreateTeam) HandleError(d *Server, c *fiber.Ctx, err error) error {
 }
 
 func (page *CreateTeam) RenderHtml(c *fiber.Ctx) error {
-	return c.Redirect("/" + page.team.Slug)
+	return c.Redirect("/" + page.team.Name)
 }
 
 func (page *CreateTeam) RenderJson(c *fiber.Ctx) error {

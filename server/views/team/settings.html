@@ -1,4 +1,4 @@
-<h1>Edit Team {{ .Team.Slug }}</h1>
+<h1>Edit Team {{ .Team.Name }}</h1>
 
 <form method="POST">
   {{ with .Error }}
@@ -11,14 +11,10 @@
 
   <input class="hidden" name="id" type="number" value="{{ .Team.ID }}" readonly />
 
-  <div class="automatic">
-    <label for="slug">Slug</label>
-    <input class="disabled" id="slug" name="slug" value="{{ .Team.Slug }}" type=" text" readonly />
-  </div>
-
   <div>
     <label for="name">Name</label>
     <input id="name" name="name" type="text" value="{{ .Team.Name }}" />
+    <p id="availability"></p>
   </div>
 
   <div>
@@ -43,4 +39,9 @@
   </div>
 </form>
 
-{{ template "partials/slugify" . }}
+<script>
+  checkAvailability("team", "/team/availability", {
+    original: "{{.Team.Name}}",
+    trigger: 'button[type="submit"]',
+  });
+</script>

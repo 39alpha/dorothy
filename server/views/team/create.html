@@ -12,14 +12,10 @@
     </div>
     {{ end }}
 
-    <div class="automatic">
-      <label for="slug">Slug:</label>
-      <input class="disabled" id="slug" name="slug" type="text" readonly />
-    </div>
-
     <div>
       <label for="name">Name</label>
       <input id="name" name="name" type="text" placeholder="Team Name" />
+      <p id="availability" class="hidden"></p>
     </div>
 
     <div>
@@ -38,9 +34,14 @@
     </div>
 
     <div>
-      <button type="submit">Create Team ▶</button>
+      <button id="submit" type="submit" disabled>Create Team ▶</button>
     </div>
   </form>
-
-  {{ template "partials/slugify" . }}
 </section>
+
+<script>
+  checkAvailability("team", "/team/availability", {
+    startDisabled: true,
+    trigger: 'button[type="submit"]'
+  });
+</script>

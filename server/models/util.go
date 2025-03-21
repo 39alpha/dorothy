@@ -9,7 +9,7 @@ var invalidChar *regexp.Regexp
 var spaces *regexp.Regexp
 
 func init() {
-	invalidChar = regexp.MustCompile(`[^a-z\- ]`)
+	invalidChar = regexp.MustCompile(`[^0-9a-zA-Z\_\- ]`)
 	spaces = regexp.MustCompile(`[[:space:]]+`)
 }
 

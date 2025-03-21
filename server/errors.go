@@ -24,6 +24,7 @@ func GormToFiber(err error) error {
 
 	mapping := map[error]error{
 		gorm.ErrRecordNotFound: fiber.ErrNotFound,
+		gorm.ErrInvalidValue:   fiber.ErrBadRequest,
 	}
 
 	for g, f := range mapping {

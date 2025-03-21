@@ -1,11 +1,11 @@
 <section>
   <header>
-    <h1><a href="/{{ .Dataset.Team.Slug }}">{{ .Dataset.Team.Name }}</a>/{{ .Dataset.Name }}</h1>
+    <h1><a href="/{{ .Dataset.Team.Name }}">{{ .Dataset.Team.Name }}</a>/{{ .Dataset.Name }}</h1>
     <nav>
       <ul>
         {{ if .CanManage }}
         <li>
-          <a href="/{{ .Dataset.Team.Slug }}/{{ .Dataset.Slug }}/settings"><i class="fa-solid fa-gear"></i></a>
+          <a href="/{{ .Dataset.Team.Name }}/{{ .Dataset.Name }}/settings"><i class="fa-solid fa-gear"></i></a>
         </li>
         {{ end }}
       </ul>

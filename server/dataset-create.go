@@ -117,7 +117,7 @@ func (page *CreateDataset) Postprocess(d *Server, c *fiber.Ctx) error {
 	defer cancel()
 
 	var err error
-	page.dataset, err = d.db.GetDataset(&page.authUser, page.team.Slug, page.newDataset.Slug)
+	page.dataset, err = d.db.GetDataset(&page.authUser, page.team.Name, page.newDataset.Name)
 	if err != nil {
 		return GormToFiber(err)
 	}
@@ -131,7 +131,7 @@ func (page *CreateDataset) Postprocess(d *Server, c *fiber.Ctx) error {
 }
 
 func (page *CreateDataset) RenderHtml(c *fiber.Ctx) error {
-	return c.Redirect("/" + page.team.Slug + "/" + page.dataset.Slug)
+	return c.Redirect("/" + page.team.Name + "/" + page.dataset.Name)
 }
 
 func (page *CreateDataset) RenderJson(c *fiber.Ctx) error {

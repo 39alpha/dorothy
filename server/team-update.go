@@ -95,7 +95,7 @@ func (page *UpdateTeam) Run(d *Server) error {
 
 func (page *UpdateTeam) Postprocess(d *Server, c *fiber.Ctx) error {
 	var err error
-	page.team, err = d.db.GetTeam(page.authUser, page.update.Slug)
+	page.team, err = d.db.GetTeam(page.authUser, page.update.Name)
 	return GormToFiber(err)
 }
 
@@ -104,7 +104,7 @@ func (page *UpdateTeam) HandleError(d *Server, c *fiber.Ctx, err error) error {
 }
 
 func (page *UpdateTeam) RenderHtml(c *fiber.Ctx) error {
-	return c.Redirect("/" + page.update.Slug)
+	return c.Redirect("/" + page.update.Name)
 }
 
 func (page *UpdateTeam) RenderJson(c *fiber.Ctx) error {
