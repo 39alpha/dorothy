@@ -34,7 +34,7 @@ func (form *LoginForm) RenderHtml(c *fiber.Ctx) error {
 		bindings["Redirect"] = c.Query("Redirect")
 	}
 
-	return c.Render("views/login", bindings, "views/layouts/main")
+	return c.Render("login", bindings, "layouts/main")
 }
 
 type Login struct {

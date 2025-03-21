@@ -20,6 +20,7 @@ type Config struct {
 	RemoteString string          `toml:"remote,omitempty"`
 	Ipfs         *IpfsConfig     `toml:"ipfs,omitempty"`
 	Database     *DatabaseConfig `toml:"database,omitempty"`
+	Server       *ServerConfig   `toml:"server,omitempty"`
 	Remote       *Remote         `toml:"-"`
 }
 
@@ -78,6 +79,17 @@ type UserConfig struct {
 	Email string `toml:"email,omitempty"`
 }
 
+func (u *UserConfig) String() string {
+	s := u.Name
+	if s != "" {
+		s += " "
+	}
+	if u.Email != "" {
+		s += "<" + u.Email + ">"
+	}
+	return s
+}
+
 type IpfsConfig struct {
 	Global  bool   `toml:"global"`
 	Host    string `toml:"host,omitempty"`
@@ -121,15 +133,8 @@ type DatabaseConfig struct {
 	Path string `toml:"path"`
 }
 
-func (u *UserConfig) String() string {
-	s := u.Name
-	if s != "" {
-		s += " "
-	}
-	if u.Email != "" {
-		s += "<" + u.Email + ">"
-	}
-	return s
+type ServerConfig struct {
+	Views string `toml:"views,omitempty"`
 }
 
 func (config *Config) ReadFile(filename string) error {

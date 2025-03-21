@@ -57,11 +57,11 @@ func (form *UpdateDatasetForm) HandleError(d *Server, c *fiber.Ctx, err error) e
 }
 
 func (form *UpdateDatasetForm) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("views/dataset/settings", Bind(c, fiber.Map{
+	return c.Render("dataset/settings", Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
 		"Dataset":  form.dataset,
 		"Error":    form.err,
-	}), "views/layouts/main")
+	}), "layouts/main")
 }
 
 type UpdateDataset struct {

@@ -15,7 +15,7 @@
     {{ if .Dataset.Manifest.Versions }}
     <ul class="versions">
       {{ range .Dataset.Manifest.ReverseVersions }}
-      {{ template "views/partials/version" . }}
+      {{ template "partials/version" . }}
       {{ end }}
     </ul>
     {{ else }}

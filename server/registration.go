@@ -24,10 +24,10 @@ func (form *RegistrationForm) RenderHtml(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 
-	return c.Render("views/register", Bind(c, fiber.Map{
+	return c.Render("register", Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
 		"Error":    form.err,
-	}), "views/layouts/main")
+	}), "layouts/main")
 }
 
 type Registration struct {

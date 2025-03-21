@@ -36,10 +36,10 @@ func (form *CreateTeamForm) HandleError(d *Server, c *fiber.Ctx, err error) erro
 }
 
 func (form *CreateTeamForm) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("views/team/create", Bind(c, fiber.Map{
+	return c.Render("team/create", Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
 		"Error":    form.err,
-	}), "views/layouts/main")
+	}), "layouts/main")
 }
 
 type CreateTeam struct {

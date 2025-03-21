@@ -67,13 +67,13 @@ func (page *GetDataset) HandleError(d *Server, c *fiber.Ctx, err error) error {
 }
 
 func (page *GetDataset) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("views/dataset/index", Bind(c, fiber.Map{
+	return c.Render("dataset/index", Bind(c, fiber.Map{
 		"AuthUser":  page.authUser,
 		"Dataset":   page.dataset,
 		"CanRead":   page.canRead,
 		"CanWrite":  page.canWrite,
 		"CanManage": page.canManage,
-	}), "views/layouts/main")
+	}), "layouts/main")
 }
 
 func (page *GetDataset) RenderJson(c *fiber.Ctx) error {

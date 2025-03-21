@@ -51,13 +51,13 @@ func (page *GetTeam) HandleError(d *Server, c *fiber.Ctx, err error) error {
 }
 
 func (page *GetTeam) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("views/team/index", Bind(c, fiber.Map{
+	return c.Render("team/index", Bind(c, fiber.Map{
 		"AuthUser":  page.authUser,
 		"CanRead":   page.canRead,
 		"CanWrite":  page.canWrite,
 		"CanManage": page.canManage,
 		"Team":      page.team,
-	}), "views/layouts/main")
+	}), "layouts/main")
 }
 
 func (page *GetTeam) RenderJson(c *fiber.Ctx) error {

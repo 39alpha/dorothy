@@ -3,6 +3,7 @@ package server
 import (
 	"embed"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"time"
 
@@ -15,13 +16,14 @@ import (
 )
 
 //go:embed views
-var viewsfs embed.FS
+var embeddedViews embed.FS
 
 type Server struct {
 	*fiber.App
 	*core.Dorothy
-	auth *Auth
-	db   *DB
+	auth    *Auth
+	db      *DB
+	viewsfs http.FileSystem
 }
 
 func NewServer(global bool) (*Server, error) {
@@ -84,7 +86,20 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return nil, err
 	}
 
-	engine := html.NewFileSystem(http.FS(viewsfs), ".html")
+	var viewsfs http.FileSystem
+	if dorothy.Config.Server == nil || dorothy.Config.Server.Views == "" {
+		fmt.Println("INFO: Using embedded views")
+		fsys, err := fs.Sub(embeddedViews, "views")
+		if err != nil {
+			panic(err)
+		}
+		viewsfs = http.FS(fsys)
+	} else {
+		fmt.Println("INFO: Using live views")
+		viewsfs = http.Dir(dorothy.Config.Server.Views)
+	}
+
+	engine := html.NewFileSystem(viewsfs, ".html")
 	engine.AddFunc("TimeFmt", func(t time.Time) string {
 		return t.Format("2006-01-02 15:04:05")
 	})
@@ -101,7 +116,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		Views:         engine,
 	})
 
-	server := &Server{app, dorothy, jwtAuth, session}
+	server := &Server{app, dorothy, jwtAuth, session, viewsfs}
 	server.setup()
 
 	return server, nil
@@ -122,13 +137,13 @@ func (d *Server) setup() {
 	}))
 
 	d.Use("/static", filesystem.New(filesystem.Config{
-		Root:       http.FS(viewsfs),
-		PathPrefix: "/views/static",
+		Root:       d.viewsfs,
+		PathPrefix: "/static",
 		Browse:     true,
 	}))
 	d.Use(favicon.New(favicon.Config{
-		FileSystem: http.FS(viewsfs),
-		File:       "/views/static/favicon.ico",
+		FileSystem: d.viewsfs,
+		File:       "/static/favicon.ico",
 	}))
 
 	d.Use(func(c *fiber.Ctx) error {

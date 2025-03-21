@@ -35,11 +35,11 @@ func (index *Index) Preprocess(d *Server, c *fiber.Ctx) error {
 }
 
 func (index *Index) RenderHtml(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).Render("views/index", Bind(c, fiber.Map{
+	return c.Status(fiber.StatusOK).Render("index", Bind(c, fiber.Map{
 		"AuthUser": index.user,
 		"Teams":    index.teams,
 		"Datasets": index.datasets,
-	}), "views/layouts/main")
+	}), "layouts/main")
 }
 
 func (index *Index) RenderJson(c *fiber.Ctx) error {

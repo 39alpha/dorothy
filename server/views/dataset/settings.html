@@ -139,7 +139,8 @@
   </form>
 </section>
 
-{{ template "views/partials/slugify" . }}
+{{ template "partials/slugify" . }}
+
 <script>
   const confirm_slug_change = (form) => {
     const dataset_slug = form.find("input[name='slug']");
