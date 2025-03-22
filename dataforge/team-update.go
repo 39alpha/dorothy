@@ -1,10 +1,10 @@
-package server
+package dataforge
 
 import (
 	"errors"
 	"fmt"
 
-	"github.com/39alpha/dorothy/server/models"
+	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 )
 

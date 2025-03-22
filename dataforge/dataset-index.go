@@ -1,12 +1,12 @@
-package server
+package dataforge
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
+	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/39alpha/dorothy/sdk"
-	"github.com/39alpha/dorothy/server/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/libp2p/go-libp2p/core/peer"
 )

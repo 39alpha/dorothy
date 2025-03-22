@@ -1,5 +1,5 @@
-SCSS := $(wildcard server/assets/styles/*.scss)
-CSS := server/static/styles/main.css
+SCSS := $(wildcard dataforge/assets/styles/*.scss)
+CSS := dataforge/static/styles/main.css
 
 all: build
 
@@ -13,7 +13,7 @@ docs:
 	make -C docs
 
 $(CSS): $(SCSS)
-	make -C server
+	make -C dataforge
 
 test: test-go test-cli
 
@@ -29,6 +29,6 @@ test-cli:
 
 clean:
 	rm -rf dorothy coverage
-	make -C server clean
+	make -C dataforge clean
 
 .PHONY: clean test docs

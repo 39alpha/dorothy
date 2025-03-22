@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/server/models"
+	"github.com/39alpha/dorothy/dataforge/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

@@ -1,4 +1,4 @@
-package server
+package dataforge
 
 import (
 	"embed"
@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/server/db"
+	"github.com/39alpha/dorothy/dataforge/db"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"

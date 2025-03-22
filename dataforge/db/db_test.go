@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/server/models"
+	"github.com/39alpha/dorothy/dataforge/models"
 	"gorm.io/gorm/clause"
 )
 

@@ -5,13 +5,13 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/39alpha/dorothy/server"
+	"github.com/39alpha/dorothy/dataforge"
 	"github.com/spf13/cobra"
 )
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "start a Dorothy web server",
+	Short: "start a Dorothy dataforge",
 	Run: HandleErrors(func(cmd *cobra.Command, args []string) error {
 		configpath, err := cmd.Flags().GetString("config")
 		if err != nil {
@@ -30,18 +30,18 @@ var serveCmd = &cobra.Command{
 			return err
 		}
 
-		var app *server.Server
+		var app *dataforge.Server
 		if configpath == "" {
-			app, err = server.NewServer(global)
+			app, err = dataforge.NewServer(global)
 		} else {
-			app, err = server.NewServerFromConfigFile(configpath, noinherit, global)
+			app, err = dataforge.NewServerFromConfigFile(configpath, noinherit, global)
 		}
 		if err != nil {
 			return err
 		}
 
 		c := make(chan error, 1)
-		go func(c chan error, app *server.Server, port int) {
+		go func(c chan error, app *dataforge.Server, port int) {
 			c <- app.ListenOnPort(port)
 		}(c, app, port)
 

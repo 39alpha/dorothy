@@ -1,4 +1,4 @@
-package server
+package dataforge
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/39alpha/dorothy/server/models"
+	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"

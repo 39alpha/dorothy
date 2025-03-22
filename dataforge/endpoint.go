@@ -1,4 +1,4 @@
-package server
+package dataforge
 
 import (
 	"github.com/gofiber/fiber/v2"
