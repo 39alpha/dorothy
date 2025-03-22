@@ -1,13 +1,16 @@
-package dataforge
+package team
 
 import (
 	"fmt"
 
+	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 )
 
-type TeamAvailability struct {
+type Available struct {
+	handlers.ErrorHandler
+
 	payload struct {
 		Name string
 	}
@@ -16,7 +19,7 @@ type TeamAvailability struct {
 	isAvailable bool
 }
 
-func (page *TeamAvailability) Preprocess(d *Server, c *fiber.Ctx) error {
+func (page *Available) Pre(c *fiber.Ctx) error {
 	authUser, _ := c.Locals("AuthUser").(*models.User)
 	if authUser == nil {
 		return fiber.ErrForbidden
@@ -29,10 +32,10 @@ func (page *TeamAvailability) Preprocess(d *Server, c *fiber.Ctx) error {
 	return nil
 }
 
-func (page *TeamAvailability) Run(d *Server) error {
+func (page *Available) Run() error {
 	var err error
 	page.name = models.Slugify(page.payload.Name)
-	page.isAvailable, err = d.db.IsTeamNameAvailable(page.name)
+	page.isAvailable, err = page.DB().IsTeamNameAvailable(page.name)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: cannot check availability at this time",
@@ -43,7 +46,7 @@ func (page *TeamAvailability) Run(d *Server) error {
 	return nil
 }
 
-func (page *TeamAvailability) RenderJson(c *fiber.Ctx) error {
+func (page *Available) RenderJson(c *fiber.Ctx) error {
 	message := fiber.Map{
 		"needsRewrite":  page.payload.Name != page.name,
 		"name":          page.payload.Name,

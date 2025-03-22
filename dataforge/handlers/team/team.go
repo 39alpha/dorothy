@@ -1,13 +1,16 @@
-package dataforge
+package team
 
 import (
 	"errors"
 
+	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 )
 
-type GetTeam struct {
+type Team struct {
+	handlers.ErrorHandler
+
 	authUser *models.User
 	team     *models.Team
 
@@ -16,14 +19,14 @@ type GetTeam struct {
 	canManage bool
 }
 
-func (page *GetTeam) Preprocess(d *Server, c *fiber.Ctx) (err error) {
+func (page *Team) Pre(c *fiber.Ctx) (err error) {
 	if authUser, ok := c.Locals("AuthUser").(*models.User); ok {
 		page.authUser = authUser
 	}
 
-	page.team, err = d.db.GetTeam(page.authUser, c.Params("team"))
+	page.team, err = page.DB().GetTeam(page.authUser, c.Params("team"))
 	if err != nil {
-		return GormToFiber(err)
+		return handlers.GormToFiber(err)
 	}
 
 	if page.authUser != nil {
@@ -41,17 +44,17 @@ func (page *GetTeam) Preprocess(d *Server, c *fiber.Ctx) (err error) {
 	return
 }
 
-func (page *GetTeam) HandleError(d *Server, c *fiber.Ctx, err error) error {
+func (page *Team) Recover(c *fiber.Ctx, err error) error {
 	var e *fiber.Error
-	if errors.As(err, &e) && e == fiber.ErrUnauthorized && Redirectable(c) {
+	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
 		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
 	}
 
-	return d.ErrorFallback(c, err)
+	return page.ErrorFallback(c, err)
 }
 
-func (page *GetTeam) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("team/index", Bind(c, fiber.Map{
+func (page *Team) RenderHtml(c *fiber.Ctx) error {
+	return c.Render("team/index", handlers.Bind(c, fiber.Map{
 		"AuthUser":  page.authUser,
 		"CanRead":   page.canRead,
 		"CanWrite":  page.canWrite,
@@ -60,8 +63,8 @@ func (page *GetTeam) RenderHtml(c *fiber.Ctx) error {
 	}), "layouts/main")
 }
 
-func (page *GetTeam) RenderJson(c *fiber.Ctx) error {
-	return c.JSON(Bind(c, fiber.Map{
+func (page *Team) RenderJson(c *fiber.Ctx) error {
+	return c.JSON(handlers.Bind(c, fiber.Map{
 		"AuthUser":  page.authUser,
 		"CanRead":   page.canRead,
 		"CanWrite":  page.canWrite,

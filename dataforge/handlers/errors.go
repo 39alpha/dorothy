@@ -1,4 +1,4 @@
-package dataforge
+package handlers
 
 import (
 	"errors"
@@ -7,15 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
-
-type MergeConflict struct {
-	error
-	conflicts []core.Conflict
-}
-
-type ErrorHandler struct {
-	err error
-}
 
 func GormToFiber(err error) error {
 	if err == nil {
@@ -40,11 +31,26 @@ func GormToFiber(err error) error {
 	return fiber.ErrInternalServerError
 }
 
-func (handler *ErrorHandler) Preprocess(d *Server, c *fiber.Ctx) error {
-	c.Locals("Error", handler.err)
+type MergeConflict struct {
+	error
+	Conflicts []core.Conflict
+}
+
+func NewMergeConflict(err error, conflicts []core.Conflict) *MergeConflict {
+	return &MergeConflict{err, conflicts}
+}
+
+type ErrorHandler struct {
+	App
+
+	Err error
+}
+
+func (handler *ErrorHandler) Pre(c *fiber.Ctx) error {
+	c.Locals("Error", handler.Err)
 
 	var e *fiber.Error
-	if errors.As(handler.err, &e) {
+	if errors.As(handler.Err, &e) {
 		c.Status(e.Code)
 	} else {
 		c.Status(fiber.StatusInternalServerError)
@@ -53,7 +59,7 @@ func (handler *ErrorHandler) Preprocess(d *Server, c *fiber.Ctx) error {
 	return nil
 }
 
-func (handler *ErrorHandler) HandleError(d *Server, c *fiber.Ctx, err error) error {
+func (handler *ErrorHandler) Recover(c *fiber.Ctx, err error) error {
 	c.Status(fiber.StatusInternalServerError)
 	if c.Accepts("application/json") != "" {
 		return c.JSON(fiber.Map{
@@ -68,7 +74,7 @@ func (handler *ErrorHandler) HandleError(d *Server, c *fiber.Ctx, err error) err
 
 func (handler *ErrorHandler) RenderHtml(c *fiber.Ctx) error {
 	var err *fiber.Error
-	if errors.As(handler.err, &err) {
+	if errors.As(handler.Err, &err) {
 		switch err {
 		case fiber.ErrNotFound:
 			return c.Render("404", Bind(c), "layouts/main")
@@ -78,33 +84,33 @@ func (handler *ErrorHandler) RenderHtml(c *fiber.Ctx) error {
 	}
 
 	return c.Render("error", Bind(c, fiber.Map{
-		"Error": handler.err,
+		"Error": handler.Err,
 	}), "layouts/main")
 }
 
 func (handler *ErrorHandler) RenderJson(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
-		"error": handler.err.Error(),
+		"error": handler.Err.Error(),
 	})
 }
 
 func (handler *ErrorHandler) RenderText(c *fiber.Ctx) error {
-	return c.SendString(handler.err.Error())
+	return c.SendString(handler.Err.Error())
 }
 
-func (d *Server) ErrorFallback(c *fiber.Ctx, err error) error {
-	return d.RenderEndpoint(&ErrorHandler{err})(c)
+func (h *ErrorHandler) ErrorFallback(c *fiber.Ctx, err error) error {
+	return ToFiberHandler(&ErrorHandler{App: h, Err: err})(c)
 }
 
-func (d *Server) HandleFormError(form Endpoint, c *fiber.Ctx, err error) error {
-	handler := &ErrorHandler{err}
-	_ = handler.Preprocess(d, c)
+func (h *ErrorHandler) HandleFormError(page Handler, c *fiber.Ctx, err error) error {
+	handler := &ErrorHandler{App: h, Err: err}
+	_ = handler.Pre(c)
 
 	if c.Accepts("text/html") != "" {
-		return d.RenderEndpoint(form)(c)
+		return ToFiberHandler(page)(c)
 	} else if c.Accepts("application/json") != "" || c.Accepts("text/plain") != "" {
-		return d.RenderEndpoint(&ErrorHandler{err})(c)
+		return h.ErrorFallback(c, err)
 	}
 
-	return d.RenderEndpoint(form)(c)
+	return ToFiberHandler(page)(c)
 }

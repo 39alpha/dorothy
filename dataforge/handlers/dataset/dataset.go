@@ -1,37 +1,41 @@
-package dataforge
+package dataset
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
+	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/39alpha/dorothy/sdk"
 	"github.com/gofiber/fiber/v2"
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
-type GetDataset struct {
-	authUser  *models.User
-	dataset   models.Dataset
-	identity  peer.ID
+type Dataset struct {
+	handlers.ErrorHandler
+
+	authUser *models.User
+	dataset  models.Dataset
+	identity peer.ID
+
 	canRead   bool
 	canWrite  bool
 	canManage bool
 }
 
-func (page *GetDataset) Preprocess(d *Server, c *fiber.Ctx) error {
+func (page *Dataset) Pre(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	page.authUser, _ = c.Locals("AuthUser").(*models.User)
 
-	dataset, err := d.db.GetDataset(page.authUser, c.Params("team"), c.Params("dataset"))
+	dataset, err := page.DB().GetDataset(page.authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
-		return GormToFiber(err)
+		return handlers.GormToFiber(err)
 	}
 
-	dataset.Manifest, err = d.Ipfs.GetManifest(ctx, dataset.ManifestHash)
+	dataset.Manifest, err = page.Dorothy().Ipfs.GetManifest(ctx, dataset.ManifestHash)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	} else if dataset.Manifest == nil {
@@ -52,22 +56,22 @@ func (page *GetDataset) Preprocess(d *Server, c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	page.identity = d.Ipfs.Identity
+	page.identity = page.Dorothy().Ipfs.Identity
 
 	return nil
 }
 
-func (page *GetDataset) HandleError(d *Server, c *fiber.Ctx, err error) error {
+func (page *Dataset) Recover(c *fiber.Ctx, err error) error {
 	var e *fiber.Error
-	if errors.As(err, &e) && e == fiber.ErrUnauthorized && Redirectable(c) {
+	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
 		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
 	}
 
-	return d.ErrorFallback(c, err)
+	return page.ErrorFallback(c, err)
 }
 
-func (page *GetDataset) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("dataset/index", Bind(c, fiber.Map{
+func (page *Dataset) RenderHtml(c *fiber.Ctx) error {
+	return c.Render("dataset/index", handlers.Bind(c, fiber.Map{
 		"AuthUser":  page.authUser,
 		"Dataset":   page.dataset,
 		"CanRead":   page.canRead,
@@ -76,13 +80,13 @@ func (page *GetDataset) RenderHtml(c *fiber.Ctx) error {
 	}), "layouts/main")
 }
 
-func (page *GetDataset) RenderJson(c *fiber.Ctx) error {
+func (page *Dataset) RenderJson(c *fiber.Ctx) error {
 	return c.JSON(sdk.Payload{
 		Hash:         page.dataset.ManifestHash,
 		PeerIdentity: page.identity,
 	})
 }
 
-func (page *GetDataset) RenderText(c *fiber.Ctx) error {
+func (page *Dataset) RenderText(c *fiber.Ctx) error {
 	return c.SendString(page.dataset.ManifestHash + "\n" + string(page.identity))
 }

@@ -1,4 +1,4 @@
-package dataforge
+package dataset
 
 import (
 	"context"
@@ -6,30 +6,33 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/39alpha/dorothy/sdk"
 	"github.com/gofiber/fiber/v2"
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
-type ReceiveDataset struct {
+type Receive struct {
+	handlers.ErrorHandler
+
 	dataset  models.Dataset
 	identity peer.ID
 	payload  sdk.Payload
 }
 
-func (page *ReceiveDataset) Preprocess(d *Server, c *fiber.Ctx) error {
+func (page *Receive) Pre(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	authUser, _ := c.Locals("AuthUser").(*models.User)
 
-	dataset, err := d.db.GetDataset(authUser, c.Params("team"), c.Params("dataset"))
+	dataset, err := page.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
-		return GormToFiber(err)
+		return handlers.GormToFiber(err)
 	}
 
-	dataset.Manifest, err = d.Ipfs.GetManifest(ctx, dataset.ManifestHash)
+	dataset.Manifest, err = page.Dorothy().Ipfs.GetManifest(ctx, dataset.ManifestHash)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}
@@ -46,16 +49,16 @@ func (page *ReceiveDataset) Preprocess(d *Server, c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	page.identity = d.Ipfs.Identity
+	page.identity = page.Dorothy().Ipfs.Identity
 
 	return nil
 }
 
-func (page *ReceiveDataset) Run(d *Server) error {
-	ctx, cancel := context.WithTimeout(d, 10*time.Second)
+func (page *Receive) Run() error {
+	ctx, cancel := context.WithTimeout(page.Dorothy(), 10*time.Second)
 	defer cancel()
 
-	err := d.Ipfs.ConnectToPeerById(ctx, page.payload.PeerIdentity)
+	err := page.Dorothy().Ipfs.ConnectToPeerById(ctx, page.payload.PeerIdentity)
 	if err != nil {
 		if ctx.Err() == nil {
 			return fmt.Errorf("%w: failed to connect to ipfs peer", fiber.ErrInternalServerError)
@@ -64,55 +67,52 @@ func (page *ReceiveDataset) Run(d *Server) error {
 		}
 	}
 
-	manifest, conflicts, err := d.Receive(page.dataset.Manifest, page.payload.Hash)
+	manifest, conflicts, err := page.Dorothy().Receive(page.dataset.Manifest, page.payload.Hash)
 	if len(conflicts) != 0 {
-		return &MergeConflict{
-			error:     fiber.ErrBadRequest,
-			conflicts: conflicts,
-		}
+		return handlers.NewMergeConflict(fiber.ErrBadRequest, conflicts)
 	} else if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
 	page.dataset.ManifestHash = manifest.Hash
-	if err := d.db.Save(&page.dataset).Error; err != nil {
+	if err := page.DB().Save(&page.dataset).Error; err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}
 
 	return nil
 }
 
-func (page *ReceiveDataset) HandleError(d *Server, c *fiber.Ctx, err error) error {
-	handler := ErrorHandler{err}
-	_ = handler.Preprocess(d, c)
+func (page *Receive) Recover(c *fiber.Ctx, err error) error {
+	handler := &handlers.ErrorHandler{Err: err}
+	_ = handler.Pre(c)
 
-	var conflict *MergeConflict
+	var conflict *handlers.MergeConflict
 	if errors.As(err, &conflict) {
 		if c.Accepts("application/json") != "" {
 			return c.JSON(fiber.Map{
-				"conflicts": conflict.conflicts,
+				"conflicts": conflict.Conflicts,
 				"error":     "merge failed with conflicts",
 			})
 		} else if c.Accepts("text/plain") != "" {
-			msg := fmt.Sprintf("merge failed with %d conflicts", len(conflict.conflicts))
+			msg := fmt.Sprintf("merge failed with %d conflicts", len(conflict.Conflicts))
 			return c.SendString(msg)
 		}
 	}
 
-	return d.ErrorFallback(c, err)
+	return page.ErrorFallback(c, err)
 }
 
-func (page *ReceiveDataset) RenderHtml(c *fiber.Ctx) error {
+func (page *Receive) RenderHtml(c *fiber.Ctx) error {
 	return c.Redirect("/" + page.dataset.Team.Name + "/" + page.dataset.Name)
 }
 
-func (page *ReceiveDataset) RenderJson(c *fiber.Ctx) error {
+func (page *Receive) RenderJson(c *fiber.Ctx) error {
 	return c.JSON(sdk.Payload{
 		Hash:         page.dataset.ManifestHash,
 		PeerIdentity: page.identity,
 	})
 }
 
-func (page *ReceiveDataset) RenderText(c *fiber.Ctx) error {
+func (*Receive) RenderText(c *fiber.Ctx) error {
 	return c.SendString("success")
 }

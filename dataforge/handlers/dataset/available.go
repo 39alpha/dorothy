@@ -1,13 +1,16 @@
-package dataforge
+package dataset
 
 import (
 	"fmt"
 
+	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 )
 
-type DatasetAvailability struct {
+type Available struct {
+	handlers.ErrorHandler
+
 	payload struct {
 		Name string
 	}
@@ -17,7 +20,7 @@ type DatasetAvailability struct {
 	isAvailable bool
 }
 
-func (page *DatasetAvailability) Preprocess(d *Server, c *fiber.Ctx) error {
+func (page *Available) Pre(c *fiber.Ctx) error {
 	authUser, _ := c.Locals("AuthUser").(*models.User)
 	if authUser == nil {
 		return fiber.ErrForbidden
@@ -27,9 +30,9 @@ func (page *DatasetAvailability) Preprocess(d *Server, c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	team, err := d.db.GetTeam(authUser, page.teamName)
+	team, err := page.DB().GetTeam(authUser, page.teamName)
 	if err != nil {
-		return GormToFiber(err)
+		return handlers.GormToFiber(err)
 	}
 
 	if team.IsPrivate && !authUser.CanReadTeam(*team) {
@@ -39,10 +42,10 @@ func (page *DatasetAvailability) Preprocess(d *Server, c *fiber.Ctx) error {
 	return nil
 }
 
-func (page *DatasetAvailability) Run(d *Server) error {
+func (page *Available) Run() error {
 	var err error
 	page.name = models.Slugify(page.payload.Name)
-	page.isAvailable, err = d.db.IsDatasetNameAvailable(page.teamName, page.name)
+	page.isAvailable, err = page.DB().IsDatasetNameAvailable(page.teamName, page.name)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: cannot check availability at this time",
@@ -53,7 +56,7 @@ func (page *DatasetAvailability) Run(d *Server) error {
 	return nil
 }
 
-func (page *DatasetAvailability) RenderJson(c *fiber.Ctx) error {
+func (page *Available) RenderJson(c *fiber.Ctx) error {
 	message := fiber.Map{
 		"needsRewrite":  page.payload.Name != page.name,
 		"name":          page.payload.Name,

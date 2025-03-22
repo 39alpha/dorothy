@@ -10,6 +10,7 @@ import (
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/dataforge/auth"
 	"github.com/39alpha/dorothy/dataforge/db"
+	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
@@ -22,10 +23,22 @@ var embeddedViews embed.FS
 
 type Server struct {
 	*fiber.App
-	*core.Dorothy
+	dorothy *core.Dorothy
 	auth    *auth.Auth
 	db      *db.DB
 	viewsfs http.FileSystem
+}
+
+func (s *Server) Dorothy() *core.Dorothy {
+	return s.dorothy
+}
+
+func (s *Server) Auth() *auth.Auth {
+	return s.auth
+}
+
+func (s *Server) DB() *db.DB {
+	return s.db
 }
 
 func NewServer(global bool) (*Server, error) {
@@ -158,119 +171,16 @@ func (d *Server) setup() {
 	d.Use(d.auth.Verifier())
 	d.Use(d.auth.Authenticator(d.db))
 
-	d.Get("/", PerRequest[Index]())
+	for _, route := range Routes() {
+		handler := handlers.PerRequest(route.handler, d)
 
-	d.Get("/register", PerRequest[RegistrationForm]())
-	d.Post("/register", PerRequest[Registration]())
-	d.Get("/login", PerRequest[LoginForm]())
-	d.Post("/login", PerRequest[Login]())
-	d.Get("/logout", PerRequest[Logout]())
-
-	d.Get("/team/create", PerRequest[CreateTeamForm]())
-	d.Post("/team/create", PerRequest[CreateTeam]())
-	d.Post("/team/availability", PerRequest[TeamAvailability]())
-
-	team := d.Group("/:team")
-	team.Get("/", PerRequest[GetTeam]())
-	team.Get("/settings", PerRequest[UpdateTeamForm]())
-	team.Post("/settings", PerRequest[UpdateTeam]())
-	team.Get("/dataset/create", PerRequest[CreateDatasetForm]())
-	team.Post("/dataset/create", PerRequest[CreateDataset]())
-	team.Post("/dataset/availability", PerRequest[DatasetAvailability]())
-
-	dataset := team.Group("/:dataset")
-	dataset.Get("/", PerRequest[GetDataset]())
-	dataset.Post("/", PerRequest[ReceiveDataset]())
-	dataset.Delete("/", PerRequest[DeleteDataset]())
-	dataset.Get("/settings", PerRequest[UpdateDatasetForm]())
-	dataset.Post("/settings", PerRequest[UpdateDataset]())
-}
-
-func (d *Server) Get(path string, ctors ...EndpointCtor) Router {
-	handlers := []fiber.Handler{}
-	for _, ctor := range ctors {
-		handlers = append(handlers, d.RenderEndpointCtor(ctor))
-	}
-
-	return Router{
-		Router: d.App.Get(path, handlers...),
-		Server: d,
-	}
-}
-
-func (d *Server) Post(path string, ctors ...EndpointCtor) Router {
-	handlers := []fiber.Handler{}
-	for _, ctor := range ctors {
-		handlers = append(handlers, d.RenderEndpointCtor(ctor))
-	}
-
-	return Router{
-		Router: d.App.Post(path, handlers...),
-		Server: d,
-	}
-}
-
-type Router struct {
-	fiber.Router
-	Server *Server
-}
-
-func (d *Server) Group(path string, ctors ...EndpointCtor) Router {
-	handlers := []fiber.Handler{}
-	for _, ctor := range ctors {
-		handlers = append(handlers, d.RenderEndpointCtor(ctor))
-	}
-
-	return Router{
-		Router: d.App.Group(path, handlers...),
-		Server: d,
-	}
-}
-
-func (r *Router) Get(path string, ctors ...EndpointCtor) Router {
-	handlers := []fiber.Handler{}
-	for _, ctor := range ctors {
-		handlers = append(handlers, r.Server.RenderEndpointCtor(ctor))
-	}
-
-	return Router{
-		Router: r.Router.Get(path, handlers...),
-		Server: r.Server,
-	}
-}
-
-func (r *Router) Post(path string, ctors ...EndpointCtor) Router {
-	handlers := []fiber.Handler{}
-	for _, ctor := range ctors {
-		handlers = append(handlers, r.Server.RenderEndpointCtor(ctor))
-	}
-
-	return Router{
-		Router: r.Router.Post(path, handlers...),
-		Server: r.Server,
-	}
-}
-
-func (r *Router) Delete(path string, ctors ...EndpointCtor) Router {
-	handlers := []fiber.Handler{}
-	for _, ctor := range ctors {
-		handlers = append(handlers, r.Server.RenderEndpointCtor(ctor))
-	}
-
-	return Router{
-		Router: r.Router.Delete(path, handlers...),
-		Server: r.Server,
-	}
-}
-
-func (r *Router) Group(path string, ctors ...EndpointCtor) Router {
-	handlers := []fiber.Handler{}
-	for _, ctor := range ctors {
-		handlers = append(handlers, r.Server.RenderEndpointCtor(ctor))
-	}
-
-	return Router{
-		Router: r.Router.Group(path, handlers...),
-		Server: r.Server,
+		switch route.method {
+		case GET:
+			d.Get(route.endpoint, handler)
+		case POST:
+			d.Post(route.endpoint, handler)
+		case DELETE:
+			d.Delete(route.endpoint, handler)
+		}
 	}
 }
