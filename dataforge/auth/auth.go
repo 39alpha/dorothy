@@ -1,4 +1,4 @@
-package dataforge
+package auth
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/39alpha/dorothy/dataforge/db"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/gofiber/fiber/v2"
@@ -19,7 +20,7 @@ type Auth struct {
 	*jwtauth.JWTAuth
 }
 
-func NewAuth() (*Auth, error) {
+func New() (*Auth, error) {
 	secret := os.Getenv("DOROTHY_OAUTH_SECRET")
 	if secret == "" {
 		var err error
@@ -57,14 +58,14 @@ func (auth *Auth) MakeToken(user *models.User) (string, error) {
 	return token, err
 }
 
-func (d *Server) Verifier() fiber.Handler {
+func (auth *Auth) Verifier() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		req, err := adaptor.ConvertRequest(c, false)
 		if err != nil {
 			return err
 		}
 
-		token, _ := jwtauth.VerifyRequest(d.auth.JWTAuth, req, jwtauth.TokenFromCookie)
+		token, _ := jwtauth.VerifyRequest(auth.JWTAuth, req, jwtauth.TokenFromCookie)
 		c.Locals("Token", token)
 		return c.Next()
 	}
@@ -90,13 +91,13 @@ func fromContext(c *fiber.Ctx) (jwt.Token, map[string]any, error) {
 	return token, claims, err
 }
 
-func (d *Server) Authenticator() fiber.Handler {
+func (auth *Auth) Authenticator(db *db.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token, claims, _ := fromContext(c)
-		if token != nil && jwt.Validate(token, d.auth.ValidateOptions()...) == nil {
+		if token != nil && jwt.Validate(token, auth.ValidateOptions()...) == nil {
 			if email, ok := claims["email"]; ok {
 				var user *models.User
-				err := d.db.Preload("Role").
+				err := db.Preload("Role").
 					Preload("TeamPrivileges.Team").
 					Preload("DatasetPrivileges.Dataset.Team").
 					First(&user, "email = ?", email).Error

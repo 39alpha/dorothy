@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/dataforge/auth"
 	"github.com/39alpha/dorothy/dataforge/db"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -22,7 +23,7 @@ var embeddedViews embed.FS
 type Server struct {
 	*fiber.App
 	*core.Dorothy
-	auth    *Auth
+	auth    *auth.Auth
 	db      *db.DB
 	viewsfs http.FileSystem
 }
@@ -73,7 +74,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return nil, err
 	}
 
-	jwtAuth, err := NewAuth()
+	jwtAuth, err := auth.New()
 	if err != nil {
 		return nil, err
 	}
@@ -154,8 +155,8 @@ func (d *Server) setup() {
 		})
 		return c.Next()
 	})
-	d.Use(d.Verifier())
-	d.Use(d.Authenticator())
+	d.Use(d.auth.Verifier())
+	d.Use(d.auth.Authenticator(d.db))
 
 	d.Get("/", PerRequest[Index]())
 
