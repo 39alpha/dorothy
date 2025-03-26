@@ -231,6 +231,32 @@ func (db *DB) IsTeamNameAvailable(name string) (bool, error) {
 	return count == 0, nil
 }
 
+func (db *DB) GetTeamById(authUser *models.User, id uint) (*models.Team, error) {
+	team := &models.Team{ID: id}
+	if err := db.Preload("Datasets.Team").Where(team).First(team).Error; err != nil {
+		return nil, err
+	}
+
+	datasets := []models.Dataset{}
+	if authUser == nil {
+		for _, dataset := range team.Datasets {
+			if !dataset.IsPrivate {
+				datasets = append(datasets, dataset)
+			}
+		}
+	} else {
+		for _, dataset := range team.Datasets {
+			if authUser.CanReadDataset(dataset) {
+				datasets = append(datasets, dataset)
+			}
+		}
+	}
+
+	team.Datasets = datasets
+
+	return team, nil
+}
+
 func (db *DB) GetTeam(authUser *models.User, name string) (*models.Team, error) {
 	if name == "" {
 		return nil, gorm.ErrRecordNotFound

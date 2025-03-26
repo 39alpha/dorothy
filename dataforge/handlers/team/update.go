@@ -101,7 +101,7 @@ func (page *Update) Run() error {
 
 func (page *Update) Post(c *fiber.Ctx) error {
 	var err error
-	page.team, err = page.DB().GetTeam(page.authUser, page.update.Name)
+	page.team, err = page.DB().GetTeamById(page.authUser, page.team.ID)
 	return handlers.GormToFiber(err)
 }
 
