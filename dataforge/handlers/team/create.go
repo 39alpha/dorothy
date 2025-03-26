@@ -7,7 +7,6 @@ import (
 	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 type CreateForm struct {
@@ -67,42 +66,17 @@ func (page *Create) Pre(c *fiber.Ctx) error {
 }
 
 func (page *Create) Run() error {
-	team := &models.Team{
-		Name:      models.Slugify(page.newTeam.Name),
-		Contact:   page.newTeam.Contact,
-		IsPrivate: page.newTeam.IsPrivate,
+	var err error
+	page.newTeam.Name, err = page.DB().CreateTeam(page.newTeam, &page.authUser)
+	if err != nil {
+		return handlers.GormToFiber(err)
 	}
-	if page.newTeam.Description != nil {
-		team.Description = *page.newTeam.Description
-	}
-
-	return page.DB().Transaction(func(tx *gorm.DB) error {
-		if err := page.DB().Save(team).Error; err != nil {
-			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
-		}
-
-		err := page.DB().Save(&models.UserTeamPrivilege{
-			User:          &page.authUser,
-			Team:          team,
-			PrivilegeCode: "admin",
-		}).Error
-
-		if err != nil {
-			return fmt.Errorf(
-				"%w: We could not create your team at this time. Try again later?",
-				fiber.ErrInternalServerError,
-			)
-		}
-
-		page.team = team
-
-		return nil
-	})
+	return nil
 }
 
 func (page *Create) Post(c *fiber.Ctx) error {
 	var err error
-	page.team, err = page.DB().GetTeam(&page.authUser, page.team.Name)
+	page.team, err = page.DB().GetTeam(&page.authUser, page.newTeam.Name)
 	return handlers.GormToFiber(err)
 }
 

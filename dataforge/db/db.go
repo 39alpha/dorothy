@@ -190,6 +190,33 @@ func (d *DB) GetTeams(user *models.User, loaddatasets bool) ([]models.Team, erro
 	return teams, nil
 }
 
+func (db *DB) CreateTeam(newteam models.NewTeam, user *models.User) (string, error) {
+	team := &models.Team{
+		Name:      models.Slugify(newteam.Name),
+		Contact:   newteam.Contact,
+		IsPrivate: newteam.IsPrivate,
+	}
+	if newteam.Description != nil {
+		team.Description = *newteam.Description
+	}
+
+	return team.Name, db.Transaction(func(tx *gorm.DB) error {
+		if err := db.Save(team).Error; err != nil {
+			return err
+		}
+
+		if user != nil {
+			return db.Save(&models.UserTeamPrivilege{
+				User:          user,
+				Team:          team,
+				PrivilegeCode: "admin",
+			}).Error
+		}
+
+		return nil
+	})
+}
+
 func (db *DB) IsTeamNameAvailable(name string) (bool, error) {
 	if name == "" {
 		return false, gorm.ErrInvalidValue
