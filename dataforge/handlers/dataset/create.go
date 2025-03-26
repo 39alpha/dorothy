@@ -108,7 +108,7 @@ func (page *Create) Run() error {
 		)
 	}
 
-	err = page.DB().CreateDataset(page.newDataset, manifest, &page.authUser)
+	page.newDataset.Name, err = page.DB().CreateDataset(page.newDataset, manifest, &page.authUser)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}

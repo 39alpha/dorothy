@@ -110,19 +110,19 @@ func (d *DB) ValidateCredentials(email, password string) error {
 	return nil
 }
 
-func (d *DB) CreateDataset(newdata models.NewDataset, manifest *core.Manifest, user *models.User) error {
-	return d.Transaction(func(tx *gorm.DB) error {
-		dataset := &models.Dataset{
-			Name:         newdata.Name,
-			TeamID:       newdata.TeamID,
-			Contact:      newdata.Contact,
-			IsPrivate:    newdata.IsPrivate,
-			ManifestHash: manifest.Hash,
-		}
-		if newdata.Description != nil {
-			dataset.Description = *newdata.Description
-		}
+func (d *DB) CreateDataset(newdata models.NewDataset, manifest *core.Manifest, user *models.User) (string, error) {
+	dataset := &models.Dataset{
+		Name:         models.Slugify(newdata.Name),
+		TeamID:       newdata.TeamID,
+		Contact:      newdata.Contact,
+		IsPrivate:    newdata.IsPrivate,
+		ManifestHash: manifest.Hash,
+	}
+	if newdata.Description != nil {
+		dataset.Description = *newdata.Description
+	}
 
+	return dataset.Name, d.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Save(dataset).Error; err != nil {
 			return err
 		}
