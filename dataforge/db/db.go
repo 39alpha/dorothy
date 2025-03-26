@@ -344,10 +344,11 @@ func (db *DB) GetDataset(authUser *models.User, teamName string, datasetName str
 	return dataset, nil
 }
 
-func (d *DB) UpdateDataset(update models.UpdateDataset) error {
+func (d *DB) UpdateDataset(update models.UpdateDataset) (string, error) {
+	name := models.Slugify(update.Name)
 	values := map[string]any{
 		"ID":          update.ID,
-		"Name":        update.Name,
+		"Name":        name,
 		"TeamID":      update.TeamID,
 		"Contact":     update.Contact,
 		"IsPrivate":   update.IsPrivate,
@@ -357,8 +358,7 @@ func (d *DB) UpdateDataset(update models.UpdateDataset) error {
 		values["Description"] = *update.Description
 	}
 
-	result := d.Model(models.Dataset{ID: update.ID}).Omit("ManifestHash").Updates(values)
-	return result.Error
+	return name, d.Model(models.Dataset{ID: update.ID}).Omit("ManifestHash").Updates(values).Error
 }
 
 func (d *DB) DeleteDataset(dataset *models.Dataset) error {

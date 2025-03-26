@@ -112,7 +112,7 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 }
 
 func (page *Update) Run() error {
-	if err := page.DB().UpdateDataset(page.update); err != nil {
+	if _, err := page.DB().UpdateDataset(page.update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 	return nil
