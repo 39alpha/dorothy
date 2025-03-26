@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/39alpha/dorothy/core"
@@ -20,6 +21,18 @@ type Dataset struct {
 
 	Team           *Team                  `json:"team"`
 	UserPrivileges []UserDatasetPrivilege `json:"userPrivileges" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}
+
+func (dataset Dataset) FullName() string {
+	if dataset.Team != nil {
+		return fmt.Sprintf("%s/%s", dataset.Team.FullName(), dataset.Name)
+	} else {
+		return fmt.Sprintf("%d/%s", dataset.TeamID, dataset.Name)
+	}
+}
+
+func (dataset Dataset) Path() string {
+	return fmt.Sprintf("/%s", dataset.FullName())
 }
 
 type NewDataset struct {

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,6 +19,14 @@ type Team struct {
 
 	Datasets       []Dataset           `json:"datasets"`
 	UserPrivileges []UserTeamPrivilege `json:"userPrivileges"`
+}
+
+func (team Team) FullName() string {
+	return team.Name
+}
+
+func (team Team) Path() string {
+	return fmt.Sprintf("/%s", team.Name)
 }
 
 type NewTeam struct {
