@@ -13,7 +13,7 @@ import (
 type UpdateForm struct {
 	handlers.ErrorHandler
 
-	authUser models.User
+	authUser *models.User
 	dataset  models.Dataset
 }
 
@@ -25,7 +25,7 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
-	form.authUser = *authUser
+	form.authUser = authUser
 
 	dataset, err := form.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
