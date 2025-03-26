@@ -15,7 +15,6 @@ func init() {
 
 func Slugify(name string) string {
 	slug := strings.TrimSpace(name)
-	slug = strings.ToLower(slug)
 	slug = invalidChar.ReplaceAllString(slug, "")
 	return spaces.ReplaceAllString(slug, "-")
 }
