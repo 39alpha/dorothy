@@ -30,6 +30,8 @@ func (page *Available) Pre(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
+	page.teamName = c.Params("team")
+
 	team, err := page.DB().GetTeam(authUser, page.teamName)
 	if err != nil {
 		return handlers.GormToFiber(err)
