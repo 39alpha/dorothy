@@ -90,7 +90,9 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 }
 
 func (page *Update) Run() error {
-	if err := page.DB().UpdateTeam(page.update); err != nil {
+	var err error
+	page.update.Name, err = page.DB().UpdateTeam(page.update)
+	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 

@@ -339,9 +339,10 @@ func (d *DB) DeleteDataset(dataset *models.Dataset) error {
 	return d.Delete(dataset).Error
 }
 
-func (d *DB) UpdateTeam(update models.UpdateTeam) error {
+func (d *DB) UpdateTeam(update models.UpdateTeam) (string, error) {
+	name := models.Slugify(update.Name)
 	values := map[string]any{
-		"Name":        update.Name,
+		"Name":        name,
 		"Contact":     update.Contact,
 		"IsPrivate":   update.IsPrivate,
 		"Description": "",
@@ -350,7 +351,7 @@ func (d *DB) UpdateTeam(update models.UpdateTeam) error {
 		values["Description"] = *update.Description
 	}
 
-	return d.Model(models.Team{ID: update.ID}).Updates(values).Error
+	return name, d.Model(models.Team{ID: update.ID}).Updates(values).Error
 }
 
 func (db *DB) IsDatasetNameAvailable(team, name string) (bool, error) {
