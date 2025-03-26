@@ -1,241 +1,204 @@
-<header>
-  <h1>{{ .Dataset.Team.Name }}/{{ .Dataset.Name }} Settings</h1>
-</header>
+<h2>{{ .Dataset.Team.Name }}/{{ .Dataset.Name }} Settings</h2>
 
 <section>
-  <div class="message hidden">
-    <p class="error"></p>
-  </div>
+    <h3>General Settings</h3>
+    <form class="flex flex-col max-w-sm" name="update" method="POST" onsubmit="return confirm_settings_update(event);">
+        {{ template "partials/error-message" . }}
 
-  <h2>General Settings</h2>
-  <form name="update" method="POST" onsubmit="return confirm_settings_update(event);">
-    <div class="message hidden">
-      <p class="error"></p>
-    </div>
+        <input class="hidden" name="teamId" type="number" value="{{ .Dataset.Team.ID }}" readonly />
 
-    <input class="hidden" name="teamId" type="number" value="{{ .Dataset.Team.ID }}" readonly />
+        <input class="hidden" name="id" type="number" value="{{ .Dataset.ID }}" readonly />
 
-    <input class="hidden" name="id" type="number" value="{{ .Dataset.ID }}" readonly />
+        <label class="font-bold" for="name">Name</label>
+        <input id="name" name="name" type="text" data-value="{{ .Dataset.Name }}" value="{{ .Dataset.Name }}" autofocus required />
+        <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
 
-    <div>
-      <label for="name">Name</label>
-      <input id="name" name="name" type="text" data-value="{{ .Dataset.Name }}" value="{{ .Dataset.Name }}" />
-      <p id="availability" class="hidden"></p>
-    </div>
+        <label class="font-bold" for="contact">Contact Email</label>
+        <input name="contact" type="email" value="{{ .Dataset.Contact }}" required />
 
-    <div>
-      <label for="contact">Contact Email</label>
-      <input name="contact" type="email" value="{{ .Dataset.Contact }}" />
-    </div>
+        <label class="font-bold" for="description">Description</label>
+        <textarea name="description" rows="4">
+            {{- .Dataset.Description -}}
+        </textarea>
 
-    <div>
-      <label for="description">Description</label>
-      <textarea name="description" rows="4">
-        {{- .Dataset.Description -}}
-      </textarea>
-    </div>
+        <div class="mb-5 flex flex-row items-center gap-5">
+            <label for="isPrivate">Private?</label>
+            <input name="isPrivate" type="checkbox" data-value="{{ .Dataset.IsPrivate }}" {{ if .Dataset.IsPrivate }}checked{{
+                end }} />
+        </div>
 
-    <div class="inline">
-      <label for="isPrivate">Private?</label>
-      <input name="isPrivate" type="checkbox" data-value="{{ .Dataset.IsPrivate }}" {{ if .Dataset.IsPrivate }}checked{{
-        end }} />
-    </div>
-
-    <div>
-      <button type="submit">Update Dataset ▶</button>
-    </div>
-  </form>
+        <button type="submit">Update Dataset ▶</button>
+    </form>
 </section>
 
 <section>
-  <header>
-    <h2>User Access</h2>
-  </header>
-  <!-- TODO: Update this to use a search instead of listing all users -->
-  <form class="user_access" name="user-access" action="#">
-    <div class="message hidden">
-      <p class="error"></p>
-    </div>
-    <ul>
-      <li>
-        Doug Moore &lt;doug@39alpharesearch.org&gt;
-        <ul>
-          <li>
+    <h3>User Access</h3>
+
+    <!-- TODO: Update this to use a search instead of listing all users -->
+    <form class="flex flex-col max-w-sm" name="user-access" action="#">
+        <input type="text" placeholder="Search for a user..." />
+
+        <fieldset class="pt-0 mb-5">
+            <legend>Doug Moore <small>&lt;doug@39alpharesearch.org&gt;</small></legend>
+            <p class="mt-0 mb-2"></p>
             <input type="radio" name="privilege-1" id="privilege-admin-1" value="admin" />
             <label for="privilege-admin-1">admin</label>
-          </li>
-          <li>
+
             <input type="radio" name="privilege-1" id="privilege-write-1" value="write" />
             <label for="privilege-write-1">write</label>
-          </li>
-          <li>
+
             <input type="radio" name="privilege-1" id="privilege-read-1" value="read" />
             <label for="privilege-read-1">read</label>
-          </li>
-        </ul>
-      </li>
-      <li>Tucker Ely &lt;tucker@39alpharesearch.org&gt;
-        <ul>
-          <li>
-            <input type="radio" name="privilege-2" id="privilege-admin-2" value="admin" />
-            <label for="privilege-admin-2">admin</label>
-          </li>
-          <li>
-            <input type="radio" name="privilege-2" id="privilege-write-2" value="write" />
-            <label for="privilege-write-2">write</label>
-          </li>
-          <li>
-            <input type="radio" name="privilege-2" id="privilege-read-2" value="read" />
-            <label for="privilege-read-2">read</label>
-          </li>
-        </ul>
-      </li>
-      <li>Cole Mathis &lt;cole@39alpharesearch.org&gt;
-        <ul>
-          <li>
-            <input type="radio" name="privilege-2" id="privilege-admin-2" value="admin" />
-            <label for="privilege-admin-2">admin</label>
-          </li>
-          <li>
-            <input type="radio" name="privilege-2" id="privilege-write-2" value="write" />
-            <label for="privilege-write-2">write</label>
-          </li>
-          <li>
-            <input type="radio" name="privilege-2" id="privilege-read-2" value="read" />
-            <label for="privilege-read-2">read</label>
-          </li>
-        </ul>
-      </li>
-    </ul>
+        </fieldset>
 
-    <div>
-      <button type="submit">Update User Access ▶</button>
-    </div>
-  </form>
+        <fieldset class="pt-0 mb-5">
+            <legend>Tucker Ely <small>&lt;tucker@39alpharesearch.org&gt;</small></legend>
+            <p class="mt-0 mb-2"></p>
+            <input type="radio" name="privilege-1" id="privilege-admin-1" value="admin" />
+            <label for="privilege-admin-1">admin</label>
+
+            <input type="radio" name="privilege-1" id="privilege-write-1" value="write" />
+            <label for="privilege-write-1">write</label>
+
+            <input type="radio" name="privilege-1" id="privilege-read-1" value="read" />
+            <label for="privilege-read-1">read</label>
+        </fieldset>
+
+        <fieldset class="pt-0 mb-5">
+            <legend>Cole Mathis <small>&lt;cole@39alpharesearch.org&gt;</small></legend>
+            <p class="mt-0 mb-2"></p>
+            <input type="radio" name="privilege-1" id="privilege-admin-1" value="admin" />
+            <label for="privilege-admin-1">admin</label>
+
+            <input type="radio" name="privilege-1" id="privilege-write-1" value="write" />
+            <label for="privilege-write-1">write</label>
+
+            <input type="radio" name="privilege-1" id="privilege-read-1" value="read" />
+            <label for="privilege-read-1">read</label>
+        </fieldset>
+
+        <button type="submit">Update User Access ▶</button>
+    </form>
 </section>
 
 <section>
-  <header>
-    <h2>Dataset Management</h2>
-  </header>
-  <form name="delete" onsubmit="return delete_dataset(event);">
-    <div class="message hidden">
-      <p class="error"></p>
-    </div>
+    <h3>Dataset Management</h3>
 
-    <input class="hidden" name="teamId" type="number" value="{{ .Dataset.Team.ID }}" readonly />
-    <input class="hidden" name="id" type="number" value="{{ .Dataset.ID }}" readonly />
-    <p>
-      <strong>Warning</strong>: When datasets are delete all data, including
-      the history and any pinned version, are removed from the server.
-      Make sure you understand the risks before deleting a dataset.
-    </p>
-    <button class="error" type="submit">Delete Dataset ▶</button>
-  </form>
+    <form class="flex flex-col max-w-sm" name="delete" onsubmit="return delete_dataset(event);">
+        <input class="hidden" name="teamId" type="number" value="{{ .Dataset.Team.ID }}" readonly />
+        <input class="hidden" name="id" type="number" value="{{ .Dataset.ID }}" readonly />
+        <p class="mt-0 max-w-full">
+            <strong>Warning</strong>: When datasets are deleted all data, including
+            the history and any pinned versions, are removed from the server.
+            Make sure you understand the risks before deleting a dataset.
+        </p>
+        <button class="text-red-600 font-bold" type="submit">Delete Dataset ▶</button>
+    </form>
 </section>
 
 <script>
-  checkAvailability("dataset", "/{{.Dataset.Team.Name}}/dataset/availability", {
-    original: "{{.Dataset.Name}}",
-    trigger: 'form[name="update"] button[type="submit"]',
-  });
+    checkAvailability("dataset", "/{{.Dataset.Team.Name}}/dataset/availability", {
+        original: "{{.Dataset.Name}}",
+        trigger: 'form[name="update"] button[type="submit"]',
+        target_parent: true,
+    });
 
-  const confirm_slug_change = (form) => {
-    const dataset_slug = form.find("input[name='slug']");
-    const was = dataset_slug.attr('data-value');
-    const now = dataset_slug.prop('value');
+    const confirm_slug_change = (form) => {
+        const dataset_name = form.find("input[name='slug']");
+        const was = dataset_slug.attr('data-value');
+        const now = dataset_slug.prop('value');
 
-    const msg = `You are about to change the dataset slug from ${was} to ${now}.\n\n` +
-      'Users who have cloned the repository will have to change their remote setting.\n\n' +
-      'Are you sure you want to do this?';
-    if (was !== now && !confirm(msg)) {
-      return false;
-    }
+        const msg = `You are about to change the dataset slug from ${was} to ${now}.\n\n` +
+            'Users who have cloned the repository will have to change their remote setting.\n\n' +
+            'Are you sure you want to do this?';
+        if (was !== now && !confirm(msg)) {
+            return false;
+        }
 
-    return true;
-  };
-
-  const confirm_visibility_change = (form) => {
-    const is_private = form.find("input[name='isPrivate']");
-    const was = is_private.attr('data-value') == 'true' ? 'private' : 'public';
-    const now = is_private.prop('checked') ? 'private' : 'public';
-
-    let msg = `You are about to change the visibility of the dataset from ${was} to ${now}.\n\n`;
-    if (now == 'public') {
-      msg += 'Anyone will be able to view the dataset, but only users with admin or write access will be able to modify it.\n\n';
-    } else {
-      msg += 'Only users with read, write or admin access to the respository will be able to view the dataset.\n\n';
-    }
-    msg += 'Are you sure you want to do this?';
-
-    if (was !== now && !confirm(msg)) {
-      return false;
-    }
-
-    return true;
-  };
-
-  const confirm_settings_update = (event) => {
-    const form = $(event.target);
-
-    if (!confirm_slug_change(form)) {
-      return false;
-    }
-
-    if (!confirm_visibility_change(form)) {
-      return false;
-    }
-
-    return true;
-  };
-
-  const parse_body = async (response) => {
-    try {
-      return {response, body: await response.json()};
-    } catch (err) {
-      return {response, body: {}};
-    }
-  };
-
-  const redirect_or_throw = (form) => {
-    return ({response, body}) => {
-      if (!response.ok) {
-        throw new Error(body.error ?? 'An unexpected error occurred; try again later');
-      }
-      form.find('.message').addClass('hidden');
-      window.location.href = "/{{ .Dataset.Team.Name }}";
+        return true;
     };
-  };
 
-  const render_message = (form) => {
-    return (msg) => {
-      const message_div = form.find('.message');
-      message_div.find('.error').html(err);
-      if (message_div.hasClass('hidden')) {
-        message_div.removeClass('hidden');
-      }
-      $('body').scrollTo(message_div);
+    const confirm_visibility_change = (form) => {
+        const is_private = form.find("input[name='isPrivate']");
+        const was = is_private.attr('data-value') == 'true' ? 'private' : 'public';
+        const now = is_private.prop('checked') ? 'private' : 'public';
+
+        let msg = `You are about to change the visibility of the dataset from ${was} to ${now}.\n\n`;
+        if (now == 'public') {
+            msg += 'Anyone will be able to view the dataset, but only users with admin or write access will be able to modify it.\n\n';
+        } else {
+            msg += 'Only users with read, write or admin access to the respository will be able to view the dataset.\n\n';
+        }
+        msg += 'Are you sure you want to do this?';
+
+        if (was !== now && !confirm(msg)) {
+            return false;
+        }
+
+        return true;
     };
-  };
 
-  const delete_dataset = (event) => {
-    event.preventDefault();
+    const confirm_settings_update = (event) => {
+        const form = $(event.target);
 
-    let msg = "You are about to DELETE the /{{ .Dataset.Team.Name }}/{{ .Dataset.Name }} dataset!.\n\n" +
-      "This cannot be undone.\n\n" +
-      "Are you sure you want to delete the dataset?";
+        if (!confirm_slug_change(form)) {
+            return false;
+        }
 
-    if (confirm(msg)) {
-      const form = $(event.target);
+        if (!confirm_visibility_change(form)) {
+            return false;
+        }
 
-      fetch("/{{ .Dataset.Team.Name }}/{{ .Dataset.Name }}", {
-        method: 'DELETE',
-        headers: {
-          accept: "application/json",
-        },
-      }).then(parse_body).then(redirect_or_throw(form)).catch(render_message(form));
-    }
+        return true;
+    };
 
-    return false;
-  };
+    const parse_body = async (response) => {
+        try {
+            return {response, body: await response.json()};
+        } catch (err) {
+            return {response, body: {}};
+        }
+    };
+
+    const redirect_or_throw = (form) => {
+        return ({response, body}) => {
+            if (!response.ok) {
+                throw new Error(body.error ?? 'An unexpected error occurred; try again later');
+            }
+            form.find('.message').addClass('hidden');
+            window.location.href = "/{{ .Dataset.Team.Name }}";
+        };
+    };
+
+    const render_message = (form) => {
+        return (msg) => {
+            const message_div = form.find('.message');
+            message_div.find('.error').html(err);
+            if (message_div.hasClass('hidden')) {
+                message_div.removeClass('hidden');
+            }
+            $('body').scrollTo(message_div);
+        };
+    };
+
+    const delete_dataset = (event) => {
+        event.preventDefault();
+
+        let msg = "You are about to DELETE the /{{ .Dataset.Team.Name }}/{{ .Dataset.Name }} dataset!.\n\n" +
+            "This cannot be undone.\n\n" +
+            "Are you sure you want to delete the dataset?";
+
+        if (confirm(msg)) {
+            const form = $(event.target);
+
+            fetch("/{{ .Dataset.Team.Name }}/{{ .Dataset.Name }}", {
+                method: 'DELETE',
+                headers: {
+                    accept: "application/json",
+                },
+            }).then(parse_body).then(redirect_or_throw(form)).catch(render_message(form));
+        }
+
+        return false;
+    };
 </script>

@@ -1,47 +1,32 @@
 <section>
-  <header>
-    <h1>Create a Team</h1>
-  </header>
+    <h1>Create a team</h1>
 
-  <form method="POST">
-    {{ with .Error }}
-    <div class="message">
-      <p class="error">
-        {{ . }}
-      </p>
-    </div>
-    {{ end }}
+    <form class="flex flex-col max-w-sm" method="POST">
+        {{ template "partials/error-message" . }}
 
-    <div>
-      <label for="name">Name</label>
-      <input id="name" name="name" type="text" placeholder="Team Name" />
-      <p id="availability" class="hidden"></p>
-    </div>
+        <label class="font-bold" for="name">Name</label>
+        <input id="name" name="name" type="text" placeholder="Team Name" autofocus required />
+        <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
 
-    <div>
-      <label for="contact">Contact Email</label>
-      <input name="contact" type="email" value="{{ .AuthUser.Email }}" />
-    </div>
+        <label class="font-bold" for="contact">Contact Email</label>
+        <input name="contact" type="email" value="{{ .AuthUser.Email }}" required />
 
-    <div>
-      <label for="description">Description</label>
-      <textarea name="description" rows="4" placeholder="Team Description"></textarea>
-    </div>
+        <label class="font-bold" for="description">Description</label>
+        <textarea name="description" rows="4" placeholder="Team Description"></textarea>
 
-    <div class="inline">
-      <label for="isPrivate">Private?</label>
-      <input name="isPrivate" type="checkbox" value="true" />
-    </div>
+        <div class="mb-4 flex flex-row items-center gap-5">
+            <label class="font-bold" for="isPrivate">Private?</label>
+            <input name="isPrivate" type="checkbox" value="true" />
+        </div>
 
-    <div>
-      <button id="submit" type="submit" disabled>Create Team ▶</button>
-    </div>
-  </form>
+        <button id="submit" type="submit" disabled>Create Team ▶</button>
+    </form>
 </section>
 
 <script>
-  checkAvailability("team", "/team/availability", {
-    startDisabled: true,
-    trigger: 'button[type="submit"]'
-  });
+    checkAvailability("team", "/team/availability", {
+        startDisabled: true,
+        trigger: 'button[type="submit"]',
+        target_parent: true,
+    });
 </script>

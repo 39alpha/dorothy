@@ -1,19 +1,9 @@
-<li class="version version-{{if eq .PathType " DIRECTORY"}}dir{{else}}file{{end}}" data-hash="{{ .Hash }}"
-  data-parents="{{ .Parents }}">
-  <a class="version_link" href="{{ GatewayUrl .Hash }}">
-    <div class="version_body">
-      <div class="version_row version_row-message">
-        <span class="version_date">{{ .Date | TimeFmt }} </span>
-        <span class="version_message">
-          {{ .Message }}
-        </span>
-      </div>
-      <div class="version_row version_row-metadata">
-        <span class="version_author">{{ .Author }}</span>
-      </div>
-      <div class="version_row version_row-hash">
-        <span class="version_hash">{{ .Hash }}</span>
-      </div>
-    </div>
-  </a>
+<li data-hash="{{ .Hash }}" data-parents="{{ .Parents }}">
+    {{if eq .PathType "DIRECTORY"}}<i class="fa-solid fa-folder"></i>{{else}}<i class="fa-solid fa-file"></i>{{end}}
+    <a class="select-none" href="{{ .Hash | GatewayUrl }}">{{ .Message }}</a>
+    <ul class="list-none">
+        <li><small>Committed on <time datetime="{{.Date}}">{{TimeFmt .Date}}</time></small></li>
+        <li><small>{{ .Author }}</small></li>
+        <li><small>{{ .Hash }}</small></li>
+    </ul>
 </li>

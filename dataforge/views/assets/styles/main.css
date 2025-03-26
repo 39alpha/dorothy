@@ -1,0 +1,20 @@
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme {
+    --color-system-blue: #0000ee;
+}
+
+body {
+    @apply px-5 w-fit max-w-full text-base sm:text-xl;
+}
+
+a {
+    @apply text-system-blue hover:font-bold;
+}
+
+ul {
+    @apply pl-4;
+}

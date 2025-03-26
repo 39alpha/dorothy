@@ -1,96 +1,39 @@
-<section>
-  <header>
-    <h1>Featured Public Teams</h1>
-  </header>
-  <div class="featured">
-    <div class="featured_items">
-      {{ range .Teams }}
-      <div class="featured_item">
-        <a class="featured_item_link" href="/{{ .Name }}">
-          <div class="featured_item_body">
-            <div class="featured_item_titlebar">
-              <span class="featured_item_title">{{ .Name }}</span>
-              {{ if .IsPrivate }}
-              <i class="fa-solid fa-lock-open"></i>
-              {{ end }}
-            </div>
-            {{ with .Description }}
-            <p class="featured_item_description">{{ . }}</p>
-            {{ else }}
-            <p class="featured_item_description featured_item_description-empty">No description...</p>
-            {{ end }}
-          </div>
-        </a>
-      </div>
-      {{ else }}
-      <p class="featured_empty">No teams have been created yet.</p>
-      {{ end }}
-    </div>
+<section class="mt-8">
+    <header>
+        <h1 class="mb-0">Featured Public Teams</h1>
+        <nav>
+            <ul class="mt-0">
+                {{ if .AuthUser }}
+                <li><a href="/team/create">Create a Team</a></li>
+                {{ end }}
 
-    <div class="featured_buttons">
-      {{ if .AuthUser }}
-      <div class="button">
-        <a class="button_link" href="/team/create">
-          <div class="button_body">
-            <span class="button_text">Create Team ▶</span>
-          </div>
-        </a>
-      </div>
-      {{ end }}
-
-      {{ if .Teams }}
-      <div class="button">
-        <a class="button_link" href="#">
-          <div class="button_body">
-            <span class="button_text">More Teams ▶</span>
-          </div>
-        </a>
-      </div>
-      {{ end }}
-    </div>
-  </div>
+                {{ if .Teams }}
+                <li><a href="#">More Teams</a></li>
+                {{ end }}
+            </ul>
+        </nav>
+    </header>
+    {{ with .Teams }}
+    {{ template "partials/asset-entry" . }}
+    {{ else }}
+    <p>No teams have been created yet.</p>
+    {{ end }}
 </section>
 
-<section>
-  <header>
-    <h1>Featured Public Datasets</h1>
-  </header>
-
-  <div class="featured">
-    <div class="featured_items">
-      {{ range .Datasets }}
-      <div class="featured_item">
-        <a class="featured_item_link" href="/{{ .Team.Name }}/{{ .Name }}">
-          <div class="featured_item_body">
-            <div class="featured_item_titlebar">
-              <span class="featured_item_title">{{ .Team.Name }}/{{ .Name }}</span>
-              {{ if .IsPrivate }}
-              <i class="fa-solid fa-lock-open"></i>
-              {{ end }}
-            </div>
-            {{ with .Description }}
-            <p class="featured_item_description">{{ . }}</p>
-            {{ else }}
-            <p class="featured_item_description featured_item_description-empty">No description...</p>
-            {{ end }}
-          </div>
-        </a>
-      </div>
-      {{ else }}
-      <p class="featured_empty">No datasets have been created yet.</p>
-      {{ end }}
-    </div>
-
-    <div class="featured_buttons">
-      {{ if .Datasets }}
-      <div class="button">
-        <a class="button_link" href="#">
-          <div class="button_body">
-            <span class="button_text">More Datasets ▶</span>
-          </div>
-        </a>
-      </div>
-      {{ end }}
-    </div>
-  </div>
+<section class="mt-8">
+    <header>
+        <h1 class="mb-0">Featured Public Datasets</h1>
+        <nav>
+            <ul class="mt-0">
+                {{ if .Datasets }}
+                <li><a href="#">More Datasets</a></li>
+                {{ end }}
+            </ul>
+        </nav>
+    </header>
+    {{ with .Datasets }}
+    {{ template "partials/asset-entry" . }}
+    {{ else }}
+    <p>No datasets have been created yet.</p>
+    {{ end }}
 </section>

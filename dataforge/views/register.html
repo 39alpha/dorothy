@@ -1,66 +1,50 @@
 <section>
-  <header>
-    <h1>Register</h1>
-  </header>
+    <header>
+        <h1>Register</h1>
+    </header>
 
-  <form method="POST">
-    {{ with .Error }}
-    <div class="message">
-      <p class="error">
-        {{ . }}
-      </p>
-    </div>
-    {{ end }}
-    <div>
-      <label for="name">Name</label>
-      <input name="name" type="text" placeholder="Enter Name" required />
-    </div>
-    <div>
-      <label for="email">Email</label>
-      <input name="email" type="email" autocomplete="email" placeholder="Enter Email" required />
-    </div>
-    <div>
-      <label for="password">New Password</label>
-      <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter Password"
-        required />
-    </div>
-    <div>
-      <label for="confirm-password">Confirm New Password</label>
-      <input id="confirmPassword" name="confirm-password" type="password" autocomplete="new-password"
-        placeholder="Confirm Password" onChange="checkPasswordConfirmation()" required />
-      <div id="passwordCheck" class="hidden"></div>
-    </div>
-    <div>
-      <label for="orcid">ORCiD (optional)</label>
-      <input name="orcid" type="text" placeholder="0000-0000-0000-0000" />
-    </div>
+    <form class="flex flex-col max-w-sm" method="POST">
+        {{ template "partials/error-message" . }}
 
-    <div>
-      <button type="submit" disabled>Register ▶</button>
-    </div>
-  </form>
+        <label class="font-bold" for="name">Name</label>
+        <input name="name" type="text" placeholder="Enter Name" autofocus required />
 
-  <script>
-    const checkPasswordConfirmation = function () {
-      const password = $("#password").val();
-      const confirmPassword = $("#confirmPassword").val();
+        <label class="font-bold" for="email">Email</label>
+        <input name="email" type="email" autocomplete="email" placeholder="Enter Email" required />
 
-      const flash = $("#passwordCheck");
-      const submit = $('button[type="submit"]');
-      flash.removeClass("error");
-      flash.removeClass("success");
-      if (password != confirmPassword) {
-        flash.addClass("error").html("Passwords do not match!");
-        submit.prop('disabled', true);
-      } else {
-        flash.addClass("success").html("Passwords match.");
-        submit.prop('disabled', false);
-      }
-      flash.removeClass("hidden")
+        <label class="font-bold" for="password">New Password</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter Password" required />
+
+        <label class="font-bold" for="confirm-password">Confirm New Password</label>
+        <input id="confirmPassword" name="confirm-password" type="password" autocomplete="new-password" placeholder="Confirm Password" onChange="checkPasswordConfirmation()" required />
+        <p class="mt-0 mb-2 hidden"><small id="passwordCheck"></small></p>
+
+        <label class="font-bold" for="orcid">ORCiD (optional)</label>
+        <input class="mb-4" name="orcid" type="text" placeholder="0000-0000-0000-0000" />
+
+        <button type="submit" disabled>Register ▶</button>
+    </form>
+</section>
+
+<script>
+    const checkPasswordConfirmation = () => {
+        const password = $("#password").val();
+        const confirmPassword = $("#confirmPassword").val();
+
+        const flash = $("#passwordCheck");
+        const submit = $('button[type="submit"]');
+        flash.removeClass("text-red-500 text-green-500");
+        if (password != confirmPassword) {
+            flash.addClass("text-red-500").html("Passwords do not match!");
+            submit.prop('disabled', true);
+        } else {
+            flash.addClass("text-green-500").html("Passwords match.");
+            submit.prop('disabled', false);
+        }
+        flash.parent().removeClass("hidden")
     }
 
     $(document).ready(function () {
-      $("#confirmPassword").keyup(checkPasswordConfirmation);
+        $("#confirmPassword").keyup(checkPasswordConfirmation);
     });
-  </script>
-</section>
+</script>

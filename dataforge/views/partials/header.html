@@ -1,19 +1,15 @@
-<header role="banner">
-  <nav>
-    <div>
-      <h1><a href="/">Dorothy</a></h1>
-      <p>Welcome to the dataforge.</p>
-    </div>
-    <ul>
-      {{ if .AuthUser }}
-      <li>
-        <b>{{.AuthUser.Name}}</b>
-      </li>
-      <li><a href="/logout">Logout</a></li>
-      {{ else }}
-      <li><a href="/login?Redirect={{ .Path }}">Login</a></li>
-      <li><a href="/register">Register</a></li>
-      {{ end }}
-    </ul>
-  </nav>
+<header>
+    <h1 class="mt-3 mb-0"><a href="/">Dorothy</a></h1>
+    <p class="my-0">Welcome to the dataforge</p>
+    <nav>
+        <ul>
+            {{ if .AuthUser }}
+            <li><a href="#">{{.AuthUser.Name}}</a></li>
+            <li><a href="/logout">Logout</a></li>
+            {{ else }}
+            <li><a href="/login?Redirect={{ .Path }}">Login</a></li>
+            <li><a href="/register">Register</a></li>
+            {{ end }}
+        </ul>
+    </nav>
 </header>

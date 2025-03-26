@@ -1,9 +1,5 @@
-STYLES := $(wildcard views/assets/styles/*.scss)
-
-all: views/static/styles/main.css
-
-views/static/styles/main.css: $(STYLES)
-	npm run sass:prod
+all:
+	tailwindcss -i views/assets/styles/main.css -o views/static/styles/main.css
 
 clean:
 	rm -f views/static/styles/*.css

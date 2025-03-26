@@ -1,5 +1,5 @@
 const checkAvailability = (entity, route, options = {}) => {
-  const { src, dst, startDisabled, original, trigger } = Object.assign({
+  let { src, dst, startDisabled, original, trigger, target_parent } = Object.assign({
     src: "#name",
     dst: "#availability",
   }, options);
@@ -16,8 +16,23 @@ const checkAvailability = (entity, route, options = {}) => {
     }
   };
 
+  const addClass = (cls) => {
+    if (target_parent) {
+      $(dst).parent().addClass(cls);
+    } else {
+      $(dst).addClass(cls);
+    }
+  };
+
+  const removeClass = (cls) => {
+    if (target_parent) {
+      $(dst).parent().removeClass(cls);
+    } else {
+      $(dst).removeClass(cls);
+    }
+  };
+
   if (startDisabled) {
-    console.log("disabling");
     disable();
   }
 
@@ -29,12 +44,12 @@ const checkAvailability = (entity, route, options = {}) => {
     if ($(src).val() == "") {
       disable();
 
-      $(dst).addClass("hidden");
+      addClass("hidden");
       return;
     } else if ($(src).val() == original) {
       enable();
 
-      $(dst).addClass("hidden");
+      addClass("hidden");
       return;
     }
 
@@ -56,22 +71,29 @@ const checkAvailability = (entity, route, options = {}) => {
         if (!response.ok) {
           disable();
 
-          $(dst)
-            .addClass("error")
-            .removeClass("hidden")
-            .html(body.error ?? "cannot check for availability right now");
+
+          addClass("text-red-500")
+          removeClass("text-green-500 text-blue-500 hidden")
+          $(dst).html(
+              '<i class="fa-solid fa-times mr-2"></i>' + body.error ??
+                "cannot check for availability right now",
+            );
         } else if (body.needsRewrite) {
           enable();
 
+          addClass("font-bold text-blue-500")
+          removeClass("text-red-500 text-green-500 hidden")
           $(dst)
-            .removeClass("error hidden")
-            .html(`Your ${entity} will be created as "${body.rewrittenName}".`);
+            .html(
+              `<i class="fa-solid fa-check mr-2"></i>Your ${entity} will be named "${body.rewrittenName}"`,
+            );
         } else if (body.message) {
           enable();
 
+          addClass("font-bold text-green-500")
+          removeClass("text-red-500 text-blue-500 hidden")
           $(dst)
-            .removeClass("error hidden")
-            .html(body.message);
+            .html('<i class="fa-solid fa-check mr-2"></i>' + body.message);
         }
       });
     }, 500);

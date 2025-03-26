@@ -1,51 +1,24 @@
 {{ $team := .Team }}
 <section>
-  <header>
-    <h1>{{ $team.Name }} Datasets</h1>
+    <h1 class="mb-0">{{ $team.FullName }} Datasets</h1>
+    {{ if .AuthUser }}
     <nav>
-      <ul>
-        {{ if .CanManage }}
-        <li>
-          <a href="/{{ $team.Name }}/settings"><i class="fa-solid fa-gear"></i></a>
-        </li>
-        {{ end }}
-      </ul>
-    </nav>
-  </header>
-  <div class="featured">
-    <div class="featured_buttons">
-      {{ if .AuthUser }}
-      <div class="button">
-        <a class="button_link" href="/{{ $team.Name }}/dataset/create">
-          <div class="button_body">
-            <span class="button_text">Create Dataset ▶</span>
-          </div>
-        </a>
-      </div>
-      {{ end }}
-    </div>
-    <div class="featured_items">
-      {{ range $team.Datasets }}
-      <div class="featured_item">
-        <a class="featured_item_link" href="/{{ $team.Name }}/{{ .Name }}">
-          <div class="featured_item_body">
-            <div class="featured_item_titlebar">
-              <span class="featured_item_title">{{ $team.Name }} / {{ .Name }}</span>
-              {{ if .IsPrivate }}
-              <i class="fa-solid fa-lock-open"></i>
-              {{ end }}
-            </div>
-            {{ with .Description }}
-            <p class="featured_item_description">{{ . }}</p>
-            {{ else }}
-            <p class="featured_item_description featured_item_description-empty">No description...</p>
+        <ul class="mt-0">
+            {{ if .CanManage }}
+            <li>
+                <a href="{{ $team.Path }}/settings">Settings</a>
+            </li>
             {{ end }}
-          </div>
-        </a>
-      </div>
-      {{ else }}
-      <p class="featured_empty">No datasets have been created yet.</p>
-      {{ end }}
-    </div>
-  </div>
+            <li><a href="{{ $team.Path }}/dataset/create">Create a Dataset</a></li>
+        </ul>
+    </nav>
+    {{ end }}
+
+    <p>{{ $team.Description }}</p>
+
+    {{ with $team.Datasets }}
+    {{ template "partials/asset-entry" . }}
+    {{ else }}
+    <p>No datasets have been created yet.</p>
+    {{ end }}
 </section>

@@ -1,0 +1,17 @@
+<dl>
+{{ range . }}
+    <dt>
+        <a href="{{ .Path }}">{{ .FullName }}</a>
+        {{ if .IsPrivate }}
+        <i class="fa-solid fa-lock-open"></i>
+        {{ end }}
+    </dt>
+    <dd class="ml-4">
+        {{ with .Description }}
+        {{ . }}
+        {{ else }}
+        No description...
+        {{ end }}
+    </dd>
+{{ end }}
+</dl>
