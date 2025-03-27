@@ -1,6 +1,12 @@
 {{ $team := .Team }}
 <section>
-    <h1 class="mb-0">{{ $team.FullName }} Datasets</h1>
+    <h1 class="mb-0">
+        {{ $team.FullName }}
+
+        {{ if $team.IsPrivate }}
+        <i class="fa-solid fa-lock-open"></i>
+        {{ end }}
+    </h1>
     {{ if .AuthUser }}
     <nav>
         <ul class="mt-0">

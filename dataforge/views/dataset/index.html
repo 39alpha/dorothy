@@ -1,5 +1,11 @@
 <section>
-    <h1 class="mb-0"><a href="{{ .Dataset.Team.Path }}">{{ .Dataset.Team.FullName }}</a>/{{ .Dataset.Name }}</h1>
+    <h1 class="mb-0">
+        <a href="{{ .Dataset.Team.Path }}">{{ .Dataset.Team.FullName }}</a>/{{ .Dataset.Name }}
+
+        {{ if .Dataset.IsPrivate }}
+        <i class="fa-solid fa-lock-open"></i>
+        {{ end }}
+    </h1>
     <nav>
         <ul class="mt-0">
             {{ if .CanManage }}
