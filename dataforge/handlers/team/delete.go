@@ -1,6 +1,7 @@
 package team
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
@@ -34,6 +35,37 @@ func (page *Delete) Pre(c *fiber.Ctx) error {
 }
 
 func (page *Delete) Run() error {
+	ctx, cancel := context.WithCancel(page.Dorothy())
+	defer cancel()
+
+	errs := []error{}
+	for _, dataset := range page.team.Datasets {
+		if err := page.DB().DeleteDataset(&dataset); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		if dataset.Manifest == nil && dataset.ManifestHash != "" {
+			var err error
+			dataset.Manifest, err = page.Dorothy().Ipfs.GetManifest(ctx, dataset.ManifestHash)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+		}
+
+		if err := page.Dorothy().Ipfs.UnpinManifest(ctx, dataset.Manifest, true); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) != 0 {
+		return fmt.Errorf(
+			"%w: We could not delete the datasets owned by the team for some reason. Try again later?",
+			fiber.ErrInternalServerError,
+		)
+	}
+
 	if err := page.DB().DeleteTeam(page.team); err != nil {
 		return fmt.Errorf(
 			"%w: We couldn't delete the team for some reason. Try again later?",
