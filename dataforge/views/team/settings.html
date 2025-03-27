@@ -20,19 +20,23 @@
         </textarea>
 
         <dialog class="max-w-sm" id="name_change_confirmation">
-            <p><strong>Warning</strong>: You are about to change the team name from <strong><slot id="name_was"></slot></strong> to <strong><slot id="name_now"></slot></strong>.</p>
+            <p class="mt-0"><strong>Warning</strong>: You are about to change the team name from <strong><slot id="name_was"></slot></strong> to <strong><slot id="name_now"></slot></strong>.</p>
             <p>Users who have cloned any dataset owned by this team will have to change their remote setting.</p>
             <p>Are you sure you want to do this?</p>
-            <button type="button" onclick="close_dialog(this);">Cancel</button>
-            <button class="text-red-600 font-bold" type="button" onclick="confirm_name_change.next(this);">Do it!</button>
+            <div>
+                <button type="button" onclick="closeDialog(this);">Cancel</button>
+                <button class="text-red-600 font-bold" type="button" onclick="confirmNameChange.next(this);">Do it!</button>
+            </div>
         </dialog>
 
         <dialog class="max-w-sm" id="visibility_change_confirmation">
-            <p><strong>Warning</strong>: You are about to change the visibility of the team from <strong><slot id="visibility_was"></slot></strong> to <strong><slot id="visibility_now"></slot></strong>.</p>
+            <p class="mt-0"><strong>Warning</strong>: You are about to change the visibility of the team from <strong><slot id="visibility_was"></slot></strong> to <strong><slot id="visibility_now"></slot></strong>.</p>
             <p><slot id="visibility_warning"></slot></p>
             <p>Are you sure you want to do this?</p>
-            <button type="button" onclick="close_dialog(this);">Cancel</button>
-            <button class="text-red-600 font-bold" type="button" onclick="confirm_visibility_change.next(this);">Do it!</button>
+            <div>
+                <button type="button" onclick="closeDialog(this);">Cancel</button>
+                <button class="text-red-600 font-bold" type="button" onclick="confirmVisibilityChange.next(this);">Do it!</button>
+            </div>
         </dialog>
 
         <div class="mb-4 flex flex-row items-center gap-5">
@@ -50,13 +54,16 @@
     <form class="flex flex-col max-w-sm" name="delete" onsubmit="return sendDelete('{{ .Team.Path }}', '/', event);">
         <p class="error mt-0 italic text-red-500 hidden"><small></small></p>
         <dialog class="max-w-sm">
-            <strong>Warning</strong>: When teams are deleted all data, including
+            <p class="mt-0"><strong>Warning</strong>: When teams are deleted all data, including
             all datasets owned by the team, are removed from the server.
-            Make sure you understand the risks before deleting a team.
-            <button type="button" onclick="close_dialog(this);">Cancel</button>
-            <button type="submit">Do it!</button>
+            Make sure you understand the risks before deleting a team.</p>
+
+            <div>
+                <button type="button" onclick="closeDialog(this);">Cancel</button>
+                <button class="text-red-600 font-bold" type="submit">Do it!</button>
+            </div>
         </dialog>
-        <button class="text-red-600 font-bold" type="button" onclick="request_confirmation(event);">Delete Team ▶</button>
+        <button class="text-red-600 font-bold" type="button" onclick="requestConfirmation(event);">Delete Team ▶</button>
     </form>
 </section>
 
