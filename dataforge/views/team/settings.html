@@ -2,7 +2,7 @@
 
 <section>
     <h3>General Settings</h3>
-    <form class="flex flex-col max-w-sm" name="update" method="POST" onsubmit="return confirm_updates(event);">
+    <form class="flex flex-col max-w-sm" name="update" method="POST" onsubmit="return confirmUpdates(event);">
         {{ template "partials/error-message" . }}
 
         <input class="hidden" name="id" type="number" value="{{ .Team.ID }}" readonly />
@@ -47,7 +47,7 @@
 <section>
     <h3>Team Management</h3>
 
-    <form class="flex flex-col max-w-sm" name="delete" onsubmit="return send_delete('{{ .Team.Path }}', '/', event);">
+    <form class="flex flex-col max-w-sm" name="delete" onsubmit="return sendDelete('{{ .Team.Path }}', '/', event);">
         <p class="error mt-0 italic text-red-500 hidden"><small></small></p>
         <dialog class="max-w-sm">
             <strong>Warning</strong>: When teams are deleted all data, including
@@ -67,7 +67,4 @@
         target_parent: true,
     });
 
-    const confirm_updates = (event) => {
-        return confirm_name_change($('form[name="update"]'));
-    };
 </script>

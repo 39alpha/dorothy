@@ -103,33 +103,40 @@ const checkAvailability = (entity, route, options = {}) => {
     });
 };
 
-const request_confirmation = (event) => {
-    $(event.target).parents().find("dialog").get(0).showModal();
+const requestConfirmation = (event) => {
+    const dialog = $(event.target).parents("form").find("dialog").get(0);
+    dialog.showModal();
 };
 
-const getParentForm = (entity) => $(entity).is('form') ? $(entity) : $($(entity).parents('form').get(0));
+const getParentForm = (entity) =>
+    $(entity).is("form") ? $(entity) : $($(entity).parents("form").get(0));
 
 const findDialogAndApply = (foo, entity) => {
     let dialog = undefined;
 
     if (entity) {
-        if ($(entity).is('dialog')) {
+        if ($(entity).is("dialog")) {
             dialog = $(entity).get(0);
         } else {
-            dialog = $(entity).parents('dialog').get(0);
+            dialog = $(entity).parents("dialog").get(0);
         }
 
         if (dialog) {
             foo(dialog);
         }
     }
-}
+};
 
-const close_dialog = (entity) => findDialogAndApply((dialog) => dialog.close(), entity);
-const show_dialog = (entity) => findDialogAndApply((dialog) => dialog.showModal(), entity);
+const closeDialog = (entity) =>
+    findDialogAndApply((dialog) => dialog.close(), entity);
+const showDialog = (entity) =>
+    findDialogAndApply((dialog) => dialog.showModal(), entity);
+const close_all_dialogs = () => $("dialog").each((_, d) => closeDialog(d));
 
-const send_delete = (resource, redirect, event) => {
+const sendDelete = (resource, redirect, event) => {
     event.preventDefault();
+
+    close_all_dialogs();
 
     fetch(resource, {
         method: "DELETE",
@@ -164,33 +171,35 @@ const send_delete = (resource, redirect, event) => {
     });
 };
 
-const confirm_name_change = (entity) => {
+const confirmNameChange = (entity) => {
     const form = getParentForm(entity);
 
     if (form) {
         const dataset_name = form.find("input[name='name']");
         const was = dataset_name.attr("data-value");
         const now = dataset_name.prop("value");
-        const dialog = $("#name_change_confirmation")
+        const dialog = $("#name_change_confirmation");
 
         if (now != was) {
             $("#name_was").html(was);
             $("#name_now").html(now);
-            show_dialog(dialog);
-        } else if (confirm_name_change.next) {
-            confirm_name_change.next(form, dialog);
+            showDialog(dialog);
+        } else if (confirmNameChange.next) {
+            confirmNameChange.next(form, dialog);
         }
     }
 
     return false;
 };
 
-const confirm_visibility_change = (entity) => {
+const confirmVisibilityChange = (entity) => {
     const form = getParentForm(entity);
 
     if (form) {
         const is_private = form.find("input[name='isPrivate']");
-        const was = is_private.attr("data-value") == "true" ? "private" : "public";
+        const was = is_private.attr("data-value") == "true"
+            ? "private"
+            : "public";
         const now = is_private.prop("checked") ? "private" : "public";
         const dialog = $("#visibility_change_confirmation");
 
@@ -202,26 +211,30 @@ const confirm_visibility_change = (entity) => {
                 ? "Anyone will be able to view the dataset, but only users with admin or write access will be able to modify it."
                 : "Only users with read, write or admin access to the respository will be able to view the dataset.";
             $("#visibility_warning").html(warning);
-            show_dialog(dialog);
-        } else if (confirm_visibility_change.next) {
-            confirm_visibility_change.next(form, dialog);
+            showDialog(dialog);
+        } else if (confirmVisibilityChange.next) {
+            confirmVisibilityChange.next(form, dialog);
         }
     }
 
     return false;
 };
 
-confirm_name_change.next = (entity, dialog) => {
+confirmNameChange.next = (entity, dialog) => {
     if (!dialog) {
-        close_dialog(entity);
+        closeDialog(entity);
     }
-    confirm_visibility_change(getParentForm(entity));
+    confirmVisibilityChange(getParentForm(entity));
 };
 
-confirm_visibility_change.next = (entity, dialog) => {
+confirmVisibilityChange.next = (entity, dialog) => {
     if (!dialog) {
-        close_dialog(entity);
+        closeDialog(entity);
     }
 
     getParentForm(entity).get(0).submit();
+};
+
+const confirmUpdates = (event) => {
+    return confirmNameChange($('form[name="update"]'));
 };

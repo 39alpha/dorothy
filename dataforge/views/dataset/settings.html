@@ -2,7 +2,7 @@
 
 <section>
     <h3>General Settings</h3>
-    <form class="flex flex-col max-w-sm" name="update" method="POST" onsubmit="return confirm_updates(event);">
+    <form class="flex flex-col max-w-sm" name="update" method="POST" onsubmit="return confirmUpdates(event);">
         {{ template "partials/error-message" . }}
 
         <input class="hidden" name="teamId" type="number" value="{{ .Dataset.Team.ID }}" readonly />
@@ -100,7 +100,7 @@
 <section>
     <h3>Dataset Management</h3>
 
-    <form class="flex flex-col max-w-sm" name="delete" onsubmit="return send_delete('{{ .Dataset.Path }}', '{{ .Dataset.Team.Path }}', event);">
+    <form class="flex flex-col max-w-sm" name="delete" onsubmit="return sendDelete('{{ .Dataset.Path }}', '{{ .Dataset.Team.Path }}', event);">
         <p class="error mt-0 italic text-red-500 hidden"><small></small></p>
         <dialog class="max-w-sm">
             <strong>Warning</strong>: When datasets are deleted all data, including
@@ -119,8 +119,4 @@
         trigger: 'form[name="update"] button[type="submit"]',
         target_parent: true,
     });
-
-    const confirm_updates = (event) => {
-        return confirm_name_change($('form[name="update"]'));
-    };
 </script>
