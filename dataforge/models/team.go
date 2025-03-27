@@ -3,22 +3,19 @@ package models
 import (
 	"fmt"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Team struct {
-	ID          uint           `json:"id" gorm:"primaryKey"`
-	Name        string         `json:"name" gorm:"uniqueIndex"`
-	Contact     string         `json:"contact" gorm:"index"`
-	Description string         `json:"description"`
-	IsPrivate   bool           `json:"private"`
-	CreatedAt   time.Time      `json:"createdAt"`
-	UpdatedAt   time.Time      `json:"updatedAt"`
-	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+	ID          uint      `json:"id" gorm:"primaryKey"`
+	Name        string    `json:"name" gorm:"uniqueIndex"`
+	Contact     string    `json:"contact" gorm:"index"`
+	Description string    `json:"description"`
+	IsPrivate   bool      `json:"private"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 
 	Datasets       []Dataset           `json:"datasets"`
-	UserPrivileges []UserTeamPrivilege `json:"userPrivileges"`
+	UserPrivileges []UserTeamPrivilege `json:"userPrivileges" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (team Team) FullName() string {

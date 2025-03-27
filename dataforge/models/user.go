@@ -2,24 +2,21 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type User struct {
-	ID           uint           `json:"id" gorm:"primaryKey"`
-	Email        string         `json:"email" gorm:"uniqueIndex"`
-	PasswordHash []byte         `json:"-"`
-	Name         string         `json:"name"`
-	Orcid        *string        `json:"orcid,omitempty" gorm:"index"`
-	RoleCode     string         `json:"roleCode"`
-	CreatedAt    time.Time      `json:"createdAt"`
-	UpdatedAt    time.Time      `json:"updatedAt"`
-	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
+	ID           uint      `json:"id" gorm:"primaryKey"`
+	Email        string    `json:"email" gorm:"uniqueIndex"`
+	PasswordHash []byte    `json:"-"`
+	Name         string    `json:"name"`
+	Orcid        *string   `json:"orcid,omitempty" gorm:"index"`
+	RoleCode     string    `json:"roleCode"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
 
 	Role              *Role                  `json:"role"`
-	TeamPrivileges    []UserTeamPrivilege    `json:"teamPrivileges"`
-	DatasetPrivileges []UserDatasetPrivilege `json:"datasetPrivileges"`
+	TeamPrivileges    []UserTeamPrivilege    `json:"teamPrivileges" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DatasetPrivileges []UserDatasetPrivilege `json:"datasetPrivileges" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (user User) TeamPrivilege(team Team) string {
