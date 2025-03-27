@@ -20,7 +20,7 @@
     </nav>
     {{ end }}
 
-    <p>{{ $team.Description }}</p>
+    <p><em>{{ $team.Description }}</em></p>
 
     {{ with $team.Datasets }}
     {{ template "partials/asset-entry" . }}
