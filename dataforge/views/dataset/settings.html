@@ -1,8 +1,8 @@
-<h2>{{ .Dataset.Team.Name }}/{{ .Dataset.Name }} Settings</h2>
+<h2><a href="{{ .Dataset.Path }}">{{ .Dataset.Team.Name }}/{{ .Dataset.Name }}</a> Settings</h2>
 
 <section>
     <h3>General Settings</h3>
-    <form class="flex flex-col max-w-sm" name="update" method="POST" onsubmit="return confirm_settings_update(event);">
+    <form class="flex flex-col max-w-sm" name="update" method="POST" onsubmit="return confirm_updates(event);">
         {{ template "partials/error-message" . }}
 
         <input class="hidden" name="teamId" type="number" value="{{ .Dataset.Team.ID }}" readonly />
@@ -26,6 +26,22 @@
             <input name="isPrivate" type="checkbox" data-value="{{ .Dataset.IsPrivate }}" {{ if .Dataset.IsPrivate }}checked{{
                 end }} />
         </div>
+
+        <dialog class="max-w-sm" id="name_change_confirmation">
+            <p><strong>Warning</strong>: You are about to change the dataset name from <strong><slot id="name_was"></slot></strong> to <strong><slot id="name_now"></slot></strong>.</p>
+            <p>Users who have cloned the dataset will have to change their remote setting.</p>
+            <p>Are you sure you want to do this?</p>
+            <button type="button" onclick="close_dialog(this);">Cancel</button>
+            <button class="text-red-600 font-bold" type="button" onclick="confirm_name_change.next(this);">Do it!</button>
+        </dialog>
+
+        <dialog class="max-w-sm" id="visibility_change_confirmation">
+            <p><strong>Warning</strong>: You are about to change the visibility of the dataset from <strong><slot id="visibility_was"></slot></strong> to <strong><slot id="visibility_now"></slot></strong>.</p>
+            <p><slot id="visibility_warning"></slot></p>
+            <p>Are you sure you want to do this?</p>
+            <button type="button" onclick="close_dialog(this);">Cancel</button>
+            <button class="text-red-600 font-bold" type="button" onclick="confirm_visibility_change.next(this);">Do it!</button>
+        </dialog>
 
         <button type="submit">Update Dataset ▶</button>
     </form>
@@ -84,15 +100,16 @@
 <section>
     <h3>Dataset Management</h3>
 
-    <form class="flex flex-col max-w-sm" name="delete" onsubmit="return delete_dataset(event);">
-        <input class="hidden" name="teamId" type="number" value="{{ .Dataset.Team.ID }}" readonly />
-        <input class="hidden" name="id" type="number" value="{{ .Dataset.ID }}" readonly />
-        <p class="mt-0 max-w-full">
+    <form class="flex flex-col max-w-sm" name="delete" onsubmit="return send_delete('{{ .Dataset.Path }}', '{{ .Dataset.Team.Path }}', event);">
+        <p class="error mt-0 italic text-red-500 hidden"><small></small></p>
+        <dialog class="max-w-sm">
             <strong>Warning</strong>: When datasets are deleted all data, including
             the history and any pinned versions, are removed from the server.
             Make sure you understand the risks before deleting a dataset.
-        </p>
-        <button class="text-red-600 font-bold" type="submit">Delete Dataset ▶</button>
+            <button type="button" onclick="close_dialog(this);">Cancel</button>
+            <button type="submit">Do it!</button>
+        </dialog>
+        <button class="text-red-600 font-bold" type="button" onclick="request_confirmation(event);">Delete Dataset ▶</button>
     </form>
 </section>
 
@@ -103,102 +120,7 @@
         target_parent: true,
     });
 
-    const confirm_slug_change = (form) => {
-        const dataset_name = form.find("input[name='slug']");
-        const was = dataset_slug.attr('data-value');
-        const now = dataset_slug.prop('value');
-
-        const msg = `You are about to change the dataset slug from ${was} to ${now}.\n\n` +
-            'Users who have cloned the repository will have to change their remote setting.\n\n' +
-            'Are you sure you want to do this?';
-        if (was !== now && !confirm(msg)) {
-            return false;
-        }
-
-        return true;
-    };
-
-    const confirm_visibility_change = (form) => {
-        const is_private = form.find("input[name='isPrivate']");
-        const was = is_private.attr('data-value') == 'true' ? 'private' : 'public';
-        const now = is_private.prop('checked') ? 'private' : 'public';
-
-        let msg = `You are about to change the visibility of the dataset from ${was} to ${now}.\n\n`;
-        if (now == 'public') {
-            msg += 'Anyone will be able to view the dataset, but only users with admin or write access will be able to modify it.\n\n';
-        } else {
-            msg += 'Only users with read, write or admin access to the respository will be able to view the dataset.\n\n';
-        }
-        msg += 'Are you sure you want to do this?';
-
-        if (was !== now && !confirm(msg)) {
-            return false;
-        }
-
-        return true;
-    };
-
-    const confirm_settings_update = (event) => {
-        const form = $(event.target);
-
-        if (!confirm_slug_change(form)) {
-            return false;
-        }
-
-        if (!confirm_visibility_change(form)) {
-            return false;
-        }
-
-        return true;
-    };
-
-    const parse_body = async (response) => {
-        try {
-            return {response, body: await response.json()};
-        } catch (err) {
-            return {response, body: {}};
-        }
-    };
-
-    const redirect_or_throw = (form) => {
-        return ({response, body}) => {
-            if (!response.ok) {
-                throw new Error(body.error ?? 'An unexpected error occurred; try again later');
-            }
-            form.find('.message').addClass('hidden');
-            window.location.href = "/{{ .Dataset.Team.Name }}";
-        };
-    };
-
-    const render_message = (form) => {
-        return (msg) => {
-            const message_div = form.find('.message');
-            message_div.find('.error').html(err);
-            if (message_div.hasClass('hidden')) {
-                message_div.removeClass('hidden');
-            }
-            $('body').scrollTo(message_div);
-        };
-    };
-
-    const delete_dataset = (event) => {
-        event.preventDefault();
-
-        let msg = "You are about to DELETE the /{{ .Dataset.Team.Name }}/{{ .Dataset.Name }} dataset!.\n\n" +
-            "This cannot be undone.\n\n" +
-            "Are you sure you want to delete the dataset?";
-
-        if (confirm(msg)) {
-            const form = $(event.target);
-
-            fetch("/{{ .Dataset.Team.Name }}/{{ .Dataset.Name }}", {
-                method: 'DELETE',
-                headers: {
-                    accept: "application/json",
-                },
-            }).then(parse_body).then(redirect_or_throw(form)).catch(render_message(form));
-        }
-
-        return false;
+    const confirm_updates = (event) => {
+        return confirm_name_change($('form[name="update"]'));
     };
 </script>
