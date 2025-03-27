@@ -16,7 +16,7 @@ type Delete struct {
 }
 
 func (page *Delete) Pre(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 
 	authUser := c.Locals("AuthUser").(*models.User)
@@ -44,7 +44,7 @@ func (page *Delete) Pre(c *fiber.Ctx) error {
 }
 
 func (page *Delete) Run() error {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 
 	if err := page.DB().DeleteDataset(&page.dataset); err != nil {

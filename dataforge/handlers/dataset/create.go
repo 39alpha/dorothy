@@ -117,7 +117,7 @@ func (page *Create) Run() error {
 }
 
 func (page *Create) Post(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 
 	var err error

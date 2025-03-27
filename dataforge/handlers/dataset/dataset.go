@@ -25,7 +25,7 @@ type Dataset struct {
 }
 
 func (page *Dataset) Pre(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 
 	page.authUser, _ = c.Locals("AuthUser").(*models.User)
