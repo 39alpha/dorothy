@@ -190,47 +190,6 @@ func (d *DB) GetTeams(user *models.User, loaddatasets bool) ([]models.Team, erro
 	return teams, nil
 }
 
-func (db *DB) CreateTeam(newteam models.NewTeam, user *models.User) (string, error) {
-	team := &models.Team{
-		Name:      models.Slugify(newteam.Name),
-		Contact:   newteam.Contact,
-		IsPrivate: newteam.IsPrivate,
-	}
-	if newteam.Description != nil {
-		team.Description = *newteam.Description
-	}
-
-	return team.Name, db.Transaction(func(tx *gorm.DB) error {
-		if err := db.Save(team).Error; err != nil {
-			return err
-		}
-
-		if user != nil {
-			return db.Save(&models.UserTeamPrivilege{
-				User:          user,
-				Team:          team,
-				PrivilegeCode: "admin",
-			}).Error
-		}
-
-		return nil
-	})
-}
-
-func (db *DB) IsTeamNameAvailable(name string) (bool, error) {
-	if name == "" {
-		return false, gorm.ErrInvalidValue
-	}
-
-	var count int64
-	team := &models.Team{Name: name}
-	if err := db.Model(team).Where(team).Count(&count).Error; err != nil {
-		return false, err
-	}
-
-	return count == 0, nil
-}
-
 func (db *DB) GetTeamById(authUser *models.User, id uint) (*models.Team, error) {
 	team := &models.Team{ID: id}
 	if err := db.Preload("Datasets.Team").Where(team).First(team).Error; err != nil {
@@ -285,6 +244,66 @@ func (db *DB) GetTeam(authUser *models.User, name string) (*models.Team, error) 
 	team.Datasets = datasets
 
 	return team, nil
+}
+
+func (db *DB) CreateTeam(newteam models.NewTeam, user *models.User) (string, error) {
+	team := &models.Team{
+		Name:      models.Slugify(newteam.Name),
+		Contact:   newteam.Contact,
+		IsPrivate: newteam.IsPrivate,
+	}
+	if newteam.Description != nil {
+		team.Description = *newteam.Description
+	}
+
+	return team.Name, db.Transaction(func(tx *gorm.DB) error {
+		if err := db.Save(team).Error; err != nil {
+			return err
+		}
+
+		if user != nil {
+			return db.Save(&models.UserTeamPrivilege{
+				User:          user,
+				Team:          team,
+				PrivilegeCode: "admin",
+			}).Error
+		}
+
+		return nil
+	})
+}
+
+func (d *DB) UpdateTeam(update models.UpdateTeam) (string, error) {
+	name := models.Slugify(update.Name)
+	values := map[string]any{
+		"Name":        name,
+		"Contact":     update.Contact,
+		"IsPrivate":   update.IsPrivate,
+		"Description": "",
+	}
+	if update.Description != nil {
+		values["Description"] = *update.Description
+	}
+
+	return name, d.Model(models.Team{ID: update.ID}).Updates(values).Error
+}
+
+func (d *DB) DeleteTeam(team *models.Team) error {
+	return d.Delete(team).Error
+}
+
+func (db *DB) IsTeamNameAvailable(name string) (bool, error) {
+	if name == "" {
+		return false, gorm.ErrInvalidValue
+	}
+
+	var count int64
+	team := &models.Team{Name: name}
+	if err := db.Model(team).Where(team).Count(&count).Error; err != nil {
+		return false, err
+	}
+
+	return count == 0, nil
 }
 
 func (d *DB) GetDatasets(user *models.User) ([]models.Dataset, error) {
@@ -363,21 +382,6 @@ func (d *DB) UpdateDataset(update models.UpdateDataset) (string, error) {
 
 func (d *DB) DeleteDataset(dataset *models.Dataset) error {
 	return d.Delete(dataset).Error
-}
-
-func (d *DB) UpdateTeam(update models.UpdateTeam) (string, error) {
-	name := models.Slugify(update.Name)
-	values := map[string]any{
-		"Name":        name,
-		"Contact":     update.Contact,
-		"IsPrivate":   update.IsPrivate,
-		"Description": "",
-	}
-	if update.Description != nil {
-		values["Description"] = *update.Description
-	}
-
-	return name, d.Model(models.Team{ID: update.ID}).Updates(values).Error
 }
 
 func (db *DB) IsDatasetNameAvailable(team, name string) (bool, error) {

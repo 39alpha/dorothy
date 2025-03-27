@@ -35,6 +35,7 @@ func Routes() []Route {
 		{POST, "/team/availability", &team.Available{}},
 
 		{GET, "/:team", &team.Team{}},
+		{DELETE, "/:team", &team.Delete{}},
 		{GET, "/:team/settings", &team.UpdateForm{}},
 		{POST, "/:team/settings", &team.Update{}},
 		{GET, "/:team/dataset/create", &dataset.CreateForm{}},
@@ -42,8 +43,8 @@ func Routes() []Route {
 		{POST, "/:team/dataset/availability", &dataset.Available{}},
 
 		{GET, "/:team/:dataset", &dataset.Dataset{}},
-		{POST, "/:team/:dataset/", &dataset.Receive{}},
-		{DELETE, "/:team/:dataset/", &dataset.Delete{}},
+		{POST, "/:team/:dataset", &dataset.Receive{}},
+		{DELETE, "/:team/:dataset", &dataset.Delete{}},
 		{GET, "/:team/:dataset/settings", &dataset.UpdateForm{}},
 		{POST, "/:team/:dataset/settings", &dataset.Update{}},
 	}

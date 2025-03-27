@@ -1,29 +1,64 @@
-<h1>Team {{ .Team.FullName }} Settings</h1>
+<h2><a href="{{.Team.Path}}">{{ .Team.FullName }}</a> Settings</h2>
 
-<form class="flex flex-col max-w-sm" method="POST">
-    {{ template "partials/error-message" . }}
+<section>
+    <h3>General Settings</h3>
+    <form class="flex flex-col max-w-sm" name="update" method="POST" onsubmit="return confirm_updates(event);">
+        {{ template "partials/error-message" . }}
 
-    <input class="hidden" name="id" type="number" value="{{ .Team.ID }}" readonly />
+        <input class="hidden" name="id" type="number" value="{{ .Team.ID }}" readonly />
 
-    <label class="font-bold" for="name">Name</label>
-    <input id="name" name="name" type="text" value="{{ .Team.Name }}" autofocus required />
-    <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
+        <label class="font-bold" for="name">Name</label>
+        <input id="name" name="name" type="text" data-value="{{ .Team.Name }}" value="{{ .Team.Name }}" autofocus required />
+        <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
 
-    <label class="font-bold" for="contact">Contact Email</label>
-    <input name="contact" type="email" value="{{ .Team.Contact }}" required />
+        <label class="font-bold" for="contact">Contact Email</label>
+        <input name="contact" type="email" value="{{ .Team.Contact }}" required />
 
-    <label class="font-bold" for="description">Description</label>
-    <textarea name="description" rows="4">
-        {{- .Team.Description -}}
-    </textarea>
+        <label class="font-bold" for="description">Description</label>
+        <textarea name="description" rows="4">
+            {{- .Team.Description -}}
+        </textarea>
 
-    <div class="mb-4 flex flex-row items-center gap-5">
-        <label class="font-bold" for="isPrivate">Private?</label>
-        <input name="isPrivate" type="checkbox" value="true" {{ if .Team.IsPrivate }}checked{{ end }} />
-    </div>
+        <dialog class="max-w-sm" id="name_change_confirmation">
+            <p><strong>Warning</strong>: You are about to change the team name from <strong><slot id="name_was"></slot></strong> to <strong><slot id="name_now"></slot></strong>.</p>
+            <p>Users who have cloned any dataset owned by this team will have to change their remote setting.</p>
+            <p>Are you sure you want to do this?</p>
+            <button type="button" onclick="close_dialog(this);">Cancel</button>
+            <button class="text-red-600 font-bold" type="button" onclick="confirm_name_change.next(this);">Do it!</button>
+        </dialog>
 
-    <button type="submit">Update Team ▶</button>
-</form>
+        <dialog class="max-w-sm" id="visibility_change_confirmation">
+            <p><strong>Warning</strong>: You are about to change the visibility of the team from <strong><slot id="visibility_was"></slot></strong> to <strong><slot id="visibility_now"></slot></strong>.</p>
+            <p><slot id="visibility_warning"></slot></p>
+            <p>Are you sure you want to do this?</p>
+            <button type="button" onclick="close_dialog(this);">Cancel</button>
+            <button class="text-red-600 font-bold" type="button" onclick="confirm_visibility_change.next(this);">Do it!</button>
+        </dialog>
+
+        <div class="mb-4 flex flex-row items-center gap-5">
+            <label class="font-bold" for="isPrivate">Private?</label>
+            <input name="isPrivate" type="checkbox" value="true" {{ if .Team.IsPrivate }}checked{{ end }} />
+        </div>
+
+        <button type="submit">Update Team ▶</button>
+    </form>
+</section>
+
+<section>
+    <h3>Team Management</h3>
+
+    <form class="flex flex-col max-w-sm" name="delete" onsubmit="return send_delete('{{ .Team.Path }}', '/', event);">
+        <p class="error mt-0 italic text-red-500 hidden"><small></small></p>
+        <dialog class="max-w-sm">
+            <strong>Warning</strong>: When teams are deleted all data, including
+            all datasets owned by the team, are removed from the server.
+            Make sure you understand the risks before deleting a team.
+            <button type="button" onclick="close_dialog(this);">Cancel</button>
+            <button type="submit">Do it!</button>
+        </dialog>
+        <button class="text-red-600 font-bold" type="button" onclick="request_confirmation(event);">Delete Team ▶</button>
+    </form>
+</section>
 
 <script>
     checkAvailability("team", "/team/availability", {
@@ -31,4 +66,8 @@
         trigger: 'button[type="submit"]',
         target_parent: true,
     });
+
+    const confirm_updates = (event) => {
+        return confirm_name_change($('form[name="update"]'));
+    };
 </script>
