@@ -10,7 +10,7 @@ type User struct {
 	PasswordHash []byte    `json:"-"`
 	Name         string    `json:"name"`
 	Orcid        *string   `json:"orcid,omitempty" gorm:"index"`
-	RoleCode     string    `json:"roleCode"`
+	RoleCode     RoleCode  `json:"roleCode"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
 
@@ -19,9 +19,9 @@ type User struct {
 	DatasetPrivileges []UserDatasetPrivilege `json:"datasetPrivileges" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
-func (user User) TeamPrivilege(team Team) string {
-	if user.RoleCode == "admin" {
-		return "admin"
+func (user User) TeamPrivilege(team Team) PrivilegeCode {
+	if user.RoleCode == AdminRole {
+		return AdminPrivilege
 	}
 
 	for _, privilege := range user.TeamPrivileges {
@@ -31,28 +31,28 @@ func (user User) TeamPrivilege(team Team) string {
 	}
 
 	if team.IsPrivate {
-		return ""
+		return NoPrivilege
 	} else {
-		return "read"
+		return ReadPrivilege
 	}
 }
 
 func (user User) CanReadTeam(team Team) bool {
-	return user.TeamPrivilege(team) != ""
+	return user.TeamPrivilege(team) != NoPrivilege
 }
 
 func (user User) CanWriteTeam(team Team) bool {
 	privilege := user.TeamPrivilege(team)
-	return privilege != "" && privilege != "read"
+	return privilege != NoPrivilege && privilege != ReadPrivilege
 }
 
 func (user User) CanManageTeam(team Team) bool {
-	return user.TeamPrivilege(team) == "admin"
+	return user.TeamPrivilege(team) == AdminPrivilege
 }
 
-func (user User) DatasetPrivilege(dataset Dataset) string {
-	if user.RoleCode == "admin" {
-		return "admin"
+func (user User) DatasetPrivilege(dataset Dataset) PrivilegeCode {
+	if user.RoleCode == AdminRole {
+		return AdminPrivilege
 	}
 
 	for _, privilege := range user.DatasetPrivileges {
@@ -64,26 +64,26 @@ func (user User) DatasetPrivilege(dataset Dataset) string {
 	team := dataset.Team
 	if dataset.IsPrivate {
 		if user.CanManageTeam(*team) {
-			return "admin"
+			return AdminPrivilege
 		}
 	} else if user.CanReadTeam(*team) {
-		return "read"
+		return ReadPrivilege
 	}
 
-	return ""
+	return NoPrivilege
 }
 
 func (user User) CanReadDataset(dataset Dataset) bool {
-	return user.DatasetPrivilege(dataset) != ""
+	return user.DatasetPrivilege(dataset) != NoPrivilege
 }
 
 func (user User) CanWriteDataset(dataset Dataset) bool {
 	privilege := user.DatasetPrivilege(dataset)
-	return privilege != "" && privilege != "read"
+	return privilege != NoPrivilege && privilege != ReadPrivilege
 }
 
 func (user User) CanManageDataset(dataset Dataset) bool {
-	return user.DatasetPrivilege(dataset) == "admin"
+	return user.DatasetPrivilege(dataset) == AdminPrivilege
 }
 
 type GetUser struct {

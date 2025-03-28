@@ -43,17 +43,17 @@ func (d *DB) Initialize() error {
 	}
 
 	roles := []*models.Role{
-		{Code: "admin", Description: "The all-powerful entity"},
-		{Code: "user", Description: "A standard user"},
+		{Code: models.AdminRole, Description: "The all-powerful entity"},
+		{Code: models.UserRole, Description: "A standard user"},
 	}
 	if result := d.Save(&roles); result.Error != nil {
 		return result.Error
 	}
 
 	privileges := []*models.Privilege{
-		{Code: "read", Description: "Read access"},
-		{Code: "write", Description: "Write access"},
-		{Code: "admin", Description: "Administrative access"},
+		{Code: models.ReadPrivilege, Description: "Read access"},
+		{Code: models.WritePrivilege, Description: "Write access"},
+		{Code: models.AdminPrivilege, Description: "Administrative access"},
 	}
 	if result := d.Save(&privileges); result.Error != nil {
 		return result.Error
@@ -71,9 +71,9 @@ func (d *DB) CreateUser(newuser *models.NewUser) error {
 		return fmt.Errorf("failed to get user count")
 	}
 
-	rolecode := "user"
+	rolecode := models.UserRole
 	if result.Count == 0 {
-		rolecode = "admin"
+		rolecode = models.AdminRole
 	}
 
 	password_hash, err := bcrypt.GenerateFromPassword([]byte(newuser.Password), 8)
