@@ -401,3 +401,24 @@ func (db *DB) IsDatasetNameAvailable(team, name string) (bool, error) {
 
 	return count == 0, err
 }
+
+func (db *DB) SearchUsers(pattern string, limit int) ([]models.User, error) {
+	pattern = fmt.Sprintf("%%%s%%", pattern)
+	users := []models.User{}
+
+	var err error
+	if limit >= 0 {
+		err = db.
+			Omit("PasswordHash").
+			Limit(limit).
+			Find(&users, "name LIKE ? OR email LIKE ? or orcid LIKE ?", pattern, pattern, pattern).
+			Error
+	} else {
+		err = db.
+			Omit("PasswordHash").
+			Find(&users, "name LIKE ? OR email LIKE ? or orcid LIKE ?", pattern, pattern, pattern).
+			Error
+	}
+
+	return users, err
+}

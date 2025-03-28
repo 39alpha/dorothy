@@ -238,3 +238,21 @@ confirmVisibilityChange.next = (entity, dialog) => {
 const confirmUpdates = (event) => {
     return confirmNameChange($('form[name="update"]'));
 };
+
+const searchUsers = (pattern, limit) => {
+    let params = [];
+
+    if (pattern != undefined) {
+        params.push(`q=${pattern}`);
+    }
+    if (limit != undefined) {
+        params.push(`limit=${limit}`);
+    }
+
+    return fetch(`/user/search?${params.join("&")}`, {
+        method: "GET",
+        headers: {
+            accept: "application/json",
+        },
+    }).then((response) => response.json()).catch((err) => ({ error: err }));
+};

@@ -30,6 +30,8 @@ func Routes() []Route {
 		{POST, "/login", &handlers.Login{}},
 		{GET, "/logout", &handlers.Logout{}},
 
+		{GET, "/user/search", &user.Search{}},
+
 		{GET, "/team/create", &team.CreateForm{}},
 		{POST, "/team/create", &team.Create{}},
 		{POST, "/team/availability", &team.Available{}},
