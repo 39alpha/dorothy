@@ -76,7 +76,7 @@
                         <label for="privilege-admin-{{$i}}">admin</label>
                     </div>
                     <div>
-                        <button class="bg-transparent border-0 hover:cursor-pointer" type="button" onclick="removePrivileges('{{$dataset_path}}/privilege', this);"><i class="fa-solid fa-trash"></i></button>
+                        <button class="bg-transparent border-0" type="button" onclick="removePrivileges('{{$dataset_path}}/privilege', this);"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </fieldset>
             {{ end }}
@@ -109,7 +109,7 @@
 </template>
 
 <template id="user">
-    <li class="m-0 p-0 hover:bg-gray-200"><button class="m-0 px-2 py-0 h-full w-full bg-transparent border-0 text-left text-base" type="button" onclick="addUserPrivilege(this);"> <i class="hover:cursor-pointer fa-solid fa-plus"></i> <slot></slot> &lt;<slot></slot>&gt;</button></li>
+    <li class="m-0 p-0 hover:bg-gray-200"><button class="m-0 px-2 py-0 h-full w-full bg-transparent border-0 text-left text-base" type="button" onclick="addUserPrivilege(this);"> <i class="fa-solid fa-plus"></i> <slot></slot> &lt;<slot></slot>&gt;</button></li>
 </template>
 
 <template id="no-users-found">
@@ -130,7 +130,7 @@
             <label>admin</label>
         </div>
         <div>
-            <button class="bg-transparent border-0 hover:cursor-pointer" type="button" onclick="removePrivileges('{{$dataset_path}}/privilege', this);"><i class="fa-solid fa-trash"></i></button>
+            <button class="bg-transparent border-0" type="button" onclick="removePrivileges('{{$dataset_path}}/privilege', this);"><i class="fa-solid fa-trash"></i></button>
         </div>
     </fieldset>
 </template>

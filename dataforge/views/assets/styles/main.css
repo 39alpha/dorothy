@@ -11,8 +11,12 @@ body {
     @apply px-5 w-fit max-w-full text-base sm:text-xl;
 }
 
-input, textarea, button {
+input, textarea {
     @apply text-base;
+}
+
+button {
+    @apply text-base cursor-pointer;
 }
 
 a {
