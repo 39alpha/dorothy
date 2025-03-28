@@ -11,6 +11,10 @@ body {
     @apply px-5 w-fit max-w-full text-base sm:text-xl;
 }
 
+input, textarea, button {
+    @apply text-base;
+}
+
 a {
     @apply text-system-blue hover:font-bold;
 }
