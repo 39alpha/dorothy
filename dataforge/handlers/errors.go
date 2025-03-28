@@ -59,19 +59,6 @@ func (handler *ErrorHandler) Pre(c *fiber.Ctx) error {
 	return nil
 }
 
-func (handler *ErrorHandler) Recover(c *fiber.Ctx, err error) error {
-	c.Status(fiber.StatusInternalServerError)
-	if c.Accepts("application/json") != "" {
-		return c.JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	} else if c.Accepts("text/plain") != "" {
-		return c.SendString(err.Error())
-	}
-
-	return c.SendStatus(fiber.StatusInternalServerError)
-}
-
 func (handler *ErrorHandler) RenderHtml(c *fiber.Ctx) error {
 	var err *fiber.Error
 	if errors.As(handler.Err, &err) {
