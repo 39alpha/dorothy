@@ -23,7 +23,7 @@ type Available struct {
 func (page *Available) Pre(c *fiber.Ctx) error {
 	authUser, _ := c.Locals("AuthUser").(*models.User)
 	if authUser == nil {
-		return fiber.ErrForbidden
+		return fiber.ErrUnauthorized
 	}
 
 	if err := c.BodyParser(&page.payload); err != nil {
