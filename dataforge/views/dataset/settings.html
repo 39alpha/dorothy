@@ -1,3 +1,4 @@
+{{ $dataset_path := .Dataset.Path }}
 <h2><a href="{{ .Dataset.Path }}">{{ .Dataset.Team.Name }}/{{ .Dataset.Name }}</a> Settings</h2>
 
 <section>
@@ -65,17 +66,17 @@
                 <fieldset class="pt-0 flex flex-row justify-between" data-index={{$i}} data-user-id="{{ $user.ID }}" data-name="{{ $user.Name }}" data-email="{{ $user.Email }}" data-privilege-code={{ $privilege.Privilege.Code }}>
                     <legend>{{ $user.Name }} <small>&lt;{{ $user.Email }}&gt;</small></legend>
                     <div>
-                        <input type="radio" name="privilege-{{$i}}" id="privilege-read-{{$i}}" value="read" {{ if eq .Privilege.Code "read" }}checked{{ end }} onchange="updatePermissions(this);" />
+                        <input type="radio" name="privilege-{{$i}}" id="privilege-read-{{$i}}" value="read" {{ if eq .Privilege.Code "read" }}checked{{ end }} onchange="updatePrivileges('{{$dataset_path}}/privilege', this);" />
                         <label for="privilege-read-{{$i}}">read</label>
 
-                        <input type="radio" name="privilege-{{$i}}" id="privilege-write-{{$i}}" value="write" {{ if eq .Privilege.Code "write" }}checked{{ end }} onchange="updatePermissions(this);" />
+                        <input type="radio" name="privilege-{{$i}}" id="privilege-write-{{$i}}" value="write" {{ if eq .Privilege.Code "write" }}checked{{ end }} onchange="updatePrivileges('{{$dataset_path}}/privilege', this);" />
                         <label for="privilege-write-{{$i}}">write</label>
 
-                        <input type="radio" name="privilege-{{$i}}" id="privilege-admin-{{$i}}" value="admin" {{ if eq .Privilege.Code "admin" }}checked{{ end }}  onchange="updatePermissions(this);"/>
+                        <input type="radio" name="privilege-{{$i}}" id="privilege-admin-{{$i}}" value="admin" {{ if eq .Privilege.Code "admin" }}checked{{ end }}  onchange="updatePrivileges('{{$dataset_path}}/privilege', this);"/>
                         <label for="privilege-admin-{{$i}}">admin</label>
                     </div>
                     <div>
-                        <button class="bg-transparent border-0 hover:cursor-pointer" type="button" onclick="removePermissions(this);"><i class="fa-solid fa-trash"></i></button>
+                        <button class="bg-transparent border-0 hover:cursor-pointer" type="button" onclick="removePrivileges('{{$dataset_path}}/privilege', this);"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </fieldset>
             {{ end }}
@@ -119,17 +120,17 @@
     <fieldset class="pt-0 flex flex-row justify-between">
         <legend><slot class="name"></slot> <small>&lt;<slot class="email"></slot>&gt;</small></legend>
         <div>
-            <input type="radio" value="read" onchange="updatePermissions(this);" />
+            <input type="radio" value="read" onchange="updatePrivileges('{{$dataset_path}}/privilege', this);" />
             <label>read</label>
 
-            <input type="radio" value="write" onchange="updatePermissions(this);" />
+            <input type="radio" value="write" onchange="updatePrivileges('{{$dataset_path}}/privilege', this);" />
             <label>write</label>
 
-            <input type="radio" value="admin" onchange="updatePermissions(this);" />
+            <input type="radio" value="admin" onchange="updatePrivileges('{{$dataset_path}}/privilege', this);" />
             <label>admin</label>
         </div>
         <div>
-            <button class="bg-transparent border-0 hover:cursor-pointer" type="button" onclick="removePermissions(this);"><i class="fa-solid fa-trash"></i></button>
+            <button class="bg-transparent border-0 hover:cursor-pointer" type="button" onclick="removePrivileges('{{$dataset_path}}/privilege', this);"><i class="fa-solid fa-trash"></i></button>
         </div>
     </fieldset>
 </template>
@@ -141,159 +142,5 @@
         target_parent: true,
     });
 
-    const getAddedUsers = (event) => {
-        const users = [];
-        $(event.target).parents('form').find('fieldset')
-            .each((_, e) => {
-                users.push({
-                    index: $(e).attr('data-index'),
-                    user_id: $(e).attr('data-user-id'),
-                    name: $(e).attr('data-name'),
-                    email: $(e).attr('data-email'),
-                })
-            });
-        return users;
-    };
-
-    const addUserPrivilege = (element) => {
-        element = $(element);
-
-        const index = 1 + getAddedUsers(element)
-            .map((fieldset) => fieldset.index)
-            .reduce((a, b) => Math.max(a, b), 0);
-
-        const user_id = $(element).attr('data-user-id');
-        const name = $(element).attr('data-name');
-        const email = $(element).attr('data-email');
-
-        const privilege = $($('#new-privilege').prop('content')).find('fieldset').clone();
-
-        $(privilege).attr('data-index', index);
-        $(privilege).attr('data-user-id', user_id);
-        $(privilege).attr('data-name', name);
-        $(privilege).attr('data-email', email);
-
-        $(privilege).find('.name').html(name);
-        $(privilege).find('.email').html(email);
-        $(privilege).find('input[type="radio"]').each((_, r) => {
-            const v = $(r).attr('value');
-            $(r).attr('name', `privilege-${index}`);
-            $(r).attr('id', `privilege-${v}-${index}`);
-        });
-        $(privilege).find('label').each((_, l) => {
-            const v = $(l).text();
-            $(l).attr('for', `privilege-${v}-${index}`);
-        });
-        $(privilege).find('checkbox').attr('name', `remove-privilege-${index}`);
-        $(privilege).find('label[for="remove-privilege"]').attr('for', `remove-privilege-${index}`);
-
-        $('#privileges').prepend(privilege);
-
-        $('#search').val('');
-        $('#search-results').empty().addClass('hidden');
-        element.remove();
-    };
-
-    const search = (element, target) => {
-        let timeout = undefined;
-        $(element).on('keyup', (event) => {
-            clearTimeout(timeout);
-
-            const value = $(event.target).val();
-
-            if (!value || value.length < 3) {
-                $(target).empty();
-                $(target).addClass('hidden');
-                return;
-            }
-
-            timeout = setTimeout(() => {
-                const existing_users = new Set(getAddedUsers({ target: element }).map((user) => user.email));
-                searchUsers(value).then(({ users }) => {
-                    $(target).empty();
-                    if (users && users.length != 0) {
-                        const user_list = $($("#found-users").prop('content')).find('ul').clone();
-                        users.forEach((user) => {
-                            if (!existing_users.has(user.email)) {
-                                const u = $($('#user').prop('content')).clone();
-                                const slots = u.find('slot');
-                                $(u).find('button').attr('data-user-id', user.id);
-                                $(u).find('button').attr('data-name', user.name);
-                                $(u).find('button').attr('data-email', user.email);
-                                $(slots.get(0)).html(user.name);
-                                $(slots.get(1)).html(user.email);
-                                user_list.append(u);
-                            }
-                        });
-                        $(target).append(user_list);
-                    } else {
-                        $(target).append($($('#no-users-found').prop('content')).clone());
-                    }
-                    $(target).removeClass('hidden');
-                }).catch((err) => console.error(err));
-            }, 500);
-        });
-    };
-
-    search($('#search'), $("#search-results"));
-
-    const updatePermissions = async (entity) => {
-        const form = $($(entity).parents('form').get(0));
-        const fieldset = $($(entity).parents('fieldset').get(0));
-
-        const dataset_id = form.find('input[name="id"]').val();
-        const user_id = fieldset.attr('data-user-id');
-        const privilege_code = fieldset.attr('data-privilege-code');
-        const checked = fieldset.find('input[type="radio"]:checked');
-
-        if (checked.length === 1) {
-            if (privilege_code == checked.val()) {
-                form.find('.error').parent().addClass('hidden');
-            } else {
-                const payload = { userId: user_id, datasetId: dataset_id, privilegeCode: checked.val() };
-
-                fetch("{{ .Dataset.Path }}/privilege", {
-                    method: 'POST',
-                    headers: {
-                        accept: 'application/json',
-                        ['Content-Type']: 'application/json',
-                    },
-                    body: JSON.stringify(payload),
-                }).then(readResponse).then(guardResponse).then(() => {
-                    form.find('.error').parent().addClass('hidden');
-                }).catch((err) => {
-                    form.find('.error').html(err.message).parent().removeClass('hidden');
-                });
-            }
-        }
-    };
-
-    const removePermissions = (entity) => {
-        const form = $($(entity).parents('form').get(0));
-        const fieldset = $($(entity).parents('fieldset').get(0));
-
-        if (fieldset.find('input[type="radio"]:checked').length == 0) {
-            $(entity).parents('fieldset').remove();
-            return;
-        }
-
-        const payload = {
-            userId: fieldset.attr('data-user-id'),
-            datasetId: form.find('input[name="id"]').val(),
-        };
-
-        fetch("{{ .Dataset.Path }}/privilege", {
-            method: 'DELETE',
-            headers: {
-                accept: 'application/json',
-                ['Content-Type']: 'application/json',
-            },
-            body: JSON.stringify(payload),
-        }).then(readResponse).then(guardResponse).then(() => {
-            form.find('.error').parent().addClass('hidden');
-            $(entity).parents('fieldset').remove();
-        }).catch((err) => {
-            form.find('.error').html(err.message).parent().removeClass('hidden');
-        });
-    };
+    searchUsersForPrivileges($('#search'), $("#search-results"));
 </script>

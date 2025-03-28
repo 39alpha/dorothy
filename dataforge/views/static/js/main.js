@@ -148,7 +148,6 @@ const readResponse = async (response) => {
 
 const guardResponse = async ({ response, body }) => {
     if (!response.ok || body?.error) {
-        console.log(body);
         throw new Error(
             body?.error ?? "An unexpected error occurred; try again later",
         );
@@ -261,4 +260,177 @@ const searchUsers = (pattern, limit) => {
             accept: "application/json",
         },
     }).then((response) => response.json()).catch((err) => ({ error: err }));
+};
+
+const getAddedUserPrivileges = (event) => {
+    const users = [];
+    $(event.target).parents("form").find("fieldset")
+        .each((_, e) => {
+            users.push({
+                index: $(e).attr("data-index"),
+                user_id: $(e).attr("data-user-id"),
+                name: $(e).attr("data-name"),
+                email: $(e).attr("data-email"),
+                privilege_code: $(e).attr("data-privilege-code"),
+            });
+        });
+    return users;
+};
+
+const addUserPrivilege = (element) => {
+    element = $(element);
+
+    const index = 1 + getAddedUserPrivileges(element)
+        .map((fieldset) => fieldset.index)
+        .reduce((a, b) => Math.max(a, b), 0);
+
+    const user_id = $(element).attr("data-user-id");
+    const name = $(element).attr("data-name");
+    const email = $(element).attr("data-email");
+
+    const privilege = $($("#new-privilege").prop("content")).find("fieldset")
+        .clone();
+
+    $(privilege).attr("data-index", index);
+    $(privilege).attr("data-user-id", user_id);
+    $(privilege).attr("data-name", name);
+    $(privilege).attr("data-email", email);
+
+    $(privilege).find(".name").html(name);
+    $(privilege).find(".email").html(email);
+    $(privilege).find('input[type="radio"]').each((_, r) => {
+        const v = $(r).attr("value");
+        $(r).attr("name", `privilege-${index}`);
+        $(r).attr("id", `privilege-${v}-${index}`);
+    });
+    $(privilege).find("label").each((_, l) => {
+        const v = $(l).text();
+        $(l).attr("for", `privilege-${v}-${index}`);
+    });
+    $(privilege).find("checkbox").attr("name", `remove-privilege-${index}`);
+    $(privilege).find('label[for="remove-privilege"]').attr(
+        "for",
+        `remove-privilege-${index}`,
+    );
+
+    $("#privileges").prepend(privilege);
+
+    $("#search").val("");
+    $("#search-results").empty().addClass("hidden");
+    element.remove();
+};
+
+const searchUsersForPrivileges = (element, target, duration = 500) => {
+    let timeout = undefined;
+    $(element).on("keyup", (event) => {
+        clearTimeout(timeout);
+
+        const value = $(event.target).val();
+
+        if (!value || value.length < 3) {
+            $(target).empty();
+            $(target).addClass("hidden");
+            return;
+        }
+
+        timeout = setTimeout(() => {
+            const existing_users = new Set(
+                getAddedUserPrivileges({ target: element }).map((user) =>
+                    user.email
+                ),
+            );
+            searchUsers(value).then(({ users }) => {
+                $(target).empty();
+                if (users && users.length != 0) {
+                    const user_list = $($("#found-users").prop("content")).find(
+                        "ul",
+                    ).clone();
+                    users.forEach((user) => {
+                        if (!existing_users.has(user.email)) {
+                            const u = $($("#user").prop("content")).clone();
+                            const slots = u.find("slot");
+                            $(u).find("button").attr("data-user-id", user.id);
+                            $(u).find("button").attr("data-name", user.name);
+                            $(u).find("button").attr("data-email", user.email);
+                            $(slots.get(0)).html(user.name);
+                            $(slots.get(1)).html(user.email);
+                            user_list.append(u);
+                        }
+                    });
+                    $(target).append(user_list);
+                } else {
+                    $(target).append(
+                        $($("#no-users-found").prop("content")).clone(),
+                    );
+                }
+                $(target).removeClass("hidden");
+            }).catch((err) => console.error(err));
+        }, duration);
+    });
+};
+
+const updatePrivileges = async (resource, entity) => {
+    const form = $($(entity).parents("form").get(0));
+    const fieldset = $($(entity).parents("fieldset").get(0));
+
+    const asset_id = form.find('input[name="id"]').val();
+    const user_id = fieldset.attr("data-user-id");
+    const privilege_code = fieldset.attr("data-privilege-code");
+    const checked = fieldset.find('input[type="radio"]:checked');
+
+    if (checked.length === 1) {
+        if (privilege_code == checked.val()) {
+            form.find(".error").parent().addClass("hidden");
+        } else {
+            const payload = {
+                id: asset_id,
+                userId: user_id,
+                privilegeCode: checked.val(),
+            };
+
+            fetch(resource, {
+                method: "POST",
+                headers: {
+                    accept: "application/json",
+                    ["Content-Type"]: "application/json",
+                },
+                body: JSON.stringify(payload),
+            }).then(readResponse).then(guardResponse).then(() => {
+                form.find(".error").parent().addClass("hidden");
+            }).catch((err) => {
+                form.find(".error").html(err.message).parent().removeClass(
+                    "hidden",
+                );
+            });
+        }
+    }
+};
+
+const removePrivileges = (resource, entity) => {
+    const form = $($(entity).parents("form").get(0));
+    const fieldset = $($(entity).parents("fieldset").get(0));
+
+    if (fieldset.find('input[type="radio"]:checked').length == 0) {
+        $(entity).parents("fieldset").remove();
+        return;
+    }
+
+    const payload = {
+        id: form.find('input[name="id"]').val(),
+        userId: fieldset.attr("data-user-id"),
+    };
+
+    fetch(resource, {
+        method: "DELETE",
+        headers: {
+            accept: "application/json",
+            ["Content-Type"]: "application/json",
+        },
+        body: JSON.stringify(payload),
+    }).then(readResponse).then(guardResponse).then(() => {
+        form.find(".error").parent().addClass("hidden");
+        $(entity).parents("fieldset").remove();
+    }).catch((err) => {
+        form.find(".error").html(err.message).parent().removeClass("hidden");
+    });
 };

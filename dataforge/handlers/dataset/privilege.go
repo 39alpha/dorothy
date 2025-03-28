@@ -13,8 +13,8 @@ type DeletePrivilege struct {
 	handlers.ErrorHandler
 
 	payload struct {
-		DatasetId string
-		UserId    string
+		Id     string
+		UserId string
 	}
 
 	datasetId uint
@@ -31,11 +31,11 @@ func (page *DeletePrivilege) Pre(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	if datasetId, err := strconv.Atoi(page.payload.DatasetId); err != nil {
+	if datasetId, err := strconv.Atoi(page.payload.Id); err != nil {
 		return fmt.Errorf(
-			"%w: the provided datasetId (%q) is not a positive integer",
+			"%w: the provided id (%q) is not a positive integer",
 			fiber.ErrBadRequest,
-			page.payload.DatasetId,
+			page.payload.Id,
 		)
 	} else {
 		page.datasetId = uint(datasetId)
@@ -116,7 +116,7 @@ type CreatePrivilege struct {
 	handlers.ErrorHandler
 
 	payload struct {
-		DatasetId     string
+		Id            string
 		UserId        string
 		PrivilegeCode models.PrivilegeCode
 	}
@@ -136,11 +136,11 @@ func (page *CreatePrivilege) Pre(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	if datasetId, err := strconv.Atoi(page.payload.DatasetId); err != nil {
+	if datasetId, err := strconv.Atoi(page.payload.Id); err != nil {
 		return fmt.Errorf(
-			"%w: the provided datasetId (%q) is not a positive integer",
+			"%w: the provided id (%q) is not a positive integer",
 			fiber.ErrBadRequest,
-			page.payload.DatasetId,
+			page.payload.Id,
 		)
 	} else {
 		page.datasetId = uint(datasetId)
