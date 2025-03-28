@@ -14,6 +14,7 @@ type UpdateForm struct {
 
 	authUser models.User
 	team     models.Team
+	users    []models.User
 }
 
 func (form *UpdateForm) Pre(c *fiber.Ctx) error {
@@ -32,6 +33,8 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 	if !authUser.CanManageTeam(*team) {
 		return fiber.ErrForbidden
 	}
+
+	form.users, _ = form.DB().GetUsersWithTeamAccess(form.team)
 
 	form.Err, _ = c.Locals("Error").(error)
 
@@ -52,6 +55,7 @@ func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("team/settings", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
 		"Team":     form.team,
+		"Users":    form.users,
 		"Error":    form.Err,
 	}), "layouts/main")
 }

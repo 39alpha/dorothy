@@ -1,7 +1,9 @@
+{{ $team_path := .Team.Path }}
 <h2><a href="{{.Team.Path}}">{{ .Team.FullName }}</a> Settings</h2>
 
 <section>
-    <h3>General Settings</h3>
+    <h3 class="mb-2">General Settings</h3>
+
     <form class="flex flex-col max-w-sm" name="update" method="POST" onsubmit="return confirmUpdates(event);">
         {{ template "partials/error-message" . }}
 
@@ -18,6 +20,11 @@
         <textarea name="description" rows="4">
             {{- .Team.Description -}}
         </textarea>
+
+        <div class="mb-4 flex flex-row items-center gap-5">
+            <label class="font-bold" for="isPrivate">Private?</label>
+            <input name="isPrivate" type="checkbox" value="true" {{ if .Team.IsPrivate }}checked{{ end }} />
+        </div>
 
         <dialog class="max-w-sm" id="name_change_confirmation">
             <p class="mt-0"><strong>Warning</strong>: You are about to change the team name from <strong><slot id="name_was"></slot></strong> to <strong><slot id="name_now"></slot></strong>.</p>
@@ -39,17 +46,45 @@
             </div>
         </dialog>
 
-        <div class="mb-4 flex flex-row items-center gap-5">
-            <label class="font-bold" for="isPrivate">Private?</label>
-            <input name="isPrivate" type="checkbox" value="true" {{ if .Team.IsPrivate }}checked{{ end }} />
-        </div>
-
         <button type="submit">Update Team ▶</button>
     </form>
 </section>
 
 <section>
-    <h3>Team Management</h3>
+    <h3 class="mb-2">User Access</h3>
+
+    <form class="flex flex-col max-w-sm" name="user-access" action="#">
+        <p class="mt-0 italic text-red-500 hidden"><small class="error"></small></p>
+        <input class="hidden" name="id" type="number" value="{{ .Team.ID }}" readonly />
+        <input id="search" type="text" placeholder="Search for a user..." />
+        <div id="search-results" class="mt-0 mb-0 p-0 hidden border-1 border-t-0 bg-white max-h-sm overflow-y-auto"></div>
+        <div class="mt-2" id="privileges">
+        {{ range $i, $user := .Users }}
+            {{ range $j, $privilege := $user.TeamPrivileges }}
+                <fieldset class="pt-0 flex flex-row justify-between" data-index={{$i}} data-user-id="{{ $user.ID }}" data-name="{{ $user.Name }}" data-email="{{ $user.Email }}" data-privilege-code={{ $privilege.Privilege.Code }}>
+                    <legend>{{ $user.Name }} <small>&lt;{{ $user.Email }}&gt;</small></legend>
+                    <div>
+                        <input type="radio" name="privilege-{{$i}}" id="privilege-read-{{$i}}" value="read" {{ if eq .Privilege.Code "read" }}checked{{ end }} onchange="updatePrivileges('{{$team_path}}/privilege', this);" />
+                        <label for="privilege-read-{{$i}}">read</label>
+
+                        <input type="radio" name="privilege-{{$i}}" id="privilege-write-{{$i}}" value="write" {{ if eq .Privilege.Code "write" }}checked{{ end }} onchange="updatePrivileges('{{$team_path}}/privilege', this);" />
+                        <label for="privilege-write-{{$i}}">write</label>
+
+                        <input type="radio" name="privilege-{{$i}}" id="privilege-admin-{{$i}}" value="admin" {{ if eq .Privilege.Code "admin" }}checked{{ end }}  onchange="updatePrivileges('{{$team_path}}/privilege', this);"/>
+                        <label for="privilege-admin-{{$i}}">admin</label>
+                    </div>
+                    <div>
+                        <button class="bg-transparent border-0" type="button" onclick="removePrivileges('{{$team_path}}/privilege', this);"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </fieldset>
+            {{ end }}
+        {{ end }}
+        </div>
+    </form>
+</section>
+
+<section>
+    <h3 class="mb-2">Team Management</h3>
 
     <form class="flex flex-col max-w-sm" name="delete" onsubmit="return sendDelete('{{ .Team.Path }}', '/', event);">
         <p class="error mt-0 italic text-red-500 hidden"><small></small></p>
@@ -67,6 +102,38 @@
     </form>
 </section>
 
+<template id="found-users">
+    <ul class="m-0 !p-0 list-none">
+    </ul>
+</template>
+
+<template id="user">
+    <li class="m-0 p-0 hover:bg-gray-200"><button class="m-0 px-2 py-0 h-full w-full bg-transparent border-0 text-left text-base" type="button" onclick="addUserPrivilege(this);"> <i class="fa-solid fa-plus"></i> <slot></slot> &lt;<slot></slot>&gt;</button></li>
+</template>
+
+<template id="no-users-found">
+    <p class="pl-2 my-0"><em>No users found</em></p>
+</template>
+
+<template id="new-privilege">
+    <fieldset class="pt-0 flex flex-row justify-between">
+        <legend><slot class="name"></slot> <small>&lt;<slot class="email"></slot>&gt;</small></legend>
+        <div>
+            <input type="radio" value="read" onchange="updatePrivileges('{{$team_path}}/privilege', this);" />
+            <label>read</label>
+
+            <input type="radio" value="write" onchange="updatePrivileges('{{$team_path}}/privilege', this);" />
+            <label>write</label>
+
+            <input type="radio" value="admin" onchange="updatePrivileges('{{$team_path}}/privilege', this);" />
+            <label>admin</label>
+        </div>
+        <div>
+            <button class="bg-transparent border-0" type="button" onclick="removePrivileges('{{$team_path}}/privilege', this);"><i class="fa-solid fa-trash"></i></button>
+        </div>
+    </fieldset>
+</template>
+
 <script>
     checkAvailability("team", "/team/availability", {
         original: "{{.Team.Name}}",
@@ -74,4 +141,5 @@
         target_parent: true,
     });
 
+    searchUsersForPrivileges($('#search'), $("#search-results"));
 </script>

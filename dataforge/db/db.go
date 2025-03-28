@@ -418,6 +418,16 @@ func (db *DB) IsDatasetNameAvailable(team, name string) (bool, error) {
 	return count == 0, err
 }
 
+func (db *DB) GetUsersWithTeamAccess(team models.Team) ([]models.User, error) {
+	users := []models.User{}
+	return users, db.
+		Preload("TeamPrivileges", "team_id = ?", team.ID).
+		Preload("TeamPrivileges.Privilege").
+		Omit("PasswordHash").
+		Find(&users).
+		Error
+}
+
 func (db *DB) GetUsersWithDatasetAccess(dataset models.Dataset) ([]models.User, error) {
 	users := []models.User{}
 	return users, db.
@@ -454,5 +464,13 @@ func (db *DB) UpdateDatasetPrivilege(privilege models.UserDatasetPrivilege) erro
 }
 
 func (db *DB) DeleteDatasetPrivilege(privilege models.UserDatasetPrivilege) error {
+	return db.Delete(&privilege).Error
+}
+
+func (db *DB) UpdateTeamPrivilege(privilege models.UserTeamPrivilege) error {
+	return db.Save(&privilege).Error
+}
+
+func (db *DB) DeleteTeamPrivilege(privilege models.UserTeamPrivilege) error {
 	return db.Delete(&privilege).Error
 }
