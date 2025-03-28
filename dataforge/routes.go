@@ -4,6 +4,7 @@ import (
 	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/handlers/dataset"
 	"github.com/39alpha/dorothy/dataforge/handlers/team"
+	"github.com/39alpha/dorothy/dataforge/handlers/user"
 )
 
 type Method int
@@ -49,5 +50,7 @@ func Routes() []Route {
 		{DELETE, "/:team/:dataset", &dataset.Delete{}},
 		{GET, "/:team/:dataset/settings", &dataset.UpdateForm{}},
 		{POST, "/:team/:dataset/settings", &dataset.Update{}},
+		{POST, "/:team/:dataset/privilege", &dataset.CreatePrivilege{}},
+		{DELETE, "/:team/:dataset/privilege", &dataset.DeletePrivilege{}},
 	}
 }

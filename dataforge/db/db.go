@@ -2,12 +2,16 @@ package db
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"time"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type DB struct {
@@ -19,8 +23,20 @@ func Open(config *core.DatabaseConfig) (*DB, error) {
 		return nil, fmt.Errorf("no server database configuration provided")
 	}
 
+	newlogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             50 * time.Millisecond,
+			LogLevel:                  logger.Warn,
+			IgnoreRecordNotFoundError: false,
+			Colorful:                  false,
+		},
+	)
+
 	path := config.Path + "?_foreign_keys=on&cache=shared"
-	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{
+		Logger: newlogger,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -402,6 +418,16 @@ func (db *DB) IsDatasetNameAvailable(team, name string) (bool, error) {
 	return count == 0, err
 }
 
+func (db *DB) GetUsersWithDatasetAccess(dataset models.Dataset) ([]models.User, error) {
+	users := []models.User{}
+	return users, db.
+		Preload("DatasetPrivileges", "dataset_id = ?", dataset.ID).
+		Preload("DatasetPrivileges.Privilege").
+		Omit("PasswordHash").
+		Find(&users).
+		Error
+}
+
 func (db *DB) SearchUsers(pattern string, limit int) ([]models.User, error) {
 	pattern = fmt.Sprintf("%%%s%%", pattern)
 	users := []models.User{}
@@ -421,4 +447,12 @@ func (db *DB) SearchUsers(pattern string, limit int) ([]models.User, error) {
 	}
 
 	return users, err
+}
+
+func (db *DB) UpdateDatasetPrivilege(privilege models.UserDatasetPrivilege) error {
+	return db.Save(&privilege).Error
+}
+
+func (db *DB) DeleteDatasetPrivilege(privilege models.UserDatasetPrivilege) error {
+	return db.Delete(&privilege).Error
 }

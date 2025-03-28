@@ -15,6 +15,7 @@ type UpdateForm struct {
 
 	authUser *models.User
 	dataset  models.Dataset
+	users    []models.User
 }
 
 func (form *UpdateForm) Pre(c *fiber.Ctx) error {
@@ -43,6 +44,8 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
+	form.users, _ = form.DB().GetUsersWithDatasetAccess(form.dataset)
+
 	form.Err, _ = c.Locals("Error").(error)
 
 	return nil
@@ -62,6 +65,7 @@ func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("dataset/settings", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
 		"Dataset":  form.dataset,
+		"Users":    form.users,
 		"Error":    form.Err,
 	}), "layouts/main")
 }

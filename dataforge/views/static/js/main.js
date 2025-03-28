@@ -133,6 +133,29 @@ const showDialog = (entity) =>
     findDialogAndApply((dialog) => dialog.showModal(), entity);
 const close_all_dialogs = () => $("dialog").each((_, d) => closeDialog(d));
 
+const readResponse = async (response) => {
+    try {
+        return { response, body: await response.json() };
+    } catch (_) {
+        return {
+            response,
+            body: {
+                error: "The server returned an unexpected response",
+            },
+        };
+    }
+};
+
+const guardResponse = async ({ response, body }) => {
+    if (!response.ok || body?.error) {
+        console.log(body);
+        throw new Error(
+            body?.error ?? "An unexpected error occurred; try again later",
+        );
+    }
+    return { response, body };
+};
+
 const sendDelete = (resource, redirect, event) => {
     event.preventDefault();
 
@@ -143,24 +166,7 @@ const sendDelete = (resource, redirect, event) => {
         headers: {
             accept: "application/json",
         },
-    }).then(async (response) => {
-        try {
-            return { response, body: await response.json() };
-        } catch (_) {
-            return {
-                response,
-                body: {
-                    error: "The server returned an unexpected response",
-                },
-            };
-        }
-    }).then(({ response, body }) => {
-        if (!response.ok || body.error) {
-            throw new Error(
-                body.error ?? "An unexpected error occurred; try again later",
-            );
-        }
-
+    }).then(readResponse).then(guardResponse).then(() => {
         window.location.href = redirect;
     }).catch((err) => {
         const message_div = $(event.target).find(".error").removeClass("hidden")
