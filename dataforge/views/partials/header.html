@@ -4,7 +4,7 @@
     <nav>
         <ul>
             {{ if .AuthUser }}
-            <li><a href="#">{{.AuthUser.Name}}</a></li>
+            <li><a href="/profile">{{.AuthUser.Name}}</a></li>
             <li><a href="/logout">Logout</a></li>
             {{ else }}
             <li><a href="/login?Redirect={{ .Path }}">Login</a></li>

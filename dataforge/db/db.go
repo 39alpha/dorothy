@@ -474,3 +474,33 @@ func (db *DB) UpdateTeamPrivilege(privilege models.UserTeamPrivilege) error {
 func (db *DB) DeleteTeamPrivilege(privilege models.UserTeamPrivilege) error {
 	return db.Delete(&privilege).Error
 }
+
+func (db *DB) GetUserById(id uint) (*models.User, error) {
+	user := &models.User{ID: id}
+	if err := db.Model(user).First(user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (db *DB) UpdateUser(update models.UpdateUser) error {
+	values := map[string]any{
+		"Name":  update.Name,
+		"Email": update.Email,
+		"Orcid": update.Orcid,
+	}
+	return db.Model(models.User{ID: update.ID}).Updates(values).Error
+}
+
+func (db *DB) UserChangePassword(update models.ChangePassword) error {
+	password_hash, err := bcrypt.GenerateFromPassword([]byte(update.Password), 8)
+	if err != nil {
+		return fmt.Errorf("failed to update password")
+	}
+
+	values := map[string]any{
+		"PasswordHash": password_hash,
+	}
+
+	return db.Model(&models.User{ID: update.ID}).Updates(values).Error
+}

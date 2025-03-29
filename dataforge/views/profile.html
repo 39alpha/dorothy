@@ -1,0 +1,103 @@
+<h2>{{ .AuthUser.Name }}'s Profile</h2>
+
+<section>
+    <h3 class="mb-2">General Settings</h3>
+
+    <form class="flex flex-col max-w-sm" method="POST">
+        <input class="hidden" name="id" type="number" value="{{ .AuthUser.ID }}" readonly />
+
+        <label class="font-bold" for="name">Name</label>
+        <input name="name" type="text" value="{{ .AuthUser.Name }}" autofocus required />
+
+        <label class="font-bold" for="email">Email</label>
+        <input name="email" type="email" autocomplete="email" value="{{ .AuthUser.Email }}" required />
+
+        <label class="font-bold" for="orcid">ORCiD (optional)</label>
+        <input class="mb-4" name="orcid" type="text" value="{{ .AuthUser.Orcid }}" placeholder="0000-0000-0000-0000" />
+
+        <button type="submit">Register ▶</button>
+    </form>
+</section>
+
+<section>
+    <h3 class="mb-2">Change Password</h3>
+
+    <form class="flex flex-col max-w-sm" method="POST" onsubmit="return changePassword(event);">
+        <p class="mt-0 italic hidden"><small id="passwordChangeMessage"></small></p>
+
+        <input class="hidden" name="id" type="number" value="{{ .AuthUser.ID }}" readonly />
+
+        <label class="font-bold" for="password">New Password</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" placeholder="New Password" required />
+
+        <label class="font-bold" for="confirm-password">Confirm New Password</label>
+        <input id="confirmPassword" name="confirm-password" type="password" autocomplete="new-password" placeholder="Confirm Password" onChange="checkPasswordConfirmation()" required />
+        <p class="my-0 hidden"><small id="passwordCheck"></small></p>
+
+        <button class="mt-4" type="submit" disabled>Change Password ▶</button>
+    </form>
+</section>
+
+<script>
+    const checkPasswordConfirmation = () => {
+        const password = $("#password").val();
+        const confirmPassword = $("#confirmPassword").val();
+
+        const flash = $("#passwordCheck");
+        const submit = $("#password").parent().find('button[type="submit"]');
+        flash.removeClass("text-red-500 text-green-500");
+        if (password != confirmPassword) {
+            flash.addClass("text-red-500").html("Passwords do not match!");
+            submit.prop('disabled', true);
+        } else {
+            flash.addClass("text-green-500").html("Passwords match.");
+            submit.prop('disabled', false);
+        }
+        flash.parent().removeClass("hidden")
+    }
+
+    const changePassword = (event) => {
+        event.preventDefault();
+
+        const id = parseInt($(event.target).find('input[name="id"]').val());
+        const password = $("#password").val();
+        const confirmPassword = $("#confirmPassword").val();
+
+        if (password != confirmPassword) {
+            $("#passwordChangeMessage")
+                .html('Your passwords do not match!')
+                .parent()
+                .addClass("text-red-500")
+                .removeClass("text-green-500 hidden");
+        } else {
+            fetch("/profile/change-password", {
+                method: "POST",
+                headers: {
+                    accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id, password }),
+            }).then(readResponse).then(guardResponse).then(() => {
+                $("#password").val(null);
+                $("#confirmPassword").val(null);
+                $("#password").parent().find('button[type="submit"]').prop('disabled', true);
+                $("#passwordCheck").addClass("hidden");
+                $("#passwordChangeMessage")
+                    .html('Your password has been changed')
+                    .parent()
+                    .addClass("text-green-500")
+                    .removeClass("text-red-500 hidden");
+            }).catch((err) => {
+                $("#passwordChangeMessage")
+                    .html(err.message)
+                    .parent()
+                    .addClass("text-red-500")
+                    .removeClass("text-green-500 hidden");
+            });
+        }
+    }
+
+    $(document).ready(function () {
+        $("#confirmPassword").keyup(checkPasswordConfirmation);
+    });
+</script>

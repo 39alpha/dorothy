@@ -101,3 +101,15 @@ type UserLogin struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type UpdateUser struct {
+	ID    uint    `json:"id"`
+	Name  string  `json:"name"`
+	Email string  `json:"email"`
+	Orcid *string `json:"orcid,omitempty"`
+}
+
+type ChangePassword struct {
+	ID       uint   `json:"id"`
+	Password string `json:"password"`
+}
