@@ -87,7 +87,7 @@
     <h3 class="mb-2">Team Management</h3>
 
     <form class="flex flex-col max-w-sm" name="delete" onsubmit="return sendDelete('{{ .Team.Path }}', '/', event);">
-        <p class="error mt-0 italic text-red-500 hidden"><small></small></p>
+        <p class="mt-0 italic text-red-500 hidden"><small class="error"></small></p>
         <dialog class="max-w-sm">
             <p class="mt-0"><strong>Warning</strong>: When teams are deleted all data, including
             all datasets owned by the team, are removed from the server.
