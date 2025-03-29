@@ -208,7 +208,6 @@ func (page *CreatePrivilege) Run() error {
 	})
 
 	if err != nil {
-		fmt.Println(err)
 		return fmt.Errorf("%w: could not update the privilege", handlers.GormToFiber(err))
 	}
 
