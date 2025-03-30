@@ -1,5 +1,11 @@
 <footer class="mt-10">
-    <p>Created by 39 Alpha Research with funding provided by NASA Grant #1234</p>
+    <p>
+        {{ with .FooterText }}
+            {{ . }}
+        {{ else }}
+        Created by 39 Alpha Research with funding provided by NASA Grant #1234</p>
+        {{ end }}
+    </p>
     <ul>
         <li><a href="about">About</a></li>
         <li><a href="https://39alpharesearch.org/dorothy">Docs</a></li>

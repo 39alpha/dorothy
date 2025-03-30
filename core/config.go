@@ -135,6 +135,12 @@ type DatabaseConfig struct {
 type ServerConfig struct {
 	Database *DatabaseConfig `toml:"database,omitempty"`
 	Views    string          `toml:"views,omitempty"`
+
+	Title             string `toml:"title,omitempty"`
+	SubTitle          string `toml:"subtitle,omitempty"`
+	AllowRegistration bool   `toml:"allow_registration,omitempty"`
+	BrandColor        string `toml:"brand_color,omitempty"`
+	FooterText        string `toml:"footer_text,omitempty"`
 }
 
 func (config *Config) ReadFile(filename string) error {

@@ -3,8 +3,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>
-    {{ if .Title}}
-        {{ .Title }}
+    {{ with .Title}}
+        {{ . }}
     {{ else }}
         Dorothy
     {{ end }}
@@ -17,4 +17,11 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <script type="application/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script type="application/javascript" src="/static/js/main.js"></script>
+    {{ with .BrandColor }}
+    <style>
+        a {
+            color: {{ . }};
+        }
+    </style>
+    {{ end }}
 </head>

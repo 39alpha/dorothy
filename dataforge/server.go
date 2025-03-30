@@ -155,6 +155,8 @@ func (d *Server) ListenOnPort(port int) error {
 }
 
 func (d *Server) setup() {
+	serverConfig := d.Dorothy().Config.Server
+
 	d.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept",
@@ -171,16 +173,31 @@ func (d *Server) setup() {
 	}))
 
 	d.Use(func(c *fiber.Ctx) error {
-		c.Locals("State", fiber.Map{
-			"Title": "Dorothy",
-			"Path":  c.Path(),
-		})
+		state := fiber.Map{
+			"Title":             "Dorothy",
+			"SubTitle":          "Welcome to the dataforge",
+			"AllowRegistration": serverConfig.AllowRegistration,
+			"BrandColor":        serverConfig.BrandColor,
+			"FooterText":        serverConfig.FooterText,
+			"Path":              c.Path(),
+		}
+		if serverConfig.Title != "" {
+			state["Title"] = serverConfig.Title
+		}
+		if serverConfig.SubTitle != "" {
+			state["SubTitle"] = serverConfig.SubTitle
+		}
+		c.Locals("State", state)
 		return c.Next()
 	})
 	d.Use(d.auth.Verifier())
 	d.Use(d.auth.Authenticator(d.db))
 
 	for _, route := range Routes() {
+		if !serverConfig.AllowRegistration && route.endpoint == "/register" {
+			continue
+		}
+
 		handler := handlers.PerRequest(route.handler, d)
 
 		switch route.method {
