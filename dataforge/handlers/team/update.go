@@ -74,10 +74,6 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 
-	if err := c.BodyParser(&page.update); err != nil {
-		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
-	}
-
 	team, err := page.DB().GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
@@ -85,6 +81,15 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 
 	if !authUser.CanManageTeam(*team) {
 		return fiber.ErrForbidden
+	}
+
+	if err := c.BodyParser(&page.update); err != nil {
+		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
+	}
+
+	name := models.Slugify(page.update.Name)
+	if handlers.IsDisallowedName(name) {
+		return fmt.Errorf("%w: that dataset name is already taken", fiber.ErrConflict)
 	}
 
 	page.team = team

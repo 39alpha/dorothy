@@ -77,6 +77,11 @@ func (page *Create) Pre(c *fiber.Ctx) (err error) {
 		return fiber.ErrBadRequest
 	}
 
+	name := models.Slugify(page.newDataset.Name)
+	if handlers.IsDisallowedName(name) {
+		return fmt.Errorf("%w: that dataset name is already taken", fiber.ErrConflict)
+	}
+
 	team, err := page.DB().GetTeam(&page.authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)

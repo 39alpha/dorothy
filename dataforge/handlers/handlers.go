@@ -3,12 +3,40 @@ package handlers
 import (
 	"maps"
 	"reflect"
+	"slices"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/dataforge/auth"
 	"github.com/39alpha/dorothy/dataforge/db"
 	"github.com/gofiber/fiber/v2"
 )
+
+var disallowedNames []string
+
+func init() {
+	disallowedNames = []string{
+		"availability",
+		"available",
+		"change-password",
+		"create",
+		"dataset",
+		"datasets",
+		"login",
+		"logout",
+		"privilege",
+		"profile",
+		"register",
+		"search",
+		"settings",
+		"team",
+		"teams",
+	}
+}
+
+func IsDisallowedName(name string) bool {
+	_, ok := slices.BinarySearch(disallowedNames, name)
+	return ok
+}
 
 type App interface {
 	Dorothy() *core.Dorothy

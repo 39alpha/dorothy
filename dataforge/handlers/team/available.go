@@ -15,8 +15,9 @@ type Available struct {
 		Name string
 	}
 
-	name        string
-	isAvailable bool
+	name         string
+	isAvailable  bool
+	isDisallowed bool
 }
 
 func (page *Available) Pre(c *fiber.Ctx) error {
@@ -29,18 +30,22 @@ func (page *Available) Pre(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
+	page.name = models.Slugify(page.payload.Name)
+	page.isDisallowed = handlers.IsDisallowedName(page.name)
+
 	return nil
 }
 
 func (page *Available) Run() error {
-	var err error
-	page.name = models.Slugify(page.payload.Name)
-	page.isAvailable, err = page.DB().IsTeamNameAvailable(page.name)
-	if err != nil {
-		return fmt.Errorf(
-			"%w: cannot check availability at this time",
-			fiber.ErrInternalServerError,
-		)
+	if !page.isDisallowed {
+		var err error
+		page.isAvailable, err = page.DB().IsTeamNameAvailable(page.name)
+		if err != nil {
+			return fmt.Errorf(
+				"%w: cannot check availability at this time",
+				fiber.ErrInternalServerError,
+			)
+		}
 	}
 
 	return nil
@@ -53,7 +58,7 @@ func (page *Available) RenderJson(c *fiber.Ctx) error {
 		"rewrittenName": page.name,
 	}
 
-	if !page.isAvailable {
+	if !page.isAvailable || page.isDisallowed {
 		c.Status(fiber.StatusConflict)
 		message["error"] = fmt.Sprintf("%q is already taken", page.name)
 	} else {

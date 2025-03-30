@@ -98,8 +98,6 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}
 
-	page.dataset = *dataset
-
 	if !authUser.CanManageDataset(*dataset) {
 		return fiber.ErrForbidden
 	}
@@ -108,9 +106,16 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
+	name := models.Slugify(page.update.Name)
+	if handlers.IsDisallowedName(name) {
+		return fmt.Errorf("%w: that dataset name is already taken", fiber.ErrConflict)
+	}
+
 	if dataset.Team.ID != page.update.TeamID || dataset.ID != page.update.ID {
 		return fmt.Errorf("%w: There is some inconsistency in your request.", fiber.ErrBadRequest)
 	}
+
+	page.dataset = *dataset
 
 	return nil
 }

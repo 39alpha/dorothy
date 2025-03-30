@@ -62,6 +62,11 @@ func (page *Create) Pre(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
+	name := models.Slugify(page.newTeam.Name)
+	if handlers.IsDisallowedName(name) {
+		return fmt.Errorf("%w: that team name is already taken", fiber.ErrConflict)
+	}
+
 	return nil
 }
 
