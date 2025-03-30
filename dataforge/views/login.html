@@ -5,10 +5,10 @@
         {{ template "partials/error-message" . }}
 
         <label class="font-bold" for="email">Email</label>
-        <input name="email" type="email" autocomplete="email" placeholder="Enter Email" autofocus required />
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="Enter Email" autofocus required />
 
         <label class="font-bold" for="password">Password</label>
-        <input name="password" type="password" autocomplete="current-password" placeholder="Enter Password" required />
+        <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter Password" required />
 
         {{ with .Redirect }}
         <input class="hidden" name="redirect" type="text" value="{{ . }}" readonly />

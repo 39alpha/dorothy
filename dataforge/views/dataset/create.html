@@ -11,14 +11,14 @@
         <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
 
         <label class="font-bold" for="contact">Contact Email</label>
-        <input name="contact" type="email" value="{{ .AuthUser.Email }}" required />
+        <input id="contact" name="contact" type="email" value="{{ .AuthUser.Email }}" required />
 
         <label class="font-bold" for="description">Description</label>
-        <textarea name="description" rows="4" placeholder="Dataset Description"></textarea>
+        <textarea id="description" name="description" rows="4" placeholder="Dataset Description"></textarea>
 
         <div class="inline">
             <label class="font-bold" for="isPrivate">Private?</label>
-            <input name="isPrivate" type="checkbox" value="true" />
+            <input id="isPrivate" name="isPrivate" type="checkbox" value="true" />
         </div>
 
         <button type="submit">Create Dataset ▶</button>

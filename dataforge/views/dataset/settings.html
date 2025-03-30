@@ -16,16 +16,16 @@
         <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
 
         <label class="font-bold" for="contact">Contact Email</label>
-        <input name="contact" type="email" value="{{ .Dataset.Contact }}" required />
+        <input id="contact" name="contact" type="email" value="{{ .Dataset.Contact }}" required />
 
         <label class="font-bold" for="description">Description</label>
-        <textarea name="description" rows="4">
+        <textarea id="description" name="description" rows="4">
             {{- .Dataset.Description -}}
         </textarea>
 
         <div class="mb-4 flex flex-row items-center gap-5">
             <label class="font-bold" for="isPrivate">Private?</label>
-            <input name="isPrivate" type="checkbox" data-value="{{ .Dataset.IsPrivate }}" {{ if .Dataset.IsPrivate }}checked{{ end }} />
+            <input id="isPrivate" name="isPrivate" type="checkbox" data-value="{{ .Dataset.IsPrivate }}" {{ if .Dataset.IsPrivate }}checked{{ end }} />
         </div>
 
         <dialog class="max-w-sm" id="name_change_confirmation">

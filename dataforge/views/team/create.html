@@ -9,14 +9,14 @@
         <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
 
         <label class="font-bold" for="contact">Contact Email</label>
-        <input name="contact" type="email" value="{{ .AuthUser.Email }}" required />
+        <input id="contact" name="contact" type="email" value="{{ .AuthUser.Email }}" required />
 
         <label class="font-bold" for="description">Description</label>
-        <textarea name="description" rows="4" placeholder="Team Description"></textarea>
+        <textarea id="description" name="description" rows="4" placeholder="Team Description"></textarea>
 
         <div class="mb-4 flex flex-row items-center gap-5">
             <label class="font-bold" for="isPrivate">Private?</label>
-            <input name="isPrivate" type="checkbox" value="true" />
+            <input id="isPrivate" name="isPrivate" type="checkbox" value="true" />
         </div>
 
         <button id="submit" type="submit" disabled>Create Team ▶</button>
