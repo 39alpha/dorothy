@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -43,11 +44,14 @@ func NewMergeConflict(err error, conflicts []core.Conflict) *MergeConflict {
 type ErrorHandler struct {
 	App
 
-	Err error
+	Err      error
+	authUser *models.User
 }
 
 func (handler *ErrorHandler) Pre(c *fiber.Ctx) error {
 	c.Locals("Error", handler.Err)
+
+	handler.authUser, _ = c.Locals("AuthUser").(*models.User)
 
 	var e *fiber.Error
 	if errors.As(handler.Err, &e) {
@@ -60,18 +64,21 @@ func (handler *ErrorHandler) Pre(c *fiber.Ctx) error {
 }
 
 func (handler *ErrorHandler) RenderHtml(c *fiber.Ctx) error {
+	page := "error"
+
 	var err *fiber.Error
 	if errors.As(handler.Err, &err) {
 		switch err {
 		case fiber.ErrNotFound:
-			return c.Render("404", Bind(c), "layouts/main")
+			page = "404"
 		case fiber.ErrForbidden:
-			return c.Render("403", Bind(c), "layouts/main")
+			page = "405"
 		}
 	}
 
-	return c.Render("error", Bind(c, fiber.Map{
-		"Error": handler.Err,
+	return c.Render(page, Bind(c, fiber.Map{
+		"Error":    handler.Err,
+		"AuthUser": handler.authUser,
 	}), "layouts/main")
 }
 
