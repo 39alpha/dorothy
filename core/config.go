@@ -15,13 +15,12 @@ import (
 )
 
 type Config struct {
-	User         *UserConfig     `toml:"user,omitempty"`
-	Editor       string          `toml:"editor,omitempty"`
-	RemoteString string          `toml:"remote,omitempty"`
-	Ipfs         *IpfsConfig     `toml:"ipfs,omitempty"`
-	Database     *DatabaseConfig `toml:"database,omitempty"`
-	Server       *ServerConfig   `toml:"server,omitempty"`
-	Remote       *Remote         `toml:"-"`
+	User         *UserConfig   `toml:"user,omitempty"`
+	Editor       string        `toml:"editor,omitempty"`
+	RemoteString string        `toml:"remote,omitempty"`
+	Ipfs         *IpfsConfig   `toml:"ipfs,omitempty"`
+	Server       *ServerConfig `toml:"server,omitempty"`
+	Remote       *Remote       `toml:"-"`
 }
 
 type Remote struct {
@@ -134,7 +133,8 @@ type DatabaseConfig struct {
 }
 
 type ServerConfig struct {
-	Views string `toml:"views,omitempty"`
+	Database *DatabaseConfig `toml:"database,omitempty"`
+	Views    string          `toml:"views,omitempty"`
 }
 
 func (config *Config) ReadFile(filename string) error {

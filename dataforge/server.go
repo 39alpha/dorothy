@@ -92,7 +92,16 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return nil, err
 	}
 
-	session, err := db.Open(dorothy.Config.Database)
+	serverConfig := dorothy.Config.Server
+	if serverConfig == nil {
+		return nil, fmt.Errorf("no server configuration provided")
+	}
+
+	if serverConfig.Database == nil {
+		return nil, fmt.Errorf("no server.database configuration provided")
+	}
+
+	session, err := db.Open(serverConfig.Database)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +111,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 	}
 
 	var viewsfs http.FileSystem
-	if dorothy.Config.Server == nil || dorothy.Config.Server.Views == "" {
+	if serverConfig.Views == "" {
 		fmt.Println("INFO: Using embedded views")
 		fsys, err := fs.Sub(embeddedViews, "views")
 		if err != nil {
@@ -111,7 +120,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		viewsfs = http.FS(fsys)
 	} else {
 		fmt.Println("INFO: Using live views")
-		viewsfs = http.Dir(dorothy.Config.Server.Views)
+		viewsfs = http.Dir(serverConfig.Views)
 	}
 
 	engine := html.NewFileSystem(viewsfs, ".html")
