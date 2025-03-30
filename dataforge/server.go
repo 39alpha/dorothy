@@ -157,6 +157,8 @@ func (d *Server) ListenOnPort(port int) error {
 func (d *Server) setup() {
 	serverConfig := d.Dorothy().Config.Server
 
+	d.Use(handlers.ErrorMiddleware(d))
+
 	d.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept",
@@ -188,6 +190,7 @@ func (d *Server) setup() {
 			state["SubTitle"] = serverConfig.SubTitle
 		}
 		c.Locals("State", state)
+
 		return c.Next()
 	})
 	d.Use(d.auth.Verifier())

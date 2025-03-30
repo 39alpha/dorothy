@@ -108,3 +108,20 @@ func (h *ErrorHandler) HandleFormError(page Handler, c *fiber.Ctx, err error) er
 
 	return ToFiberHandler(page)(c)
 }
+
+func ErrorMiddleware(app App) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		defer func() {
+			if err := recover(); err != nil {
+				ToFiberHandler(&ErrorHandler{App: app, Err: err.(error)})(c)
+			}
+		}()
+
+		err := c.Next()
+		if err != nil {
+			panic(err)
+		}
+
+		return nil
+	}
+}
