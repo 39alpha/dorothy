@@ -16,7 +16,7 @@
         </ul>
     </nav>
 
-    <p><em>{{ .Dataset.Description }}</em></p>
+    <p class="italic">{{ .Dataset.Description }}</p>
 
     {{ if .Dataset.Manifest.Versions }}
     <ul>
@@ -25,6 +25,6 @@
         {{ end }}
     </ul>
     {{ else }}
-    <p>No versions have been uploaded quite yet!</p>
+    <p class="font-bold">No versions have been uploaded quite yet!</p>
     {{ end }}
 </section>

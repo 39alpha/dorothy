@@ -6,12 +6,13 @@
         <i class="fa-solid fa-lock-open"></i>
         {{ end }}
     </dt>
+    {{ with .Description }}
     <dd class="ml-4">
-        {{ with .Description }}
         {{ . }}
-        {{ else }}
+    {{ else }}
+    <dd class="ml-4 italic">
         No description...
-        {{ end }}
+    {{ end }}
     </dd>
 {{ end }}
 </dl>
