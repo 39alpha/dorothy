@@ -1,6 +1,36 @@
 <section class="mt-8">
     <header>
-        <h1 class="mb-0">Featured Public Teams</h1>
+        <h1 class="mb-0">
+            {{ if .AuthUser }}
+            Your Recent Datasets
+            {{ else }}
+            Recent Public Datasets
+            {{ end }}
+        </h1>
+        <nav>
+            <ul class="mt-0">
+                {{ if .Datasets }}
+                <li><a href="#">More Datasets</a></li>
+                {{ end }}
+            </ul>
+        </nav>
+    </header>
+    {{ with .Datasets }}
+    {{ template "partials/asset-entry" . }}
+    {{ else }}
+    <p>No datasets have been created yet.</p>
+    {{ end }}
+</section>
+
+<section class="mt-8">
+    <header>
+        <h1 class="mb-0">
+            {{ if .AuthUser }}
+            Your Recent Teams
+            {{ else }}
+            Recent Public Teams
+            {{ end }}
+        </h1>
         <nav>
             <ul class="mt-0">
                 {{ if .AuthUser }}
@@ -17,23 +47,5 @@
     {{ template "partials/asset-entry" . }}
     {{ else }}
     <p>No teams have been created yet.</p>
-    {{ end }}
-</section>
-
-<section class="mt-8">
-    <header>
-        <h1 class="mb-0">Featured Public Datasets</h1>
-        <nav>
-            <ul class="mt-0">
-                {{ if .Datasets }}
-                <li><a href="#">More Datasets</a></li>
-                {{ end }}
-            </ul>
-        </nav>
-    </header>
-    {{ with .Datasets }}
-    {{ template "partials/asset-entry" . }}
-    {{ else }}
-    <p>No datasets have been created yet.</p>
     {{ end }}
 </section>

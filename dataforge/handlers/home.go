@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"math"
-
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 )
@@ -18,20 +16,8 @@ type Home struct {
 func (page *Home) Pre(c *fiber.Ctx) error {
 	page.user, _ = c.Locals("AuthUser").(*models.User)
 
-	teams, err := page.DB().GetTeams(page.user, false)
-	if err != nil {
-		page.teams = []models.Team{}
-	}
-	teams = teams[0:int64(math.Min(float64(len(teams)), 6))]
-
-	datasets, err := page.DB().GetDatasets(page.user)
-	if err != nil {
-		datasets = []models.Dataset{}
-	}
-	datasets = datasets[0:int64(math.Min(float64(len(datasets)), 6))]
-
-	page.teams = teams
-	page.datasets = datasets
+	page.teams, _ = page.DB().GetHotTeams(page.user)
+	page.datasets, _ = page.DB().GetHotDatasets(page.user)
 
 	return nil
 }
