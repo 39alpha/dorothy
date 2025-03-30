@@ -371,10 +371,10 @@ func (db *DB) GetHotDatasets(user *models.User) ([]models.Dataset, error) {
 		return datasets, db.Model(&models.Dataset{}).
 			Select("datasets.*").
 			Joins("INNER JOIN `teams` ON `teams`.`id` = `datasets`.`team_id`").
-			Where("`teams`.`is_private` = 0").
+			Where("`teams`.`is_private` = 0 AND `datasets`.`is_private` = 0").
 			Order("`datasets`.`updated_at` desc").
 			Limit(6).
-			Find(&datasets, "is_private = 0").
+			Find(&datasets).
 			Error
 	} else {
 		return datasets, db.Model(&models.Dataset{}).
