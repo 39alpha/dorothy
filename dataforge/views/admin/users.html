@@ -1,0 +1,55 @@
+<h2>Users</h2>
+
+{{ with .Users }}
+<table class="w-full table-auto border-collapse">
+    <thead>
+        <tr>
+            <th class="px-2 border-1">ID</th>
+            <th class="px-2 border-1">Name</th>
+            <th class="px-2 border-1">Email</th>
+            <th class="px-2 border-1">Orcid</th>
+            <th class="px-2 border-1">Created</th>
+            <th class="px-2 border-1">Updated</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {{ range . }}
+        <tr>
+            <td class="px-2 border-1 text-center"><a href="/admin/users/{{ .ID }}">{{ .ID }}</td>
+            <td class="px-2 border-1">{{ .Name }}</td>
+            <td class="px-2 border-1">{{ .Email }}</td>
+            <td class="px-2 border-1">
+            {{ if .HasOrcid }}
+                {{ . }}
+            {{ else }}
+                -
+            {{ end }}
+            </td>
+            <td class="px-2 border-1">{{ .CreatedAt | TimeFmt }}</td>
+            <td class="px-2 border-1">{{ .CreatedAt | TimeFmt }}</td>
+        </tr>
+    {{ end }}
+    </tbody>
+</table>
+{{ else }}
+<p>There are no users? This is probably an error given you are a user.</p>
+{{ end }}
+
+<p class="mb-0">
+    Page <span>{{ .Page }}</span> of <span>{{ .NumPages }}</span> <span>({{ .PerPage }} per page)</span>
+</p>
+
+<p class="mt-0">
+{{ if .PrevPage }}
+    <a href="/admin/users?page={{ .PrevPage }}&per_page={{ .PerPage }}">Prev</a>
+{{ end }}
+
+{{ if and .PrevPage .NextPage }}
+    <span class="mx-2">|</span>
+{{ end }}
+
+{{ if .NextPage }}
+    <a href="/admin/users?page={{ .NextPage }}&per_page={{ .PerPage }}">Next</a>
+{{ end }}
+</p>

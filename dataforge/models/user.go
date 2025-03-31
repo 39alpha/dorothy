@@ -23,6 +23,10 @@ func (user User) HasAdminRole() bool {
 	return user.RoleCode == AdminRole
 }
 
+func (user User) HasOrcid() bool {
+	return user.Orcid != nil && *user.Orcid != ""
+}
+
 func (user User) TeamPrivilege(team Team) PrivilegeCode {
 	if user.RoleCode == AdminRole {
 		return AdminPrivilege
