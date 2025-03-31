@@ -1,4 +1,11 @@
-<h2>Users</h2>
+<header>
+    <h2>Users</h2>
+    <nav>
+        <ul>
+            <li><a href="/admin/users/create">Create User</a></li>
+        </ul>
+    </nav>
+</header>
 
 <form class="flex flex-row gap-2 mb-4" onsubmit="return adminUserSearch(event);">
     <input class="flex-1" type="text" name="search" placeholder="Search..." value="{{ .Search }}" autofocus />

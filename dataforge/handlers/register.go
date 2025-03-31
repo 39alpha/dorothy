@@ -45,7 +45,7 @@ func (page *Register) Pre(c *fiber.Ctx) error {
 }
 
 func (page *Register) Run() error {
-	if err := page.DB().CreateUser(&page.newUser); err != nil {
+	if err := page.DB().NewUser(&page.newUser); err != nil {
 		return fmt.Errorf("%w: User already exists", fiber.ErrBadRequest)
 	}
 	return nil

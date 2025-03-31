@@ -1,6 +1,8 @@
 package db
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
@@ -78,7 +80,7 @@ func (d *DB) Initialize() error {
 	return nil
 }
 
-func (d *DB) CreateUser(newuser *models.NewUser) error {
+func (d *DB) NewUser(newuser *models.NewUser) error {
 	var result struct {
 		Count int
 	}
@@ -103,6 +105,46 @@ func (d *DB) CreateUser(newuser *models.NewUser) error {
 		Name:         newuser.Name,
 		Orcid:        newuser.Orcid,
 		RoleCode:     rolecode,
+	}
+
+	return d.Create(user).Error
+}
+
+func GenerateRandomPassword() (string, error) {
+	key := make([]byte, 32)
+
+	if _, err := rand.Read(key); err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(key), nil
+}
+
+func (d *DB) CreateUser(create models.CreateUser) error {
+	var result struct {
+		Count int
+	}
+	err := d.Raw("SELECT COUNT(*) AS count FROM users").First(&result).Error
+	if err != nil {
+		return fmt.Errorf("failed to get user count")
+	}
+
+	password, err := GenerateRandomPassword()
+	if err != nil {
+		return fmt.Errorf("failed to create user")
+	}
+
+	password_hash, err := bcrypt.GenerateFromPassword([]byte(password), 8)
+	if err != nil {
+		return fmt.Errorf("failed to create user")
+	}
+
+	user := &models.User{
+		Email:        create.Email,
+		PasswordHash: password_hash,
+		Name:         create.Name,
+		Orcid:        create.Orcid,
+		RoleCode:     create.Role,
 	}
 
 	return d.Create(user).Error

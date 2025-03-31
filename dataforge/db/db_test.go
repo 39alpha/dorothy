@@ -25,7 +25,7 @@ func setup(t *testing.T) {
 	}
 }
 
-func TestCanCreateUser(t *testing.T) {
+func TestCanCreateNewUser(t *testing.T) {
 	setup(t)
 
 	user := &models.User{

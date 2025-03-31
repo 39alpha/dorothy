@@ -129,3 +129,10 @@ type ChangePassword struct {
 	ID       uint   `json:"id"`
 	Password string `json:"password"`
 }
+
+type CreateUser struct {
+	Name  string   `json:"email"`
+	Email string   `json:"name"`
+	Orcid *string  `json:"orcid,omitempty"`
+	Role  RoleCode `json:"role"`
+}

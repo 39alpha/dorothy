@@ -1,0 +1,26 @@
+<h2>Create User</h2>
+
+<form class="flex flex-col max-w-sm" method="POST">
+    {{ template "partials/error-message" . }}
+
+    <label class="font-bold" for="name">Name</label>
+    <input id="name" name="name" type="text" placeholder="Enter Name" autofocus required />
+
+    <label class="font-bold" for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" placeholder="Enter Email" required />
+
+    <label class="font-bold" for="orcid">ORCiD (optional)</label>
+    <input class="mb-4" id="orcid" name="orcid" type="text" placeholder="0000-0000-0000-0000" />
+
+    <fieldset class="mb-4 pt-0">
+        <legend>Role</legend>
+
+        <input type="radio" name="role" id="role-user" value="user" {{ if ne .RoleCode "admin" }}checked{{ end }} />
+        <label for="role-user">User</label>
+
+        <input type="radio" name="role" id="role-admin" value="admin" {{ if eq .RoleCode "admin" }}checked{{ end }} />
+        <label for="role-admin">Admin</label>
+    </fieldset>
+
+    <button type="submit">Create User ▶</button>
+</form>
