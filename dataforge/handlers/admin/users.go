@@ -17,6 +17,7 @@ type UserListing struct {
 
 	authUser *models.User
 	users    []models.User
+	search   string
 	pageNum  int
 	perPage  int
 	numPages int
@@ -25,7 +26,7 @@ type UserListing struct {
 func (page *UserListing) PathWithQueries(c *fiber.Ctx, useQueries, escape bool) string {
 	path := fmt.Sprintf("%s?%s", c.Path(), string(c.Context().QueryArgs().QueryString()))
 	if !useQueries {
-		path = fmt.Sprintf("%s?page=%d&per_page=%d", c.Path(), page.pageNum, page.perPage)
+		path = fmt.Sprintf("%s?search=%s&page=%d&per_page=%d", c.Path(), page.search, page.pageNum, page.perPage)
 	}
 
 	if escape {
@@ -45,6 +46,8 @@ func (page *UserListing) Pre(c *fiber.Ctx) error {
 	} else if !page.authUser.HasAdminRole() {
 		return fiber.ErrForbidden
 	}
+
+	page.search = c.Query("search")
 
 	pageNum := c.Query("page")
 	if pageNum == "" {
@@ -68,8 +71,15 @@ func (page *UserListing) Pre(c *fiber.Ctx) error {
 		}
 	}
 
+	count_query := page.DB().Model(&models.User{})
+	if page.search != "" {
+		pattern := fmt.Sprintf("%%%s%%", page.search)
+		count_query = count_query.
+			Where("name LIKE ? OR email LIKE ? OR orcid LIKE ?", pattern, pattern, pattern)
+	}
+
 	var user_count int64
-	if err := page.DB().Model(&models.User{}).Count(&user_count).Error; err != nil {
+	if err := count_query.Count(&user_count).Error; err != nil {
 		return fmt.Errorf("%w: failed to get users", handlers.GormToFiber(err))
 	}
 
@@ -90,7 +100,19 @@ func (page *UserListing) Pre(c *fiber.Ctx) error {
 func (page *UserListing) Run() error {
 	offset := page.perPage * (page.pageNum - 1)
 
-	if err := page.DB().Order("name").Offset(offset).Limit(page.perPage).Omit("PasswordHash").Find(&page.users).Error; err != nil {
+	query := page.DB().
+		Omit("PasswordHash").
+		Order("name").
+		Offset(offset).
+		Limit(page.perPage)
+
+	if page.search != "" {
+		pattern := fmt.Sprintf("%%%s%%", page.search)
+		query = query.
+			Where("name LIKE ? OR email LIKE ? OR orcid LIKE ?", pattern, pattern, pattern)
+	}
+
+	if err := query.Find(&page.users).Error; err != nil {
 		return fmt.Errorf("%w: failed to get users", handlers.GormToFiber(err))
 	}
 
@@ -111,6 +133,7 @@ func (page *UserListing) RenderHtml(c *fiber.Ctx) error {
 	params := handlers.Bind(c, fiber.Map{
 		"AuthUser": page.authUser,
 		"Users":    page.users,
+		"Search":   page.search,
 		"Page":     page.pageNum,
 		"PerPage":  page.perPage,
 		"NumPages": page.numPages,
@@ -128,6 +151,7 @@ func (page *UserListing) RenderHtml(c *fiber.Ctx) error {
 func (page *UserListing) RenderJson(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"users":     page.users,
+		"search":    page.search,
 		"page":      page.pageNum,
 		"per_page":  page.perPage,
 		"num_pages": page.numPages,
