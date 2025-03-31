@@ -14,22 +14,30 @@ import (
 var disallowedNames []string
 
 func init() {
+	// DGM: This must be sorted lexicographically
 	disallowedNames = []string{
 		"availability",
 		"available",
 		"change-password",
+		"change-passwords",
 		"create",
+		"creates",
 		"dataset",
 		"datasets",
 		"login",
 		"logout",
 		"privilege",
+		"privileges",
 		"profile",
+		"profiles",
 		"register",
 		"search",
+		"searches",
 		"settings",
 		"team",
 		"teams",
+		"user",
+		"users",
 	}
 }
 
