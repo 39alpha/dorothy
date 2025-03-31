@@ -3,15 +3,18 @@
     <p class="my-0">{{ .SubTitle }}</p>
     <nav>
         <ul>
-            {{ if .AuthUser }}
+        {{ if .AuthUser }}
             <li><a href="/profile">{{.AuthUser.Name}}</a></li>
             <li><a href="/logout">Logout</a></li>
-            {{ else }}
+            {{ if .AuthUser.HasAdminRole }}
+                <li><a href="/admin">Admin Dashboard</a></li>
+            {{ end }}
+        {{ else }}
             <li><a href="/login?Redirect={{ .Path }}">Login</a></li>
             {{ if .AllowRegistration }}
-            <li><a href="/register">Register</a></li>
+                <li><a href="/register">Register</a></li>
             {{ end }}
-            {{ end }}
+        {{ end }}
         </ul>
     </nav>
 </header>

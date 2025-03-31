@@ -2,6 +2,7 @@ package dataforge
 
 import (
 	"github.com/39alpha/dorothy/dataforge/handlers"
+	"github.com/39alpha/dorothy/dataforge/handlers/admin"
 	"github.com/39alpha/dorothy/dataforge/handlers/dataset"
 	"github.com/39alpha/dorothy/dataforge/handlers/profile"
 	"github.com/39alpha/dorothy/dataforge/handlers/team"
@@ -31,6 +32,8 @@ func Routes() []Route {
 		{GET, "/login", &handlers.LoginForm{}},
 		{POST, "/login", &handlers.Login{}},
 		{GET, "/logout", &handlers.Logout{}},
+
+		{GET, "/admin", &admin.Dashboard{}},
 
 		{GET, "/profile", &profile.Form{}},
 		{POST, "/profile", &profile.Update{}},
