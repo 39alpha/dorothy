@@ -1,0 +1,50 @@
+{{ with .User }}
+<h2>{{ .Name }}'s Profile</h2>
+
+<section>
+    <h3 class="mb-2">General Settings</h3>
+
+    <form class="flex flex-col max-w-sm" method="POST">
+        <input class="hidden" name="id" type="number" value="{{ .ID }}" readonly />
+
+        <label class="font-bold" for="name">Name</label>
+        <input id="name" name="name" type="text" value="{{ .Name }}" autofocus required />
+
+        <label class="font-bold" for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" value="{{ .Email }}" required />
+
+        <label class="font-bold" for="orcid">ORCiD (optional)</label>
+        <input id="orcid" name="orcid" type="text" value="{{ .Orcid }}" placeholder="0000-0000-0000-0000" />
+
+        <fieldset class="mb-4 pt-0">
+            <legend>Role</legend>
+
+            <input type="radio" name="role" id="role-user" value="user" {{ if ne .RoleCode "admin" }}checked{{ end }} />
+            <label for="role-user">User</label>
+
+            <input type="radio" name="role" id="role-admin" value="admin" {{ if eq .RoleCode "admin" }}checked{{ end }} />
+            <label for="role-admin">Admin</label>
+        </fieldset>
+
+        <button type="submit">Update ▶</button>
+    </form>
+</section>
+
+<section>
+    <h3 class="mb-2">User Management</h3>
+
+    <form class="flex flex-col max-w-sm" name="delete" onsubmit="return sendDelete('/admin/users/{{ .ID }}', '/admin/users', event);">
+        <p class="mt-0 italic text-red-500 hidden"><small class="error"></small></p>
+        <dialog class="max-w-sm">
+            <p class="mt-0"><strong>Warning</strong>You are about to delete a user.</p>
+
+            <p>Are you sure you want to do this?</p>
+            <div>
+                <button type="button" onclick="closeDialog(this);">Cancel</button>
+                <button class="text-red-600 font-bold" type="submit">Do it!</button>
+            </div>
+        </dialog>
+        <button class="text-red-600 font-bold" type="button" onclick="requestConfirmation(event);">Delete User ▶</button>
+    </form>
+</section>
+{{ end }}

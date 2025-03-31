@@ -35,6 +35,9 @@ func Routes() []Route {
 
 		{GET, "/admin", &admin.Dashboard{}},
 		{GET, "/admin/users", &admin.UserListing{}},
+		{GET, "/admin/users/:user", &admin.UserForm{}},
+		{POST, "/admin/users/:user", &admin.UserUpdate{}},
+		{DELETE, "/admin/users/:user", &admin.UserDelete{}},
 
 		{GET, "/profile", &profile.Form{}},
 		{POST, "/profile", &profile.Update{}},

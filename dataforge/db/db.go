@@ -532,6 +532,16 @@ func (db *DB) UpdateUser(update models.UpdateUser) error {
 	return db.Model(models.User{ID: update.ID}).Updates(values).Error
 }
 
+func (db *DB) UpdateUserWithRole(update models.UpdateUserWithRole) error {
+	values := map[string]any{
+		"Name":     update.Name,
+		"Email":    update.Email,
+		"Orcid":    update.Orcid,
+		"RoleCode": update.Role,
+	}
+	return db.Model(models.User{ID: update.ID}).Updates(values).Error
+}
+
 func (db *DB) UserChangePassword(update models.ChangePassword) error {
 	password_hash, err := bcrypt.GenerateFromPassword([]byte(update.Password), 8)
 	if err != nil {
@@ -543,4 +553,8 @@ func (db *DB) UserChangePassword(update models.ChangePassword) error {
 	}
 
 	return db.Model(&models.User{ID: update.ID}).Updates(values).Error
+}
+
+func (d *DB) DeleteUser(user *models.User) error {
+	return d.Delete(user).Error
 }

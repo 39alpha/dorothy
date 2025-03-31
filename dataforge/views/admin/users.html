@@ -11,6 +11,7 @@
             <thead>
                 <tr>
                     <th class="px-2 border-1">ID</th>
+                    <th class="px-2 border-1">Role</th>
                     <th class="px-2 border-1">Name</th>
                     <th class="px-2 border-1">Email</th>
                     <th class="px-2 border-1">Orcid</th>
@@ -23,6 +24,7 @@
             {{ range . }}
                 <tr>
                     <td class="px-2 border-1 text-center"><a href="/admin/users/{{ .ID }}">{{ .ID }}</td>
+                    <td class="px-2 border-1">{{ .RoleCode }}</td>
                     <td class="px-2 border-1">{{ .Name }}</td>
                     <td class="px-2 border-1">{{ .Email }}</td>
                     <td class="px-2 border-1">

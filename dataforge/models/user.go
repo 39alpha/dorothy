@@ -117,6 +117,14 @@ type UpdateUser struct {
 	Orcid *string `json:"orcid,omitempty"`
 }
 
+type UpdateUserWithRole struct {
+	ID    uint     `json:"id"`
+	Name  string   `json:"name"`
+	Email string   `json:"email"`
+	Orcid *string  `json:"orcid,omitempty"`
+	Role  RoleCode `json:"role"`
+}
+
 type ChangePassword struct {
 	ID       uint   `json:"id"`
 	Password string `json:"password"`
