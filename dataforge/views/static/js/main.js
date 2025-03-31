@@ -168,8 +168,11 @@ const sendDelete = (resource, redirect, event) => {
     }).then(readResponse).then(guardResponse).then(() => {
         window.location.href = redirect;
     }).catch((err) => {
-        const message_div = $(event.target).find(".error").removeClass("hidden")
-            .html(err);
+        const message_div = $(event.target)
+            .find(".error")
+            .html(err)
+            .parent()
+            .removeClass("hidden");
         $("html, body").animate({
             scrollTop: message_div.offset().top,
         });
