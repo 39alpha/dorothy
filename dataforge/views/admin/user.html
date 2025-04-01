@@ -32,6 +32,15 @@
 </section>
 
 <section>
+    <h3 class="mb-2">Reset Password</h3>
+
+    <form class="flex flex-col max-w-sm" name="reset-password" onsubmit="return sendPasswordReset(event);">
+        <p class="mt-0 italic text-red-500 hidden"><small class="error"></small></p>
+        <button type="submit">Send Password Reset ▶</button>
+    </form>
+</section>
+
+<section>
     <h3 class="mb-2">User Management</h3>
 
     <form class="flex flex-col max-w-sm" name="delete" onsubmit="return sendDelete('/admin/users/{{ .User.ID }}', '/admin/users', event);">
@@ -48,3 +57,29 @@
         <button class="text-red-600 font-bold" type="button" onclick="requestConfirmation(event);">Delete User ▶</button>
     </form>
 </section>
+
+<script>
+    const sendPasswordReset = (event) => {
+        event.preventDefault();
+
+        const email = $('#email').val();
+        const message = $(event.target).find('.error');
+        const parent = message.parent();
+        if (email) {
+            fetch('/reset-password', {
+                method: 'POST',
+                headers: {
+                    accept: 'application/json',
+                    ['Content-Type']: 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            }).then(readResponse).then(guardResponse).then(() => {
+                message.html('Password reset sent');
+                parent.removeClass('text-red-500 hidden').addClass('text-green-500');
+            }).catch((err) => {
+                message.html(err);
+                parent.removeClass('text-green-500 hidden').addClass('text-red-500');
+            });
+        }
+    };
+</script>

@@ -59,8 +59,8 @@ func (page *ResetPassword) Pre(c *fiber.Ctx) error {
 	authUser, _ := c.Locals("AuthUser").(*models.User)
 	if authUser != nil {
 		if Redirectable(c) {
-			return c.Redirect("/profile/change-password")
-		} else {
+			return c.Redirect("/profile")
+		} else if !authUser.HasAdminRole() {
 			return fiber.ErrForbidden
 		}
 	}
