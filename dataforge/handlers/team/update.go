@@ -11,17 +11,15 @@ import (
 type UpdateForm struct {
 	handlers.App
 
-	authUser models.User
-	team     models.Team
-	users    []models.User
+	team  models.Team
+	users []models.User
 }
 
 func (form *UpdateForm) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
-	form.authUser = *authUser
 
 	team, err := form.DB().GetTeam(authUser, c.Params("team"))
 	if err != nil {
@@ -40,9 +38,8 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 
 func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("team/settings", handlers.Bind(c, fiber.Map{
-		"AuthUser": form.authUser,
-		"Team":     form.team,
-		"Users":    form.users,
+		"Team":  form.team,
+		"Users": form.users,
 	}), "layouts/main")
 }
 
@@ -55,8 +52,8 @@ type Update struct {
 }
 
 func (page *Update) Pre(c *fiber.Ctx) error {
-	authUser, ok := c.Locals("AuthUser").(*models.User)
-	if !ok {
+	authUser := handlers.GetAuthUser(c)
+	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
 

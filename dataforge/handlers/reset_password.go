@@ -19,7 +19,7 @@ type ResetPasswordForm struct {
 }
 
 func (form *ResetPasswordForm) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := GetAuthUser(c)
 	if authUser != nil {
 		if Redirectable(c) {
 			return c.Redirect("/profile/change-password")
@@ -60,7 +60,7 @@ type ResetPassword struct {
 }
 
 func (page *ResetPassword) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := GetAuthUser(c)
 	if authUser != nil {
 		if Redirectable(c) {
 			return c.Redirect("/profile")

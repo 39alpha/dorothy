@@ -16,7 +16,7 @@ type Delete struct {
 }
 
 func (page *Delete) Pre(c *fiber.Ctx) error {
-	authUser := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}

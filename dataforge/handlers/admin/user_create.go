@@ -11,25 +11,14 @@ import (
 
 type UserCreateForm struct {
 	handlers.App
-
-	authUser *models.User
 }
 
 func (form *UserCreateForm) Pre(c *fiber.Ctx) error {
-	form.authUser, _ = c.Locals("AuthUser").(*models.User)
-	if form.authUser == nil {
-		return fiber.ErrUnauthorized
-	} else if !form.authUser.HasAdminRole() {
-		return fiber.ErrForbidden
-	}
-
-	return nil
+	return RequireAdmin(c)
 }
 
 func (form *UserCreateForm) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("admin/user-create", handlers.Bind(c, fiber.Map{
-		"AuthUser": form.authUser,
-	}), "layouts/main")
+	return c.Render("admin/user-create", handlers.Bind(c), "layouts/main")
 }
 
 type UserCreate struct {
@@ -38,16 +27,12 @@ type UserCreate struct {
 	title   string
 	baseUrl string
 
-	authUser *models.User
-	create   models.CreateUser
+	create models.CreateUser
 }
 
 func (page *UserCreate) Pre(c *fiber.Ctx) error {
-	page.authUser, _ = c.Locals("AuthUser").(*models.User)
-	if page.authUser == nil {
-		return fiber.ErrUnauthorized
-	} else if !page.authUser.HasAdminRole() {
-		return fiber.ErrForbidden
+	if err := RequireAdmin(c); err != nil {
+		return err
 	}
 
 	if err := c.BodyParser(&page.create); err != nil {

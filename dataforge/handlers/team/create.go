@@ -10,24 +10,14 @@ import (
 
 type CreateForm struct {
 	handlers.App
-
-	authUser models.User
 }
 
 func (form *CreateForm) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
-	if authUser == nil {
-		return fiber.ErrUnauthorized
-	}
-	form.authUser = *authUser
-
-	return nil
+	return handlers.RequireLogin(c)
 }
 
 func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("team/create", handlers.Bind(c, fiber.Map{
-		"AuthUser": form.authUser,
-	}), "layouts/main")
+	return c.Render("team/create", handlers.Bind(c), "layouts/main")
 }
 
 type Create struct {
@@ -39,7 +29,7 @@ type Create struct {
 }
 
 func (page *Create) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}

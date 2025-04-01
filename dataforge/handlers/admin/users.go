@@ -15,7 +15,6 @@ import (
 type UserListing struct {
 	handlers.App
 
-	authUser *models.User
 	users    []models.User
 	search   string
 	pageNum  int
@@ -40,11 +39,8 @@ func (page *UserListing) RedirectWithQueries(c *fiber.Ctx, useQueries, escape bo
 }
 
 func (page *UserListing) Pre(c *fiber.Ctx) error {
-	page.authUser, _ = c.Locals("AuthUser").(*models.User)
-	if page.authUser == nil {
-		return fiber.ErrUnauthorized
-	} else if !page.authUser.HasAdminRole() {
-		return fiber.ErrForbidden
+	if err := RequireAdmin(c); err != nil {
+		return err
 	}
 
 	page.search = c.Query("search")
@@ -130,7 +126,6 @@ func (page *UserListing) Recover(c *fiber.Ctx, err error) error {
 
 func (page *UserListing) RenderHtml(c *fiber.Ctx) error {
 	params := handlers.Bind(c, fiber.Map{
-		"AuthUser": page.authUser,
 		"Users":    page.users,
 		"Search":   page.search,
 		"Page":     page.pageNum,

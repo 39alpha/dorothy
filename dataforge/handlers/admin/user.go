@@ -12,26 +12,20 @@ import (
 type UserForm struct {
 	handlers.App
 
-	authUser *models.User
-	userId   int
-	user     *models.User
+	user *models.User
 }
 
 func (form *UserForm) Pre(c *fiber.Ctx) error {
-	form.authUser, _ = c.Locals("AuthUser").(*models.User)
-	if form.authUser == nil {
-		return fiber.ErrUnauthorized
-	} else if !form.authUser.HasAdminRole() {
-		return fiber.ErrForbidden
+	if err := RequireAdmin(c); err != nil {
+		return err
 	}
 
-	var err error
-	form.userId, err = strconv.Atoi(c.Params("user"))
+	userId, err := strconv.Atoi(c.Params("user"))
 	if err != nil {
 		return fiber.ErrNotFound
 	}
 
-	if form.user, err = form.DB().GetUserById(uint(form.userId)); err != nil {
+	if form.user, err = form.DB().GetUserById(uint(userId)); err != nil {
 		return handlers.GormToFiber(err)
 	}
 
@@ -40,8 +34,7 @@ func (form *UserForm) Pre(c *fiber.Ctx) error {
 
 func (form *UserForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("admin/user", handlers.Bind(c, fiber.Map{
-		"AuthUser": form.authUser,
-		"User":     form.user,
+		"User": form.user,
 	}), "layouts/main")
 }
 
@@ -53,16 +46,12 @@ type UserUpdate struct {
 }
 
 func (page *UserUpdate) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
-	if authUser == nil {
-		return fiber.ErrUnauthorized
-	} else if !authUser.HasAdminRole() {
-		return fiber.ErrForbidden
+	if err := RequireAdmin(c); err != nil {
+		return err
 	}
 
-	var err error
-
-	if err = c.BodyParser(&page.update); err != nil {
+	err := c.BodyParser(&page.update)
+	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
@@ -124,11 +113,8 @@ type UserDelete struct {
 }
 
 func (page *UserDelete) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
-	if authUser == nil {
-		return fiber.ErrUnauthorized
-	} else if !authUser.HasAdminRole() {
-		return fiber.ErrForbidden
+	if err := RequireAdmin(c); err != nil {
+		return err
 	}
 
 	userId, err := strconv.Atoi(c.Params("user"))

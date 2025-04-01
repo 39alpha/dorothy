@@ -19,7 +19,7 @@ func (page *Delete) Pre(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 
-	authUser := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}

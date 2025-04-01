@@ -12,20 +12,18 @@ import (
 type UpdateForm struct {
 	handlers.App
 
-	authUser *models.User
-	dataset  models.Dataset
-	users    []models.User
+	dataset models.Dataset
+	users   []models.User
 }
 
 func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(form.Dorothy())
 	defer cancel()
 
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
-	form.authUser = authUser
 
 	dataset, err := form.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
@@ -50,9 +48,8 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 
 func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("dataset/settings", handlers.Bind(c, fiber.Map{
-		"AuthUser": form.authUser,
-		"Dataset":  form.dataset,
-		"Users":    form.users,
+		"Dataset": form.dataset,
+		"Users":   form.users,
 	}), "layouts/main")
 }
 
@@ -68,7 +65,7 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}

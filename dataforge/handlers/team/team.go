@@ -18,9 +18,7 @@ type Team struct {
 }
 
 func (page *Team) Pre(c *fiber.Ctx) (err error) {
-	if authUser, ok := c.Locals("AuthUser").(*models.User); ok {
-		page.authUser = authUser
-	}
+	page.authUser = handlers.GetAuthUser(c)
 
 	page.team, err = page.DB().GetTeam(page.authUser, c.Params("team"))
 	if err != nil {
@@ -44,7 +42,6 @@ func (page *Team) Pre(c *fiber.Ctx) (err error) {
 
 func (page *Team) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("team/index", handlers.Bind(c, fiber.Map{
-		"AuthUser":  page.authUser,
 		"CanRead":   page.canRead,
 		"CanWrite":  page.canWrite,
 		"CanManage": page.canManage,
@@ -54,7 +51,6 @@ func (page *Team) RenderHtml(c *fiber.Ctx) error {
 
 func (page *Team) RenderJson(c *fiber.Ctx) error {
 	return c.JSON(handlers.Bind(c, fiber.Map{
-		"AuthUser":  page.authUser,
 		"CanRead":   page.canRead,
 		"CanWrite":  page.canWrite,
 		"CanManage": page.canManage,

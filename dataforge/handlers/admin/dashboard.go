@@ -13,17 +13,19 @@ type Dashboard struct {
 }
 
 func (page *Dashboard) Pre(c *fiber.Ctx) error {
-	page.authUser, _ = c.Locals("AuthUser").(*models.User)
-	if page.authUser == nil {
-		return fiber.ErrUnauthorized
-	} else if !page.authUser.HasAdminRole() {
-		return fiber.ErrForbidden
-	}
-	return nil
+	return RequireAdmin(c)
 }
 
 func (page *Dashboard) RenderHtml(c *fiber.Ctx) error {
-	return c.Render("admin/dashboard", handlers.Bind(c, fiber.Map{
-		"AuthUser": page.authUser,
-	}), "layouts/main")
+	return c.Render("admin/dashboard", handlers.Bind(c), "layouts/main")
+}
+
+func RequireAdmin(c *fiber.Ctx) error {
+	authUser := handlers.GetAuthUser(c)
+	if authUser == nil {
+		return fiber.ErrUnauthorized
+	} else if !authUser.HasAdminRole() {
+		return fiber.ErrForbidden
+	}
+	return nil
 }

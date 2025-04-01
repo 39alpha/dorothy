@@ -16,8 +16,8 @@ type ChangePassword struct {
 }
 
 func (page *ChangePassword) Pre(c *fiber.Ctx) error {
-	authUser, ok := c.Locals("AuthUser").(*models.User)
-	if !ok {
+	authUser := handlers.GetAuthUser(c)
+	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
 

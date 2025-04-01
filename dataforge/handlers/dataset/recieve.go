@@ -25,7 +25,7 @@ func (page *Receive) Pre(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 
 	dataset, err := page.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {

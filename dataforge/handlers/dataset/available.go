@@ -22,7 +22,7 @@ type Available struct {
 }
 
 func (page *Available) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}

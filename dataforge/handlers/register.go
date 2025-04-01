@@ -9,24 +9,14 @@ import (
 
 type RegisterForm struct {
 	App
-
-	authUser *models.User
-}
-
-func (form *RegisterForm) Pre(c *fiber.Ctx) error {
-	form.authUser, _ = c.Locals("AuthUser").(*models.User)
-
-	return nil
 }
 
 func (form *RegisterForm) RenderHtml(c *fiber.Ctx) error {
-	if form.authUser != nil {
+	if GetAuthUser(c) != nil {
 		return c.Redirect("/")
 	}
 
-	return c.Render("register", Bind(c, fiber.Map{
-		"AuthUser": form.authUser,
-	}), "layouts/main")
+	return c.Render("register", Bind(c), "layouts/main")
 }
 
 type Register struct {

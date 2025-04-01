@@ -14,7 +14,6 @@ import (
 type Dataset struct {
 	handlers.App
 
-	authUser *models.User
 	dataset  models.Dataset
 	identity peer.ID
 
@@ -27,9 +26,9 @@ func (page *Dataset) Pre(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 
-	page.authUser, _ = c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 
-	dataset, err := page.DB().GetDataset(page.authUser, c.Params("team"), c.Params("dataset"))
+	dataset, err := page.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
@@ -43,15 +42,15 @@ func (page *Dataset) Pre(c *fiber.Ctx) error {
 
 	page.dataset = *dataset
 
-	if page.authUser != nil {
-		page.canRead = page.authUser.CanReadDataset(*dataset)
-		page.canWrite = page.authUser.CanManageDataset(*dataset)
-		page.canManage = page.authUser.CanManageDataset(*dataset)
+	if authUser != nil {
+		page.canRead = authUser.CanReadDataset(*dataset)
+		page.canWrite = authUser.CanManageDataset(*dataset)
+		page.canManage = authUser.CanManageDataset(*dataset)
 	}
 
-	if page.authUser == nil && (dataset.IsPrivate || dataset.Team.IsPrivate) {
+	if authUser == nil && (dataset.IsPrivate || dataset.Team.IsPrivate) {
 		return fiber.ErrUnauthorized
-	} else if page.authUser != nil && !page.canRead {
+	} else if authUser != nil && !page.canRead {
 		return fiber.ErrForbidden
 	}
 
@@ -62,7 +61,6 @@ func (page *Dataset) Pre(c *fiber.Ctx) error {
 
 func (page *Dataset) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("dataset/index", handlers.Bind(c, fiber.Map{
-		"AuthUser":  page.authUser,
 		"Dataset":   page.dataset,
 		"CanRead":   page.canRead,
 		"CanWrite":  page.canWrite,

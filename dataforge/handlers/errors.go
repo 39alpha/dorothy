@@ -5,7 +5,6 @@ import (
 	"net/url"
 
 	"github.com/39alpha/dorothy/core"
-	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -69,12 +68,7 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 	}
 
 	if AcceptsHtml(c) {
-		authUser, _ := c.Locals("AuthUser").(*models.User)
-
-		return c.Render(page, Bind(c, fiber.Map{
-			"Error":    err,
-			"AuthUser": authUser,
-		}), "layouts/main")
+		return c.Render(page, Bind(c), "layouts/main")
 	} else if AcceptsJson(c) {
 		return c.JSON(fiber.Map{
 			"error": err,

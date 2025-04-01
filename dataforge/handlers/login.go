@@ -14,21 +14,14 @@ type LoginForm struct {
 	authUser *models.User
 }
 
-func (form *LoginForm) Pre(c *fiber.Ctx) error {
-	form.authUser, _ = c.Locals("AuthUser").(*models.User)
-
-	return nil
-}
-
 func (form *LoginForm) RenderHtml(c *fiber.Ctx) error {
-	if form.authUser != nil {
+	authUser := GetAuthUser(c)
+
+	if authUser != nil {
 		return c.Redirect("/")
 	}
 
-	bindings := Bind(c, fiber.Map{
-		"AuthUser": form.authUser,
-	})
-
+	bindings := Bind(c)
 	if c.Query("Redirect") != "" {
 		bindings["Redirect"] = c.Query("Redirect")
 	}

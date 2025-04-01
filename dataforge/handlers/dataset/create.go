@@ -12,16 +12,14 @@ import (
 type CreateForm struct {
 	handlers.App
 
-	authUser models.User
-	team     models.Team
+	team models.Team
 }
 
 func (form *CreateForm) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
-	form.authUser = *authUser
 
 	team, err := form.DB().GetTeam(authUser, c.Params("team"))
 	if err != nil {
@@ -38,8 +36,7 @@ func (form *CreateForm) Pre(c *fiber.Ctx) error {
 
 func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("dataset/create", handlers.Bind(c, fiber.Map{
-		"AuthUser": form.authUser,
-		"Team":     form.team,
+		"Team": form.team,
 	}), "layouts/main")
 }
 
@@ -53,7 +50,7 @@ type Create struct {
 }
 
 func (page *Create) Pre(c *fiber.Ctx) (err error) {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
+	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}

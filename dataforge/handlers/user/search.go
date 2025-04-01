@@ -18,9 +18,8 @@ type Search struct {
 }
 
 func (page *Search) Pre(c *fiber.Ctx) error {
-	authUser, _ := c.Locals("AuthUser").(*models.User)
-	if authUser == nil {
-		return fiber.ErrForbidden
+	if err := handlers.RequireLogin(c); err != nil {
+		return err
 	}
 
 	queries := c.Queries()

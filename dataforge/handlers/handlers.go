@@ -9,6 +9,7 @@ import (
 	"github.com/39alpha/dorothy/dataforge/auth"
 	"github.com/39alpha/dorothy/dataforge/db"
 	"github.com/39alpha/dorothy/dataforge/mail"
+	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -160,6 +161,18 @@ func ToFiberHandler(page Handler) fiber.Handler {
 	}
 }
 
+func RequireLogin(c *fiber.Ctx) error {
+	if GetAuthUser(c) == nil {
+		return fiber.ErrUnauthorized
+	}
+	return nil
+}
+
+func GetAuthUser(c *fiber.Ctx) *models.User {
+	user, _ := c.Locals("AuthUser").(*models.User)
+	return user
+}
+
 func GetError(c *fiber.Ctx) error {
 	err, _ := c.Locals("Error").(error)
 	return err
@@ -167,7 +180,8 @@ func GetError(c *fiber.Ctx) error {
 
 func Bind(c *fiber.Ctx, local ...fiber.Map) fiber.Map {
 	bind := fiber.Map{
-		"Error": GetError(c),
+		"AuthUser": GetAuthUser(c),
+		"Error":    GetError(c),
 	}
 
 	state, ok := c.Locals("State").(fiber.Map)
