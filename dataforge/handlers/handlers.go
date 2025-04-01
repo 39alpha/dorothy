@@ -8,6 +8,7 @@ import (
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/dataforge/auth"
 	"github.com/39alpha/dorothy/dataforge/db"
+	"github.com/39alpha/dorothy/dataforge/mail"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -50,6 +51,7 @@ type App interface {
 	Dorothy() *core.Dorothy
 	Auth() *auth.Auth
 	DB() *db.DB
+	Mailer() *mail.Mailer
 }
 
 type Handler interface {

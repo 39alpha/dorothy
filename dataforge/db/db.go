@@ -55,6 +55,7 @@ func (d *DB) Initialize() error {
 		&models.User{},
 		&models.UserTeamPrivilege{},
 		&models.UserDatasetPrivilege{},
+		&models.PasswordReset{},
 	)
 	if err != nil {
 		return err
@@ -166,6 +167,34 @@ func (d *DB) ValidateCredentials(email, password string) error {
 	}
 
 	return nil
+}
+
+func (d *DB) ValidateResetCredentials(token, resetPassword string, delete bool) (*models.User, error) {
+	reset := &models.PasswordReset{ID: token}
+	if err := d.Model(reset).First(reset).Error; err != nil {
+		return nil, fmt.Errorf("invalid credentials")
+	}
+
+	if err := bcrypt.CompareHashAndPassword(reset.ResetHash, []byte(resetPassword)); err != nil {
+		return nil, fmt.Errorf("invalid credentials")
+	}
+
+	if time.Now().Sub(reset.CreatedAt) > 24*time.Hour {
+		return nil, fmt.Errorf("reset has expired")
+	}
+
+	user := &models.User{ID: reset.UserID}
+	if err := d.Omit("PasswordHash").Find(&user).Error; err != nil {
+		return nil, fmt.Errorf("invalid credentials")
+	}
+
+	if delete {
+		if err := d.Delete(reset).Error; err != nil {
+			return nil, fmt.Errorf("invalid credentials")
+		}
+	}
+
+	return user, nil
 }
 
 func (d *DB) CreateDataset(newdata models.NewDataset, manifest *core.Manifest, user *models.User) (string, error) {
@@ -599,4 +628,50 @@ func (db *DB) UserChangePassword(update models.ChangePassword) error {
 
 func (d *DB) DeleteUser(user *models.User) error {
 	return d.Delete(user).Error
+}
+
+func (db *DB) GetUserByEmail(email string) (*models.User, error) {
+	user := models.User{Email: email}
+	if err := db.Omit("PasswordHash").Where(user).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (db *DB) CreatePasswordReset(email string) (string, string, error) {
+	user, err := db.GetUserByEmail(email)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create password reset")
+	}
+
+	if err = db.Where("user_id = ?", user.ID).Delete(&models.PasswordReset{}).Error; err != nil {
+		return "", "", fmt.Errorf("failed to create password reset")
+	}
+
+	password, err := GenerateRandomPassword()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create password reset")
+	}
+
+	token, err := GenerateRandomPassword()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create password reset")
+	}
+
+	resetHash, err := bcrypt.GenerateFromPassword([]byte(password), 8)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create password reset")
+	}
+
+	reset := models.PasswordReset{
+		ID:        token,
+		UserID:    user.ID,
+		ResetHash: resetHash,
+	}
+
+	if err = db.Create(&reset).Error; err != nil {
+		return "", "", fmt.Errorf("failed to create password reset")
+	}
+
+	return token, password, nil
 }

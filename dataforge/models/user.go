@@ -136,3 +136,14 @@ type CreateUser struct {
 	Orcid *string  `json:"orcid,omitempty"`
 	Role  RoleCode `json:"role"`
 }
+
+type RequestPasswordReset struct {
+	Email string `json:"email"`
+}
+
+type PasswordReset struct {
+	ID        string    `json:"id" gorm:"primaryKey"`
+	UserID    uint      `json:"user_id" gorm:"index"`
+	ResetHash []byte    `json:"-"`
+	CreatedAt time.Time `json:"createdAt"`
+}

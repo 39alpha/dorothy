@@ -11,6 +11,7 @@ import (
 	"github.com/39alpha/dorothy/dataforge/auth"
 	"github.com/39alpha/dorothy/dataforge/db"
 	"github.com/39alpha/dorothy/dataforge/handlers"
+	"github.com/39alpha/dorothy/dataforge/mail"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
@@ -24,9 +25,11 @@ var embeddedViews embed.FS
 type Server struct {
 	*fiber.App
 	dorothy *core.Dorothy
+	config  *core.ServerConfig
 	auth    *auth.Auth
 	db      *db.DB
 	viewsfs http.FileSystem
+	mailer  *mail.Mailer
 }
 
 func (s *Server) Dorothy() *core.Dorothy {
@@ -39,6 +42,10 @@ func (s *Server) Auth() *auth.Auth {
 
 func (s *Server) DB() *db.DB {
 	return s.db
+}
+
+func (s *Server) Mailer() *mail.Mailer {
+	return s.mailer
 }
 
 func NewServer(global bool) (*Server, error) {
@@ -83,6 +90,20 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 			return nil, err
 		}
 	}
+
+	config := dorothy.Config.Server
+	if config == nil {
+		return nil, fmt.Errorf("no server configuration provided")
+	}
+
+	if config.Database == nil {
+		return nil, fmt.Errorf("no server.database configuration provided")
+	}
+
+	if config.Mail == nil {
+		return nil, fmt.Errorf("no server.mail configuration provided")
+	}
+
 	if err := dorothy.ConnectIpfs(); err != nil {
 		return nil, err
 	}
@@ -92,16 +113,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return nil, err
 	}
 
-	serverConfig := dorothy.Config.Server
-	if serverConfig == nil {
-		return nil, fmt.Errorf("no server configuration provided")
-	}
-
-	if serverConfig.Database == nil {
-		return nil, fmt.Errorf("no server.database configuration provided")
-	}
-
-	session, err := db.Open(serverConfig.Database)
+	session, err := db.Open(config.Database)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +123,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 	}
 
 	var viewsfs http.FileSystem
-	if serverConfig.Views == "" {
+	if config.Views == "" {
 		fmt.Println("INFO: Using embedded views")
 		fsys, err := fs.Sub(embeddedViews, "views")
 		if err != nil {
@@ -120,7 +132,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		viewsfs = http.FS(fsys)
 	} else {
 		fmt.Println("INFO: Using live views")
-		viewsfs = http.Dir(serverConfig.Views)
+		viewsfs = http.Dir(config.Views)
 	}
 
 	engine := html.NewFileSystem(viewsfs, ".html")
@@ -140,14 +152,24 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		Views:         engine,
 	})
 
-	server := &Server{app, dorothy, jwtAuth, session, viewsfs}
+	mailer := mail.NewMailer(*config.Mail, viewsfs)
+
+	server := &Server{app, dorothy, config, jwtAuth, session, viewsfs, mailer}
 	server.setup()
 
 	return server, nil
 }
 
 func (d *Server) Listen(host string, port int) error {
-	return d.App.Listen(fmt.Sprintf("%s:%d", host, port))
+	url := fmt.Sprintf("%s:%d", host, port)
+	if d.config.BaseUrl == "" {
+		if host == "" {
+			d.config.BaseUrl = fmt.Sprintf("http://127.0.0.1:%d", port)
+		} else {
+			d.config.BaseUrl = url
+		}
+	}
+	return d.App.Listen(url)
 }
 
 func (d *Server) ListenOnPort(port int) error {
@@ -155,9 +177,7 @@ func (d *Server) ListenOnPort(port int) error {
 }
 
 func (d *Server) setup() {
-	serverConfig := d.Dorothy().Config.Server
-
-	d.Use(handlers.ErrorMiddleware(d))
+	// d.Use(handlers.ErrorMiddleware(d))
 
 	d.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -176,18 +196,19 @@ func (d *Server) setup() {
 
 	d.Use(func(c *fiber.Ctx) error {
 		state := fiber.Map{
+			"BaseUrl":           d.config.BaseUrl,
 			"Title":             "Dorothy",
 			"SubTitle":          "Welcome to the dataforge",
-			"AllowRegistration": serverConfig.AllowRegistration,
-			"BrandColor":        serverConfig.BrandColor,
-			"FooterText":        serverConfig.FooterText,
+			"AllowRegistration": d.config.AllowRegistration,
+			"BrandColor":        d.config.BrandColor,
+			"FooterText":        d.config.FooterText,
 			"Path":              c.Path(),
 		}
-		if serverConfig.Title != "" {
-			state["Title"] = serverConfig.Title
+		if d.config.Title != "" {
+			state["Title"] = d.config.Title
 		}
-		if serverConfig.SubTitle != "" {
-			state["SubTitle"] = serverConfig.SubTitle
+		if d.config.SubTitle != "" {
+			state["SubTitle"] = d.config.SubTitle
 		}
 		c.Locals("State", state)
 
@@ -197,7 +218,7 @@ func (d *Server) setup() {
 	d.Use(d.auth.Authenticator(d.db))
 
 	for _, route := range Routes() {
-		if !serverConfig.AllowRegistration && route.endpoint == "/register" {
+		if !d.config.AllowRegistration && route.endpoint == "/register" {
 			continue
 		}
 

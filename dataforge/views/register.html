@@ -16,7 +16,7 @@
         <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter Password" required />
 
         <label class="font-bold" for="confirmPassword">Confirm New Password</label>
-        <input id="confirmPassword" name="confirm-password" type="password" autocomplete="new-password" placeholder="Confirm Password" onChange="checkPasswordConfirmation()" required />
+        <input id="confirmPassword" name="confirm-password" type="password" autocomplete="new-password" placeholder="Confirm Password" onkeyup="checkPasswordConfirmation()" required />
         <p class="mt-0 mb-2 hidden"><small id="passwordCheck"></small></p>
 
         <label class="font-bold" for="orcid">ORCiD (optional)</label>

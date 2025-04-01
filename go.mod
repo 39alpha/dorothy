@@ -18,6 +18,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.12.3
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/crypto v0.20.0
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/sqlite v1.5.5
 	gorm.io/gorm v1.25.7
 	v.io/x/lib v0.1.18
@@ -249,6 +250,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240108191215-35c7eff3a6b1 // indirect
 	google.golang.org/grpc v1.60.1 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect

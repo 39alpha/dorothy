@@ -32,6 +32,8 @@ func Routes() []Route {
 		{GET, "/login", &handlers.LoginForm{}},
 		{POST, "/login", &handlers.Login{}},
 		{GET, "/logout", &handlers.Logout{}},
+		{GET, "/reset-password", &handlers.ResetPasswordForm{}},
+		{POST, "/reset-password", &handlers.ResetPassword{}},
 
 		{GET, "/admin", &admin.Dashboard{}},
 		{GET, "/admin/users", &admin.UserListing{}},

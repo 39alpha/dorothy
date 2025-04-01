@@ -135,12 +135,22 @@ type DatabaseConfig struct {
 type ServerConfig struct {
 	Database *DatabaseConfig `toml:"database,omitempty"`
 	Views    string          `toml:"views,omitempty"`
+	Mail     *MailConfig     `toml:"mail,omitempty"`
 
+	BaseUrl           string `toml:"base_url,omitempty"`
 	Title             string `toml:"title,omitempty"`
 	SubTitle          string `toml:"subtitle,omitempty"`
 	AllowRegistration bool   `toml:"allow_registration,omitempty"`
 	BrandColor        string `toml:"brand_color,omitempty"`
 	FooterText        string `toml:"footer_text,omitempty"`
+}
+
+type MailConfig struct {
+	NoReplyAddress string `toml:"noreply"`
+	Host           string `toml:"host"`
+	Port           int    `toml:"port"`
+	Username       string `toml:"username"`
+	Password       string `toml:"password"`
 }
 
 func (config *Config) ReadFile(filename string) error {
