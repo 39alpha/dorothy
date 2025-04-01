@@ -12,9 +12,10 @@ import (
 type ResetPasswordForm struct {
 	ErrorHandler
 
-	token    string
-	password string
-	user     *models.User
+	isInvitation bool
+	token        string
+	password     string
+	user         *models.User
 }
 
 func (form *ResetPasswordForm) Pre(c *fiber.Ctx) error {
@@ -27,6 +28,7 @@ func (form *ResetPasswordForm) Pre(c *fiber.Ctx) error {
 		}
 	}
 
+	form.isInvitation = c.QueryBool("invitation")
 	form.password = c.Query("id")
 	form.token = c.Query("token")
 
@@ -40,14 +42,16 @@ func (form *ResetPasswordForm) Run() error {
 
 func (form *ResetPasswordForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("reset-password", Bind(c, fiber.Map{
-		"User": form.user,
+		"User":         form.user,
+		"IsInvitation": form.isInvitation,
 	}), "layouts/main")
 }
 
 type ResetPassword struct {
 	ErrorHandler
 
-	user *models.User
+	isInvitation bool
+	user         *models.User
 
 	title   string
 	baseUrl string
@@ -65,8 +69,10 @@ func (page *ResetPassword) Pre(c *fiber.Ctx) error {
 		}
 	}
 
+	page.isInvitation = c.QueryBool("invitation")
 	password := c.Query("id")
 	token := c.Query("token")
+
 	state := c.Locals("State").(fiber.Map)
 	page.title = state["Title"].(string)
 	page.baseUrl = state["BaseUrl"].(string)
@@ -95,21 +101,16 @@ func (page *ResetPassword) Run() error {
 			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 		}
 	} else {
-		token, id, err := page.DB().CreatePasswordReset(page.reset.Email)
+		token, err := page.DB().CreatePasswordReset(page.reset.Email)
 		if err != nil {
 			return err
 		}
 
-		resetUrl := fmt.Sprintf(
-			"%s/reset-password?id=%s&token=%s",
-			page.baseUrl,
-			url.QueryEscape(id),
-			url.QueryEscape(token),
-		)
+		resetUrl := fmt.Sprintf("%s/reset-password?%s", page.baseUrl, token)
 
 		err = page.Mailer().Send(mail.Message{
 			To:           page.reset.Email,
-			Subject:      "Reset Dorothy Password",
+			Subject:      fmt.Sprintf("Reset %s Password", page.title),
 			HtmlTemplate: "emails/reset-password.html",
 			TextTemplate: "emails/reset-password.txt",
 			Data: map[string]any{
@@ -126,7 +127,11 @@ func (page *ResetPassword) Run() error {
 
 func (page *ResetPassword) RenderHtml(c *fiber.Ctx) error {
 	if page.user != nil {
-		return c.Redirect("/login")
+		if page.isInvitation {
+			return c.Redirect(fmt.Sprintf("/login?Redirect=%s", url.QueryEscape("/profile")))
+		} else {
+			return c.Redirect("/login")
+		}
 	} else {
 		return c.Render("reset-password-sent", Bind(c), "layouts/main")
 	}

@@ -5,11 +5,13 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"time"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/dataforge/models"
+	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -638,29 +640,29 @@ func (db *DB) GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-func (db *DB) CreatePasswordReset(email string) (string, string, error) {
+func (db *DB) CreatePasswordReset(email string) (string, error) {
 	user, err := db.GetUserByEmail(email)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create password reset")
+		return "", fmt.Errorf("failed to create password reset")
 	}
 
 	if err = db.Where("user_id = ?", user.ID).Delete(&models.PasswordReset{}).Error; err != nil {
-		return "", "", fmt.Errorf("failed to create password reset")
+		return "", fmt.Errorf("failed to create password reset")
 	}
 
 	password, err := GenerateRandomPassword()
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create password reset")
-	}
-
-	token, err := GenerateRandomPassword()
-	if err != nil {
-		return "", "", fmt.Errorf("failed to create password reset")
+		return "", fmt.Errorf("failed to create password reset")
 	}
 
 	resetHash, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create password reset")
+		return "", fmt.Errorf("failed to create password reset")
+	}
+
+	token, err := GenerateRandomPassword()
+	if err != nil {
+		return "", fmt.Errorf("failed to create password reset")
 	}
 
 	reset := models.PasswordReset{
@@ -670,8 +672,26 @@ func (db *DB) CreatePasswordReset(email string) (string, string, error) {
 	}
 
 	if err = db.Create(&reset).Error; err != nil {
-		return "", "", fmt.Errorf("failed to create password reset")
+		return "", fmt.Errorf("failed to create password reset")
 	}
 
-	return token, password, nil
+	token = fmt.Sprintf("id=%s&token=%s", url.QueryEscape(password), url.QueryEscape(token))
+	return token, nil
+}
+
+func (db *DB) InviteUser(create models.CreateUser) (string, error) {
+	var token string
+	return token, db.Transaction(func(tx *gorm.DB) error {
+		if err := db.CreateUser(create); err != nil {
+			return err
+		}
+
+		var err error
+		token, err = db.CreatePasswordReset(create.Email)
+		if err != nil {
+			return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
+		}
+
+		return nil
+	})
 }

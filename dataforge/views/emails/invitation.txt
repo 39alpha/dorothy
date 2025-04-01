@@ -1,0 +1,5 @@
+# Invitation to {{ .Title }}
+
+You are invited to join the {{ .Title }} dataforge. Follow the link[^1] below to setup your account.
+
+[^1]: {{ .ResetUrl }}
