@@ -2,7 +2,6 @@ package dataset
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
@@ -11,7 +10,8 @@ import (
 )
 
 type UpdateForm struct {
-	handlers.ErrorHandler
+	handlers.App
+	Err error
 
 	authUser *models.User
 	dataset  models.Dataset
@@ -52,13 +52,7 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 }
 
 func (form *UpdateForm) Recover(c *fiber.Ctx, err error) error {
-	var e *fiber.Error
-
-	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
-		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
-	}
-
-	return form.ErrorFallback(c, err)
+	return handlers.RecoverLogin(c, err)
 }
 
 func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
@@ -71,7 +65,7 @@ func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type Update struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	authUser models.User
 	dataset  models.Dataset
@@ -147,7 +141,9 @@ func (page *Update) Post(c *fiber.Ctx) error {
 }
 
 func (page *Update) Recover(c *fiber.Ctx, err error) error {
-	return page.HandleFormError(&UpdateForm{}, c, err)
+	return handlers.RecoverForm(&UpdateForm{
+		App: page.App,
+	}, c, err)
 }
 
 func (page *Update) RenderHtml(c *fiber.Ctx) error {

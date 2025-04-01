@@ -9,7 +9,8 @@ import (
 )
 
 type LoginForm struct {
-	ErrorHandler
+	App
+	Err error
 
 	authUser *models.User
 }
@@ -39,7 +40,7 @@ func (form *LoginForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type Login struct {
-	ErrorHandler
+	App
 
 	fields struct {
 		Redirect string
@@ -89,7 +90,9 @@ func (page *Login) Post(c *fiber.Ctx) error {
 }
 
 func (page *Login) Recover(c *fiber.Ctx, err error) error {
-	return page.HandleFormError(&LoginForm{}, c, err)
+	return RecoverForm(&LoginForm{
+		App: page.App,
+	}, c, err)
 }
 
 func (page *Login) RenderHtml(c *fiber.Ctx) error {

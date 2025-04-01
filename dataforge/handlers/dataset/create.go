@@ -2,7 +2,6 @@ package dataset
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
@@ -11,7 +10,8 @@ import (
 )
 
 type CreateForm struct {
-	handlers.ErrorHandler
+	handlers.App
+	Err error
 
 	authUser models.User
 	team     models.Team
@@ -40,13 +40,7 @@ func (form *CreateForm) Pre(c *fiber.Ctx) error {
 }
 
 func (form *CreateForm) Recover(c *fiber.Ctx, err error) error {
-	var e *fiber.Error
-
-	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
-		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
-	}
-
-	return form.ErrorFallback(c, err)
+	return handlers.RecoverLogin(c, err)
 }
 
 func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
@@ -58,7 +52,8 @@ func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type Create struct {
-	handlers.ErrorHandler
+	handlers.App
+	Err error
 
 	authUser   models.User
 	team       models.Team
@@ -98,7 +93,9 @@ func (page *Create) Pre(c *fiber.Ctx) (err error) {
 }
 
 func (page *Create) Recover(c *fiber.Ctx, err error) error {
-	return page.HandleFormError(&CreateForm{}, c, err)
+	return handlers.RecoverForm(&CreateForm{
+		App: page.App,
+	}, c, err)
 }
 
 func (page *Create) Run() error {

@@ -13,7 +13,7 @@ import (
 )
 
 type UserListing struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	authUser *models.User
 	users    []models.User
@@ -121,12 +121,11 @@ func (page *UserListing) Run() error {
 
 func (page *UserListing) Recover(c *fiber.Ctx, err error) error {
 	var e *fiber.Error
-
 	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
 		return c.Status(e.Code).Redirect("/login?Redirect=" + page.PathWithQueries(c, true, true))
 	}
 
-	return page.ErrorFallback(c, err)
+	return err
 }
 
 func (page *UserListing) RenderHtml(c *fiber.Ctx) error {

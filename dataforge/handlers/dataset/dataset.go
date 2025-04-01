@@ -2,7 +2,6 @@ package dataset
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
@@ -13,7 +12,7 @@ import (
 )
 
 type Dataset struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	authUser *models.User
 	dataset  models.Dataset
@@ -62,12 +61,7 @@ func (page *Dataset) Pre(c *fiber.Ctx) error {
 }
 
 func (page *Dataset) Recover(c *fiber.Ctx, err error) error {
-	var e *fiber.Error
-	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
-		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
-	}
-
-	return page.ErrorFallback(c, err)
+	return handlers.RecoverLogin(c, err)
 }
 
 func (page *Dataset) RenderHtml(c *fiber.Ctx) error {

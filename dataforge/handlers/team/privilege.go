@@ -10,7 +10,7 @@ import (
 )
 
 type DeletePrivilege struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	payload struct {
 		Id     string
@@ -113,7 +113,7 @@ func (page *DeletePrivilege) RenderJson(c *fiber.Ctx) error {
 }
 
 type CreatePrivilege struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	payload struct {
 		Id            string

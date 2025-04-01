@@ -10,7 +10,7 @@ import (
 )
 
 type ChangePassword struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	update models.ChangePassword
 }
@@ -46,7 +46,9 @@ func (page *ChangePassword) Run() error {
 }
 
 func (page *ChangePassword) Recover(c *fiber.Ctx, err error) error {
-	return page.HandleFormError(&Form{}, c, err)
+	return handlers.RecoverForm(&Form{
+		App: page.App,
+	}, c, err)
 }
 
 func (page *ChangePassword) RenderJson(c *fiber.Ctx) error {

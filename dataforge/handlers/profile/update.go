@@ -9,7 +9,7 @@ import (
 )
 
 type Update struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	update models.UpdateUser
 	user   *models.User
@@ -47,7 +47,9 @@ func (page *Update) Post(c *fiber.Ctx) error {
 }
 
 func (page *Update) Recover(c *fiber.Ctx, err error) error {
-	return page.HandleFormError(&Form{}, c, err)
+	return handlers.RecoverForm(&Form{
+		App: page.App,
+	}, c, err)
 }
 
 func (page *Update) RenderHtml(c *fiber.Ctx) error {

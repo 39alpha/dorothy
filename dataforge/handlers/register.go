@@ -8,7 +8,8 @@ import (
 )
 
 type RegisterForm struct {
-	ErrorHandler
+	App
+	Err error
 
 	authUser *models.User
 }
@@ -32,7 +33,7 @@ func (form *RegisterForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type Register struct {
-	ErrorHandler
+	App
 
 	newUser models.NewUser
 }
@@ -52,7 +53,9 @@ func (page *Register) Run() error {
 }
 
 func (page *Register) Recover(c *fiber.Ctx, err error) error {
-	return page.HandleFormError(&RegisterForm{}, c, err)
+	return RecoverForm(&RegisterForm{
+		App: page.App,
+	}, c, err)
 }
 
 func (*Register) RenderHtml(c *fiber.Ctx) error {

@@ -9,7 +9,8 @@ import (
 )
 
 type Form struct {
-	handlers.ErrorHandler
+	handlers.App
+	Err error
 
 	authUser models.User
 }
@@ -27,12 +28,10 @@ func (form *Form) Pre(c *fiber.Ctx) error {
 
 func (form *Form) Recover(c *fiber.Ctx, err error) error {
 	var e *fiber.Error
-
 	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
 		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
 	}
-
-	return form.ErrorFallback(c, err)
+	return err
 }
 
 func (form *Form) RenderHtml(c *fiber.Ctx) error {

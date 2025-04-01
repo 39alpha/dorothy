@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
@@ -11,7 +10,8 @@ import (
 )
 
 type UserCreateForm struct {
-	handlers.ErrorHandler
+	handlers.App
+	Err error
 
 	authUser *models.User
 }
@@ -19,24 +19,18 @@ type UserCreateForm struct {
 func (form *UserCreateForm) Pre(c *fiber.Ctx) error {
 	form.authUser, _ = c.Locals("AuthUser").(*models.User)
 	if form.authUser == nil {
-		form.Err = fiber.ErrUnauthorized
-		return form.Err
+		return fiber.ErrUnauthorized
 	} else if !form.authUser.HasAdminRole() {
-		form.Err = fiber.ErrForbidden
-		return form.Err
+		return fiber.ErrForbidden
 	}
+
+	form.Err, _ = c.Locals("Error").(error)
 
 	return nil
 }
 
 func (form *UserCreateForm) Recover(c *fiber.Ctx, err error) error {
-	var e *fiber.Error
-
-	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
-		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
-	}
-
-	return form.ErrorFallback(c, err)
+	return handlers.RecoverLogin(c, err)
 }
 
 func (form *UserCreateForm) RenderHtml(c *fiber.Ctx) error {
@@ -47,7 +41,7 @@ func (form *UserCreateForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type UserCreate struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	title   string
 	baseUrl string
@@ -95,7 +89,6 @@ func (page *UserCreate) Run() error {
 		},
 	})
 	if err != nil {
-		fmt.Println(err)
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -103,7 +96,9 @@ func (page *UserCreate) Run() error {
 }
 
 func (page *UserCreate) Recover(c *fiber.Ctx, err error) error {
-	return page.HandleFormError(&UserCreateForm{}, c, err)
+	return handlers.RecoverForm(&UserCreateForm{
+		App: page.App,
+	}, c, err)
 }
 
 func (page *UserCreate) RenderHtml(c *fiber.Ctx) error {

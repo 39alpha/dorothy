@@ -10,7 +10,7 @@ import (
 )
 
 type Delete struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	dataset models.Dataset
 }

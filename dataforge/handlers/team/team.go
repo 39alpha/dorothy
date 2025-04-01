@@ -1,15 +1,13 @@
 package team
 
 import (
-	"errors"
-
 	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 )
 
 type Team struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	authUser *models.User
 	team     *models.Team
@@ -45,12 +43,7 @@ func (page *Team) Pre(c *fiber.Ctx) (err error) {
 }
 
 func (page *Team) Recover(c *fiber.Ctx, err error) error {
-	var e *fiber.Error
-	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
-		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
-	}
-
-	return page.ErrorFallback(c, err)
+	return handlers.RecoverLogin(c, err)
 }
 
 func (page *Team) RenderHtml(c *fiber.Ctx) error {

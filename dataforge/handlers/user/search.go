@@ -10,7 +10,7 @@ import (
 )
 
 type Search struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	pattern string
 	limit   int

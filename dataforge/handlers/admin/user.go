@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -11,7 +10,8 @@ import (
 )
 
 type UserForm struct {
-	handlers.ErrorHandler
+	handlers.App
+	Err error
 
 	authUser *models.User
 	userId   int
@@ -21,12 +21,12 @@ type UserForm struct {
 func (form *UserForm) Pre(c *fiber.Ctx) error {
 	form.authUser, _ = c.Locals("AuthUser").(*models.User)
 	if form.authUser == nil {
-		form.Err = fiber.ErrUnauthorized
-		return form.Err
+		return fiber.ErrUnauthorized
 	} else if !form.authUser.HasAdminRole() {
-		form.Err = fiber.ErrForbidden
-		return form.Err
+		return fiber.ErrForbidden
 	}
+
+	form.Err, _ = c.Locals("Error").(error)
 
 	var err error
 	form.userId, err = strconv.Atoi(c.Params("user"))
@@ -44,13 +44,7 @@ func (form *UserForm) Pre(c *fiber.Ctx) error {
 }
 
 func (form *UserForm) Recover(c *fiber.Ctx, err error) error {
-	var e *fiber.Error
-
-	if errors.As(err, &e) && e == fiber.ErrUnauthorized && handlers.Redirectable(c) {
-		return c.Status(e.Code).Redirect("/login?Redirect=" + c.Path())
-	}
-
-	return form.ErrorFallback(c, err)
+	return handlers.RecoverLogin(c, err)
 }
 
 func (form *UserForm) RenderHtml(c *fiber.Ctx) error {
@@ -62,7 +56,7 @@ func (form *UserForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type UserUpdate struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	update models.UpdateUserWithRole
 	user   *models.User
@@ -116,8 +110,9 @@ func (page *UserUpdate) Post(c *fiber.Ctx) error {
 }
 
 func (page *UserUpdate) Recover(c *fiber.Ctx, err error) error {
-	fmt.Println(err)
-	return page.HandleFormError(&UserForm{}, c, err)
+	return handlers.RecoverForm(&UserForm{
+		App: page.App,
+	}, c, err)
 }
 
 func (page *UserUpdate) RenderHtml(c *fiber.Ctx) error {
@@ -133,7 +128,7 @@ func (page *UserUpdate) RenderText(c *fiber.Ctx) error {
 }
 
 type UserDelete struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	user *models.User
 }

@@ -5,7 +5,7 @@ import (
 )
 
 type Logout struct {
-	ErrorHandler
+	App
 }
 
 func (*Logout) Post(c *fiber.Ctx) error {

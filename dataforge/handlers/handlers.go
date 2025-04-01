@@ -56,7 +56,6 @@ type App interface {
 
 type Handler interface {
 	App
-	ErrorFallback(c *fiber.Ctx, err error) error
 }
 
 type PreHandler interface {
@@ -141,9 +140,8 @@ func ToFiberHandler(page Handler) fiber.Handler {
 		if err != nil {
 			if is_recover {
 				return recover.Recover(c, err)
-			} else {
-				return page.ErrorFallback(c, err)
 			}
+			return err
 		}
 
 		if html_ok && c.Accepts("text/html") != "" {

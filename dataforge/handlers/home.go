@@ -6,7 +6,7 @@ import (
 )
 
 type Home struct {
-	ErrorHandler
+	App
 
 	user     *models.User
 	datasets []models.Dataset

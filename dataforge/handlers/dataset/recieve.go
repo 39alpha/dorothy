@@ -14,7 +14,7 @@ import (
 )
 
 type Receive struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	dataset  models.Dataset
 	identity peer.ID
@@ -83,12 +83,10 @@ func (page *Receive) Run() error {
 }
 
 func (page *Receive) Recover(c *fiber.Ctx, err error) error {
-	handler := &handlers.ErrorHandler{Err: err}
-	_ = handler.Pre(c)
-
 	var conflict *handlers.MergeConflict
 	if errors.As(err, &conflict) {
-		if c.Accepts("application/json") != "" {
+		c.Status(fiber.StatusBadRequest)
+		if handlers.AcceptsJson(c) {
 			return c.JSON(fiber.Map{
 				"conflicts": conflict.Conflicts,
 				"error":     "merge failed with conflicts",
@@ -98,8 +96,7 @@ func (page *Receive) Recover(c *fiber.Ctx, err error) error {
 			return c.SendString(msg)
 		}
 	}
-
-	return page.ErrorFallback(c, err)
+	return err
 }
 
 func (page *Receive) RenderHtml(c *fiber.Ctx) error {

@@ -9,7 +9,7 @@ import (
 )
 
 type Available struct {
-	handlers.ErrorHandler
+	handlers.App
 
 	payload struct {
 		Name string
