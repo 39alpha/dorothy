@@ -216,6 +216,7 @@ func (d *Server) setup() {
 
 		return c.Next()
 	})
+
 	d.Use(d.auth.Verifier())
 	d.Use(d.auth.Authenticator(d.db))
 

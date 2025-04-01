@@ -11,7 +11,6 @@ import (
 
 type UpdateForm struct {
 	handlers.App
-	Err error
 
 	authUser *models.User
 	dataset  models.Dataset
@@ -46,8 +45,6 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 
 	form.users, _ = form.DB().GetUsersWithDatasetAccess(form.dataset)
 
-	form.Err, _ = c.Locals("Error").(error)
-
 	return nil
 }
 
@@ -56,7 +53,6 @@ func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 		"AuthUser": form.authUser,
 		"Dataset":  form.dataset,
 		"Users":    form.users,
-		"Error":    form.Err,
 	}), "layouts/main")
 }
 

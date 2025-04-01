@@ -11,7 +11,6 @@ import (
 
 type UserForm struct {
 	handlers.App
-	Err error
 
 	authUser *models.User
 	userId   int
@@ -26,15 +25,11 @@ func (form *UserForm) Pre(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	form.Err, _ = c.Locals("Error").(error)
-
 	var err error
 	form.userId, err = strconv.Atoi(c.Params("user"))
 	if err != nil {
 		return fiber.ErrNotFound
 	}
-
-	form.Err, _ = c.Locals("Error").(error)
 
 	if form.user, err = form.DB().GetUserById(uint(form.userId)); err != nil {
 		return handlers.GormToFiber(err)
@@ -47,7 +42,6 @@ func (form *UserForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("admin/user", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
 		"User":     form.user,
-		"Error":    form.Err,
 	}), "layouts/main")
 }
 

@@ -10,7 +10,6 @@ import (
 
 type UpdateForm struct {
 	handlers.App
-	Err error
 
 	authUser models.User
 	team     models.Team
@@ -36,8 +35,6 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 
 	form.users, _ = form.DB().GetUsersWithTeamAccess(form.team)
 
-	form.Err, _ = c.Locals("Error").(error)
-
 	return nil
 }
 
@@ -46,7 +43,6 @@ func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 		"AuthUser": form.authUser,
 		"Team":     form.team,
 		"Users":    form.users,
-		"Error":    form.Err,
 	}), "layouts/main")
 }
 

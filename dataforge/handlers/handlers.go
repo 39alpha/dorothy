@@ -160,8 +160,15 @@ func ToFiberHandler(page Handler) fiber.Handler {
 	}
 }
 
+func GetError(c *fiber.Ctx) error {
+	err, _ := c.Locals("Error").(error)
+	return err
+}
+
 func Bind(c *fiber.Ctx, local ...fiber.Map) fiber.Map {
-	bind := fiber.Map{}
+	bind := fiber.Map{
+		"Error": GetError(c),
+	}
 
 	state, ok := c.Locals("State").(fiber.Map)
 	if !ok || state != nil {

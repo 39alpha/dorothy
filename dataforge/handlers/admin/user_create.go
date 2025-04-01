@@ -11,7 +11,6 @@ import (
 
 type UserCreateForm struct {
 	handlers.App
-	Err error
 
 	authUser *models.User
 }
@@ -24,15 +23,12 @@ func (form *UserCreateForm) Pre(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	form.Err, _ = c.Locals("Error").(error)
-
 	return nil
 }
 
 func (form *UserCreateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("admin/user-create", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
-		"Error":    form.Err,
 	}), "layouts/main")
 }
 

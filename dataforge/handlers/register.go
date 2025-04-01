@@ -9,14 +9,12 @@ import (
 
 type RegisterForm struct {
 	App
-	Err error
 
 	authUser *models.User
 }
 
 func (form *RegisterForm) Pre(c *fiber.Ctx) error {
 	form.authUser, _ = c.Locals("AuthUser").(*models.User)
-	form.Err, _ = c.Locals("Error").(error)
 
 	return nil
 }
@@ -28,7 +26,6 @@ func (form *RegisterForm) RenderHtml(c *fiber.Ctx) error {
 
 	return c.Render("register", Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
-		"Error":    form.Err,
 	}), "layouts/main")
 }
 

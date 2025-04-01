@@ -10,7 +10,6 @@ import (
 
 type Form struct {
 	handlers.App
-	Err error
 
 	authUser models.User
 }
@@ -22,7 +21,6 @@ func (form *Form) Pre(c *fiber.Ctx) error {
 	}
 	form.authUser = *authUser
 
-	form.Err, _ = c.Locals("Error").(error)
 	return nil
 }
 
@@ -37,6 +35,5 @@ func (form *Form) Recover(c *fiber.Ctx, err error) error {
 func (form *Form) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("profile", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
-		"Error":    form.Err,
 	}), "layouts/main")
 }

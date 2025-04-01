@@ -11,7 +11,6 @@ import (
 
 type CreateForm struct {
 	handlers.App
-	Err error
 
 	authUser models.User
 	team     models.Team
@@ -34,8 +33,6 @@ func (form *CreateForm) Pre(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	form.Err, _ = c.Locals("Error").(error)
-
 	return nil
 }
 
@@ -43,13 +40,11 @@ func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("dataset/create", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
 		"Team":     form.team,
-		"Error":    form.Err,
 	}), "layouts/main")
 }
 
 type Create struct {
 	handlers.App
-	Err error
 
 	authUser   models.User
 	team       models.Team
@@ -82,8 +77,6 @@ func (page *Create) Pre(c *fiber.Ctx) (err error) {
 	if team.ID != page.newDataset.TeamID {
 		return fiber.ErrBadRequest
 	}
-
-	page.Err, _ = c.Locals("Error").(error)
 
 	return nil
 }

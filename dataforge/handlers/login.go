@@ -10,14 +10,12 @@ import (
 
 type LoginForm struct {
 	App
-	Err error
 
 	authUser *models.User
 }
 
 func (form *LoginForm) Pre(c *fiber.Ctx) error {
 	form.authUser, _ = c.Locals("AuthUser").(*models.User)
-	form.Err, _ = c.Locals("Error").(error)
 
 	return nil
 }
@@ -29,7 +27,6 @@ func (form *LoginForm) RenderHtml(c *fiber.Ctx) error {
 
 	bindings := Bind(c, fiber.Map{
 		"AuthUser": form.authUser,
-		"Error":    form.Err,
 	})
 
 	if c.Query("Redirect") != "" {
