@@ -13,7 +13,7 @@
         <input id="email" name="email" type="email" autocomplete="email" placeholder="Enter Email" required />
 
         <label class="font-bold" for="password">New Password</label>
-        <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter Password" required />
+        <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter Password" onkeyup="checkPasswordConfirmation()" required />
 
         <label class="font-bold" for="confirmPassword">Confirm New Password</label>
         <input id="confirmPassword" name="confirm-password" type="password" autocomplete="new-password" placeholder="Confirm Password" onkeyup="checkPasswordConfirmation()" required />
@@ -25,26 +25,3 @@
         <button type="submit" disabled>Register ▶</button>
     </form>
 </section>
-
-<script>
-    const checkPasswordConfirmation = () => {
-        const password = $("#password").val();
-        const confirmPassword = $("#confirmPassword").val();
-
-        const flash = $("#passwordCheck");
-        const submit = $('button[type="submit"]');
-        flash.removeClass("text-red-500 text-green-500");
-        if (password != confirmPassword) {
-            flash.addClass("text-red-500").html("Passwords do not match!");
-            submit.prop('disabled', true);
-        } else {
-            flash.addClass("text-green-500").html("Passwords match.");
-            submit.prop('disabled', false);
-        }
-        flash.parent().removeClass("hidden")
-    }
-
-    $(document).ready(function () {
-        $("#confirmPassword").keyup(checkPasswordConfirmation);
-    });
-</script>

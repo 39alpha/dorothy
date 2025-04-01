@@ -1,3 +1,28 @@
+const checkPasswordConfirmation = (elements = {}) => {
+    elements = Object.assign({
+        password: "#password",
+        confirm: "#confirmPassword",
+        check: "#passwordCheck",
+    }, elements);
+
+    const password = $(elements.password).val();
+    const confirmPassword = $(elements.confirm).val();
+
+    const flash = $(elements.check);
+    const submit = elements.submit
+        ? $(elements.submit)
+        : $(elements.password).parent().find('button[type="submit"]');
+    flash.removeClass("text-red-500 text-green-500");
+    if (password != confirmPassword) {
+        flash.addClass("text-red-500").html("Passwords do not match!");
+        submit.prop("disabled", true);
+    } else {
+        flash.addClass("text-green-500").html("Passwords match.");
+        submit.prop("disabled", false);
+    }
+    flash.parent().removeClass("hidden");
+};
+
 const checkAvailability = (entity, route, options = {}) => {
     const { src, dst, startDisabled, original, trigger, target_parent } = Object
         .assign({
