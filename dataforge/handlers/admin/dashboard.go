@@ -22,10 +22,6 @@ func (page *Dashboard) Pre(c *fiber.Ctx) error {
 	return nil
 }
 
-func (page *Dashboard) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverLogin(c, err)
-}
-
 func (page *Dashboard) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("admin/dashboard", handlers.Bind(c, fiber.Map{
 		"AuthUser": page.authUser,

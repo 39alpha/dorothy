@@ -43,10 +43,6 @@ func (form *UserForm) Pre(c *fiber.Ctx) error {
 	return nil
 }
 
-func (form *UserForm) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverLogin(c, err)
-}
-
 func (form *UserForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("admin/user", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,

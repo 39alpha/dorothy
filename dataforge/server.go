@@ -16,6 +16,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/template/html/v2"
 )
 
@@ -150,6 +151,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		ServerHeader:  "Dorothy",
 		AppName:       "Dorothy",
 		Views:         engine,
+		ErrorHandler:  handlers.ErrorHandler,
 	})
 
 	mailer := mail.NewMailer(*config.Mail, viewsfs)
@@ -177,7 +179,7 @@ func (d *Server) ListenOnPort(port int) error {
 }
 
 func (d *Server) setup() {
-	// d.Use(handlers.ErrorMiddleware(d))
+	d.Use(recover.New())
 
 	d.Use(cors.New(cors.Config{
 		AllowOrigins: "*",

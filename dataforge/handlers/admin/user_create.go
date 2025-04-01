@@ -29,10 +29,6 @@ func (form *UserCreateForm) Pre(c *fiber.Ctx) error {
 	return nil
 }
 
-func (form *UserCreateForm) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverLogin(c, err)
-}
-
 func (form *UserCreateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("admin/user-create", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,

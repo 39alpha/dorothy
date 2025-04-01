@@ -41,10 +41,6 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 	return nil
 }
 
-func (form *UpdateForm) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverLogin(c, err)
-}
-
 func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("team/settings", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,

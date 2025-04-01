@@ -60,10 +60,6 @@ func (page *Dataset) Pre(c *fiber.Ctx) error {
 	return nil
 }
 
-func (page *Dataset) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverLogin(c, err)
-}
-
 func (page *Dataset) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("dataset/index", handlers.Bind(c, fiber.Map{
 		"AuthUser":  page.authUser,

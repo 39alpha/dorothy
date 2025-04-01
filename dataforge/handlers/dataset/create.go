@@ -39,10 +39,6 @@ func (form *CreateForm) Pre(c *fiber.Ctx) error {
 	return nil
 }
 
-func (form *CreateForm) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverLogin(c, err)
-}
-
 func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("dataset/create", handlers.Bind(c, fiber.Map{
 		"AuthUser": form.authUser,

@@ -42,10 +42,6 @@ func (page *Team) Pre(c *fiber.Ctx) (err error) {
 	return
 }
 
-func (page *Team) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverLogin(c, err)
-}
-
 func (page *Team) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("team/index", handlers.Bind(c, fiber.Map{
 		"AuthUser":  page.authUser,
