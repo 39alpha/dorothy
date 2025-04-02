@@ -172,6 +172,7 @@ const readResponse = async (response) => {
 };
 
 const guardResponse = async ({ response, body }) => {
+    console.log(body);
     if (!response.ok || body?.error) {
         throw new Error(
             body?.error ?? "An unexpected error occurred; try again later",
@@ -401,8 +402,8 @@ const updatePrivileges = async (resource, entity) => {
     const form = $($(entity).parents("form").get(0));
     const fieldset = $($(entity).parents("fieldset").get(0));
 
-    const asset_id = form.find('input[name="id"]').val();
-    const user_id = fieldset.attr("data-user-id");
+    const asset_id = parseInt(form.find('input[name="id"]').val());
+    const user_id = parseInt(fieldset.attr("data-user-id"));
     const privilege_code = fieldset.attr("data-privilege-code");
     const checked = fieldset.find('input[type="radio"]:checked');
 
@@ -426,6 +427,7 @@ const updatePrivileges = async (resource, entity) => {
             }).then(readResponse).then(guardResponse).then(() => {
                 form.find(".error").parent().addClass("hidden");
             }).catch((err) => {
+                console.log(err);
                 form.find(".error").html(err.message).parent().removeClass(
                     "hidden",
                 );
@@ -444,8 +446,8 @@ const removePrivileges = (resource, entity) => {
     }
 
     const payload = {
-        id: form.find('input[name="id"]').val(),
-        userId: fieldset.attr("data-user-id"),
+        id: parseInt(form.find('input[name="id"]').val()),
+        userId: parseInt(fieldset.attr("data-user-id")),
     };
 
     fetch(resource, {
