@@ -8,7 +8,7 @@ type Logout struct {
 	App
 }
 
-func (*Logout) Post(c *fiber.Ctx) error {
+func (*Logout) Run(c *fiber.Ctx) error {
 	c.ClearCookie("jwt")
 	return nil
 }

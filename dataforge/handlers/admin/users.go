@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"net/url"
-	"strconv"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/models"
@@ -38,33 +37,24 @@ func (page *UserListing) RedirectWithQueries(c *fiber.Ctx, useQueries, escape bo
 	return c.Redirect(page.PathWithQueries(c, useQueries, escape))
 }
 
-func (page *UserListing) Pre(c *fiber.Ctx) error {
+func (page *UserListing) Run(c *fiber.Ctx) error {
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
 
 	page.search = c.Query("search")
 
-	pageNum := c.Query("page")
-	if pageNum == "" {
+	redirect := false
+	page.pageNum = c.QueryInt("page", 1)
+	if page.pageNum < 1 {
+		redirect = true
 		page.pageNum = 1
-	} else {
-		var err error
-		page.pageNum, err = strconv.Atoi(pageNum)
-		if err != nil {
-			return fmt.Errorf("%w: invalid page number %q", fiber.ErrBadRequest, pageNum)
-		}
 	}
 
-	perPage := c.Query("per_page")
-	if perPage == "" {
+	page.perPage = c.QueryInt("per_page", 20)
+	if page.perPage < 1 {
+		redirect = true
 		page.perPage = 20
-	} else {
-		var err error
-		page.perPage, err = strconv.Atoi(perPage)
-		if err != nil {
-			return fmt.Errorf("%w: invalid per_page %q", fiber.ErrBadRequest, perPage)
-		}
 	}
 
 	count_query := page.DB().Model(&models.User{})
@@ -81,19 +71,14 @@ func (page *UserListing) Pre(c *fiber.Ctx) error {
 
 	page.numPages = int(math.Ceil(float64(user_count) / float64(page.perPage)))
 	if page.pageNum > page.numPages {
+		redirect = true
 		page.pageNum = 1
 	}
 
-	if handlers.Redirectable(c) {
-		if pageNum != strconv.Itoa(page.pageNum) || perPage != strconv.Itoa(page.perPage) {
-			return page.RedirectWithQueries(c, false, false)
-		}
+	if handlers.Redirectable(c) && redirect {
+		return page.RedirectWithQueries(c, false, false)
 	}
 
-	return nil
-}
-
-func (page *UserListing) Run() error {
 	offset := page.perPage * (page.pageNum - 1)
 
 	query := page.DB().

@@ -14,6 +14,10 @@ type LoginForm struct {
 	authUser *models.User
 }
 
+func (form *LoginForm) Run(c *fiber.Ctx) error {
+	return nil
+}
+
 func (form *LoginForm) RenderHtml(c *fiber.Ctx) error {
 	authUser := GetAuthUser(c)
 
@@ -32,47 +36,40 @@ func (form *LoginForm) RenderHtml(c *fiber.Ctx) error {
 type Login struct {
 	App
 
-	fields struct {
-		Redirect string
-	}
-	userLogin models.UserLogin
-	token     string
+	Redirect string
 }
 
-func (page *Login) Pre(c *fiber.Ctx) error {
-	_ = c.BodyParser(&page.fields)
+func (page *Login) Run(c *fiber.Ctx) error {
+	var fields struct {
+		Redirect string
+	}
+	_ = c.BodyParser(&fields)
+	page.Redirect = fields.Redirect
 
-	if err := c.BodyParser(&page.userLogin); err != nil {
+	userLogin := models.UserLogin{}
+	if err := c.BodyParser(&userLogin); err != nil {
 		return fiber.ErrBadRequest
 	}
 
-	return nil
-}
-
-func (page *Login) Run() error {
-	err := page.DB().ValidateCredentials(page.userLogin.Email, page.userLogin.Password)
+	err := page.DB().ValidateCredentials(userLogin.Email, userLogin.Password)
 	if err != nil {
 		return fmt.Errorf("%w: invalid login credentials", fiber.ErrUnauthorized)
 	}
 
-	user := &models.User{Email: page.userLogin.Email}
+	user := &models.User{Email: userLogin.Email}
 	err = page.DB().Select("id", "email", "name", "orcid").Where(user).First(user).Error
 	if err != nil {
 		return fmt.Errorf("%w: an unexpected error occurred", fiber.ErrInternalServerError)
 	}
 
-	page.token, err = page.Auth().MakeToken(user)
+	token, err := page.Auth().MakeToken(user)
 	if err != nil {
 		return fmt.Errorf("%w: an unexpected error occurred", fiber.ErrInternalServerError)
 	}
 
-	return nil
-}
-
-func (page *Login) Post(c *fiber.Ctx) error {
 	c.Cookie(&fiber.Cookie{
 		Name:    "jwt",
-		Value:   page.token,
+		Value:   token,
 		Expires: time.Now().Add(72 * time.Hour),
 	})
 
@@ -86,10 +83,10 @@ func (page *Login) Recover(c *fiber.Ctx, err error) error {
 }
 
 func (page *Login) RenderHtml(c *fiber.Ctx) error {
-	if page.fields.Redirect == "" {
+	if page.Redirect == "" {
 		return c.Redirect("/")
 	} else {
-		return c.Redirect(page.fields.Redirect)
+		return c.Redirect(page.Redirect)
 	}
 }
 

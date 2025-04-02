@@ -15,7 +15,7 @@ type UserForm struct {
 	user *models.User
 }
 
-func (form *UserForm) Pre(c *fiber.Ctx) error {
+func (form *UserForm) Run(c *fiber.Ctx) error {
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
@@ -41,26 +41,25 @@ func (form *UserForm) RenderHtml(c *fiber.Ctx) error {
 type UserUpdate struct {
 	handlers.App
 
-	update models.UpdateUserWithRole
-	user   *models.User
+	user *models.User
 }
 
-func (page *UserUpdate) Pre(c *fiber.Ctx) error {
+func (page *UserUpdate) Run(c *fiber.Ctx) error {
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
 
-	err := c.BodyParser(&page.update)
-	if err != nil {
+	var update models.UpdateUserWithRole
+	if err := c.BodyParser(&update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	page.user, err = page.DB().GetUserById(page.update.ID)
+	user, err := page.DB().GetUserById(update.ID)
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
 
-	if page.user.RoleCode == models.AdminRole && page.update.Role != models.AdminRole {
+	if user.RoleCode == models.AdminRole && update.Role != models.AdminRole {
 		var admin_count int64
 		if err := page.DB().Model(&models.User{}).Where("role_code = ?", models.AdminRole).Count(&admin_count).Error; err != nil {
 			return handlers.GormToFiber(err)
@@ -71,20 +70,11 @@ func (page *UserUpdate) Pre(c *fiber.Ctx) error {
 		}
 	}
 
-	return nil
-}
-
-func (page *UserUpdate) Run() error {
-	if err := page.DB().UpdateUserWithRole(page.update); err != nil {
+	if err := page.DB().UpdateUserWithRole(update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	return nil
-}
-
-func (page *UserUpdate) Post(c *fiber.Ctx) error {
-	var err error
-	page.user, err = page.DB().GetUserById(page.update.ID)
+	page.user, err = page.DB().GetUserById(update.ID)
 	return handlers.GormToFiber(err)
 }
 
@@ -108,11 +98,9 @@ func (page *UserUpdate) RenderText(c *fiber.Ctx) error {
 
 type UserDelete struct {
 	handlers.App
-
-	user *models.User
 }
 
-func (page *UserDelete) Pre(c *fiber.Ctx) error {
+func (page *UserDelete) Run(c *fiber.Ctx) error {
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
@@ -122,12 +110,12 @@ func (page *UserDelete) Pre(c *fiber.Ctx) error {
 		return fiber.ErrNotFound
 	}
 
-	page.user, err = page.DB().GetUserById(uint(userId))
+	user, err := page.DB().GetUserById(uint(userId))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
 
-	if page.user.RoleCode == models.AdminRole {
+	if user.RoleCode == models.AdminRole {
 		var admin_count int64
 		if err := page.DB().Model(&models.User{}).Where("role_code = ?", models.AdminRole).Count(&admin_count).Error; err != nil {
 			return handlers.GormToFiber(err)
@@ -138,11 +126,7 @@ func (page *UserDelete) Pre(c *fiber.Ctx) error {
 		}
 	}
 
-	return nil
-}
-
-func (page *UserDelete) Run() error {
-	if err := page.DB().DeleteUser(page.user); err != nil {
+	if err := page.DB().DeleteUser(user); err != nil {
 		return fmt.Errorf(
 			"%w: We couldn't delete the user for some reason. Try again later?",
 			fiber.ErrInternalServerError,

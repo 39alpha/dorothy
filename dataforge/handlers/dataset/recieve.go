@@ -18,11 +18,10 @@ type Receive struct {
 
 	dataset  models.Dataset
 	identity peer.ID
-	payload  sdk.Payload
 }
 
-func (page *Receive) Pre(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(context.Background())
+func (page *Receive) Run(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(page.Dorothy(), 15*time.Second)
 	defer cancel()
 
 	authUser := handlers.GetAuthUser(c)
@@ -39,7 +38,8 @@ func (page *Receive) Pre(c *fiber.Ctx) error {
 
 	page.dataset = *dataset
 
-	if err := c.BodyParser(&page.payload); err != nil {
+	var payload sdk.Payload
+	if err := c.BodyParser(&payload); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
@@ -51,15 +51,7 @@ func (page *Receive) Pre(c *fiber.Ctx) error {
 
 	page.identity = page.Dorothy().Ipfs.Identity
 
-	return nil
-}
-
-func (page *Receive) Run() error {
-	ctx, cancel := context.WithTimeout(page.Dorothy(), 10*time.Second)
-	defer cancel()
-
-	err := page.Dorothy().Ipfs.ConnectToPeerById(ctx, page.payload.PeerIdentity)
-	if err != nil {
+	if err := page.Dorothy().Ipfs.ConnectToPeerById(ctx, payload.PeerIdentity); err != nil {
 		if ctx.Err() == nil {
 			return fmt.Errorf("%w: failed to connect to ipfs peer", fiber.ErrInternalServerError)
 		} else {
@@ -67,7 +59,7 @@ func (page *Receive) Run() error {
 		}
 	}
 
-	manifest, conflicts, err := page.Dorothy().Receive(page.dataset.Manifest, page.payload.Hash)
+	manifest, conflicts, err := page.Dorothy().Receive(page.dataset.Manifest, payload.Hash)
 	if len(conflicts) != 0 {
 		return handlers.NewMergeConflict(fiber.ErrBadRequest, conflicts)
 	} else if err != nil {

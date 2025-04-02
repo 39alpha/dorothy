@@ -11,7 +11,7 @@ type Home struct {
 	datasets []models.Dataset
 }
 
-func (page *Home) Pre(c *fiber.Ctx) error {
+func (page *Home) Run(c *fiber.Ctx) error {
 	page.datasets, _ = page.DB().GetHotDatasets(GetAuthUser(c))
 
 	return nil

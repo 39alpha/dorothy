@@ -11,6 +11,10 @@ type RegisterForm struct {
 	App
 }
 
+func (form *RegisterForm) Run(c *fiber.Ctx) error {
+	return nil
+}
+
 func (form *RegisterForm) RenderHtml(c *fiber.Ctx) error {
 	if GetAuthUser(c) != nil {
 		return c.Redirect("/")
@@ -21,21 +25,19 @@ func (form *RegisterForm) RenderHtml(c *fiber.Ctx) error {
 
 type Register struct {
 	App
-
-	newUser models.NewUser
 }
 
-func (page *Register) Pre(c *fiber.Ctx) error {
-	if err := c.BodyParser(&page.newUser); err != nil {
+func (page *Register) Run(c *fiber.Ctx) error {
+	newUser := models.NewUser{}
+
+	if err := c.BodyParser(&newUser); err != nil {
 		return fiber.ErrBadRequest
 	}
-	return nil
-}
 
-func (page *Register) Run() error {
-	if err := page.DB().NewUser(&page.newUser); err != nil {
+	if err := page.DB().NewUser(&newUser); err != nil {
 		return fmt.Errorf("%w: User already exists", fiber.ErrBadRequest)
 	}
+
 	return nil
 }
 

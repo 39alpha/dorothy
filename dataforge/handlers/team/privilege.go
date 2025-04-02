@@ -2,7 +2,6 @@ package team
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
 	"github.com/39alpha/dorothy/dataforge/models"
@@ -11,50 +10,31 @@ import (
 
 type DeletePrivilege struct {
 	handlers.App
-
-	payload struct {
-		Id     string
-		UserId string
-	}
-
-	teamId uint
-	userId uint
 }
 
-func (page *DeletePrivilege) Pre(c *fiber.Ctx) error {
+func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
 
-	if err := c.BodyParser(&page.payload); err != nil {
+	var payload struct {
+		Id     uint
+		UserId uint
+	}
+	if err := c.BodyParser(&payload); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	if teamId, err := strconv.Atoi(page.payload.Id); err != nil {
-		return fmt.Errorf(
-			"%w: the provided id (%q) is not a positive integer",
-			fiber.ErrBadRequest,
-			page.payload.Id,
-		)
-	} else {
-		page.teamId = uint(teamId)
-	}
-
-	if userId, err := strconv.Atoi(page.payload.UserId); err != nil {
-		return fmt.Errorf(
-			"%w: the provided userId (%q) is not a positive integer",
-			fiber.ErrBadRequest,
-			page.payload.UserId,
-		)
-	} else {
-		page.userId = uint(userId)
+	privilege := models.UserTeamPrivilege{
+		UserID: payload.UserId,
+		TeamID: payload.Id,
 	}
 
 	team, err := page.DB().GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
-	} else if team.ID != page.teamId {
+	} else if team.ID != privilege.TeamID {
 		return fiber.ErrBadRequest
 	}
 
@@ -74,7 +54,7 @@ func (page *DeletePrivilege) Pre(c *fiber.Ctx) error {
 	isAdmin := false
 	var thisUser *models.User
 	for _, user := range users {
-		if user.ID == page.userId {
+		if user.ID == privilege.UserID {
 			thisUser = &user
 		}
 		privileges := user.TeamPrivileges
@@ -92,16 +72,7 @@ func (page *DeletePrivilege) Pre(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: cannot remove the last admin user's privileges", fiber.ErrBadRequest)
 	}
 
-	return nil
-}
-
-func (page *DeletePrivilege) Run() error {
-	err := page.DB().DeleteTeamPrivilege(models.UserTeamPrivilege{
-		UserID: page.userId,
-		TeamID: page.teamId,
-	})
-
-	if err != nil {
+	if err := page.DB().DeleteTeamPrivilege(privilege); err != nil {
 		return fmt.Errorf("%w: could not remove the privilege", handlers.GormToFiber(err))
 	}
 
@@ -114,54 +85,33 @@ func (page *DeletePrivilege) RenderJson(c *fiber.Ctx) error {
 
 type CreatePrivilege struct {
 	handlers.App
-
-	payload struct {
-		Id            string
-		UserId        string
-		PrivilegeCode models.PrivilegeCode
-	}
-
-	teamId        uint
-	userId        uint
-	privilegeCode models.PrivilegeCode
 }
 
-func (page *CreatePrivilege) Pre(c *fiber.Ctx) error {
+func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
 
-	if err := c.BodyParser(&page.payload); err != nil {
+	var payload struct {
+		Id            uint
+		UserId        uint
+		PrivilegeCode models.PrivilegeCode
+	}
+	if err := c.BodyParser(&payload); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	if teamId, err := strconv.Atoi(page.payload.Id); err != nil {
-		return fmt.Errorf(
-			"%w: the provided id (%q) is not a positive integer",
-			fiber.ErrBadRequest,
-			page.payload.Id,
-		)
-	} else {
-		page.teamId = uint(teamId)
+	privilege := models.UserTeamPrivilege{
+		UserID:        payload.UserId,
+		TeamID:        payload.Id,
+		PrivilegeCode: payload.PrivilegeCode,
 	}
-
-	if userId, err := strconv.Atoi(page.payload.UserId); err != nil {
-		return fmt.Errorf(
-			"%w: the provided userId (%q) is not a positive integer",
-			fiber.ErrBadRequest,
-			page.payload.UserId,
-		)
-	} else {
-		page.userId = uint(userId)
-	}
-
-	page.privilegeCode = page.payload.PrivilegeCode
 
 	team, err := page.DB().GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
-	} else if team.ID != page.teamId {
+	} else if team.ID != privilege.TeamID {
 		return fiber.ErrBadRequest
 	}
 
@@ -181,7 +131,7 @@ func (page *CreatePrivilege) Pre(c *fiber.Ctx) error {
 	isAdmin := false
 	var thisUser *models.User
 	for _, user := range users {
-		if user.ID == page.userId {
+		if user.ID == privilege.UserID {
 			thisUser = &user
 		}
 		privileges := user.TeamPrivileges
@@ -193,21 +143,11 @@ func (page *CreatePrivilege) Pre(c *fiber.Ctx) error {
 
 	if thisUser == nil {
 		return fmt.Errorf("%w: we cannot find that user's privilege", fiber.ErrNotFound)
-	} else if isAdmin && len(adminUsers) == 1 && thisUser.TeamPrivileges[0].Privilege.Code != page.privilegeCode {
+	} else if isAdmin && len(adminUsers) == 1 && thisUser.TeamPrivileges[0].Privilege.Code != privilege.PrivilegeCode {
 		return fmt.Errorf("%w: cannot remove the last admin user's admin privileges", fiber.ErrBadRequest)
 	}
 
-	return nil
-}
-
-func (page *CreatePrivilege) Run() error {
-	err := page.DB().UpdateTeamPrivilege(models.UserTeamPrivilege{
-		UserID:        page.userId,
-		TeamID:        page.teamId,
-		PrivilegeCode: page.privilegeCode,
-	})
-
-	if err != nil {
+	if err := page.DB().UpdateTeamPrivilege(privilege); err != nil {
 		return fmt.Errorf("%w: could not update the privilege", handlers.GormToFiber(err))
 	}
 

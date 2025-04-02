@@ -17,7 +17,7 @@ type Team struct {
 	canManage bool
 }
 
-func (page *Team) Pre(c *fiber.Ctx) (err error) {
+func (page *Team) Run(c *fiber.Ctx) (err error) {
 	page.authUser = handlers.GetAuthUser(c)
 
 	page.team, err = page.DB().GetTeam(page.authUser, c.Params("team"))

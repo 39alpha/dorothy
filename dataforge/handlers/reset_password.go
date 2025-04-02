@@ -13,12 +13,10 @@ type ResetPasswordForm struct {
 	App
 
 	isInvitation bool
-	token        string
-	password     string
 	user         *models.User
 }
 
-func (form *ResetPasswordForm) Pre(c *fiber.Ctx) error {
+func (form *ResetPasswordForm) Run(c *fiber.Ctx) error {
 	authUser := GetAuthUser(c)
 	if authUser != nil {
 		if Redirectable(c) {
@@ -28,15 +26,12 @@ func (form *ResetPasswordForm) Pre(c *fiber.Ctx) error {
 		}
 	}
 
+	password := c.Query("id")
+	token := c.Query("token")
+
 	form.isInvitation = c.QueryBool("invitation")
-	form.password = c.Query("id")
-	form.token = c.Query("token")
+	form.user, _ = form.DB().ValidateResetCredentials(token, password, false)
 
-	return nil
-}
-
-func (form *ResetPasswordForm) Run() error {
-	form.user, _ = form.DB().ValidateResetCredentials(form.token, form.password, false)
 	return nil
 }
 
@@ -52,14 +47,9 @@ type ResetPassword struct {
 
 	isInvitation bool
 	user         *models.User
-
-	title   string
-	baseUrl string
-	reset   models.RequestPasswordReset
-	change  models.ChangePassword
 }
 
-func (page *ResetPassword) Pre(c *fiber.Ctx) error {
+func (page *ResetPassword) Run(c *fiber.Ctx) error {
 	authUser := GetAuthUser(c)
 	if authUser != nil {
 		if Redirectable(c) {
@@ -70,16 +60,40 @@ func (page *ResetPassword) Pre(c *fiber.Ctx) error {
 	}
 
 	page.isInvitation = c.QueryBool("invitation")
+
 	password := c.Query("id")
 	token := c.Query("token")
 
 	state := c.Locals("State").(fiber.Map)
-	page.title = state["Title"].(string)
-	page.baseUrl = state["BaseUrl"].(string)
+	title := state["Title"].(string)
+	baseUrl := state["BaseUrl"].(string)
 
 	if password == "" && token == "" {
-		if err := c.BodyParser(&page.reset); err != nil {
+		reset := models.RequestPasswordReset{}
+		if err := c.BodyParser(&reset); err != nil {
 			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
+		}
+
+		token, err := page.DB().CreatePasswordReset(reset.Email)
+		if err != nil {
+			return err
+		}
+
+		resetUrl := fmt.Sprintf("%s/reset-password?%s", baseUrl, token)
+
+		message := mail.Message{
+			To:           reset.Email,
+			Subject:      fmt.Sprintf("Reset %s Password", title),
+			HtmlTemplate: "emails/reset-password.html",
+			TextTemplate: "emails/reset-password.txt",
+			Data: map[string]any{
+				"Title":    title,
+				"ResetUrl": resetUrl,
+			},
+		}
+
+		if err = page.Mailer().Send(message); err != nil {
+			return fmt.Errorf("failed to send email: %w", err)
 		}
 	} else {
 		var err error
@@ -87,41 +101,16 @@ func (page *ResetPassword) Pre(c *fiber.Ctx) error {
 		if err != nil {
 			return fiber.ErrInternalServerError
 		}
-		if err := c.BodyParser(&page.change); err != nil {
+
+		change := models.ChangePassword{}
+		if err := c.BodyParser(&change); err != nil {
+			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
+		}
+		if err := page.DB().UserChangePassword(change); err != nil {
 			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 		}
 	}
 
-	return nil
-}
-
-func (page *ResetPassword) Run() error {
-	if page.user != nil {
-		if err := page.DB().UserChangePassword(page.change); err != nil {
-			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
-		}
-	} else {
-		token, err := page.DB().CreatePasswordReset(page.reset.Email)
-		if err != nil {
-			return err
-		}
-
-		resetUrl := fmt.Sprintf("%s/reset-password?%s", page.baseUrl, token)
-
-		err = page.Mailer().Send(mail.Message{
-			To:           page.reset.Email,
-			Subject:      fmt.Sprintf("Reset %s Password", page.title),
-			HtmlTemplate: "emails/reset-password.html",
-			TextTemplate: "emails/reset-password.txt",
-			Data: map[string]any{
-				"Title":    page.title,
-				"ResetUrl": resetUrl,
-			},
-		})
-		if err != nil {
-			return fmt.Errorf("failed to send email: %w", err)
-		}
-	}
 	return nil
 }
 

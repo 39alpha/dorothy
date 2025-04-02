@@ -11,34 +11,29 @@ import (
 
 type ChangePassword struct {
 	handlers.App
-
-	update models.ChangePassword
 }
 
-func (page *ChangePassword) Pre(c *fiber.Ctx) error {
+func (page *ChangePassword) Run(c *fiber.Ctx) error {
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
 
-	if err := c.BodyParser(&page.update); err != nil {
+	var update models.ChangePassword
+	if err := c.BodyParser(&update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	page.update.Password = strings.TrimSpace(page.update.Password)
-	if len(page.update.Password) < 8 {
+	update.Password = strings.TrimSpace(update.Password)
+	if len(update.Password) < 8 {
 		return fmt.Errorf("%w: password must be at least 8 characters long", fiber.ErrBadRequest)
 	}
 
-	if authUser.ID != page.update.ID {
+	if authUser.ID != update.ID {
 		return fiber.ErrForbidden
 	}
 
-	return nil
-}
-
-func (page *ChangePassword) Run() error {
-	if err := page.DB().UserChangePassword(page.update); err != nil {
+	if err := page.DB().UserChangePassword(update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 

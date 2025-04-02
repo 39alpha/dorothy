@@ -22,7 +22,7 @@ type Dataset struct {
 	canManage bool
 }
 
-func (page *Dataset) Pre(c *fiber.Ctx) error {
+func (page *Dataset) Run(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 

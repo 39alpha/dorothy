@@ -57,21 +57,7 @@ type App interface {
 
 type Handler interface {
 	App
-}
-
-type PreHandler interface {
-	Handler
-	Pre(c *fiber.Ctx) error
-}
-
-type RunHandler interface {
-	Handler
-	Run() error
-}
-
-type PostHandler interface {
-	Handler
-	Post(c *fiber.Ctx) error
+	Run(c *fiber.Ctx) error
 }
 
 type RecoverHandler interface {
@@ -114,9 +100,6 @@ func PerRequest(handler Handler, app App) fiber.Handler {
 }
 
 func ToFiberHandler(page Handler) fiber.Handler {
-	pre, is_pre := page.(PreHandler)
-	run, is_run := page.(RunHandler)
-	post, is_post := page.(PostHandler)
 	recover, is_recover := page.(RecoverHandler)
 
 	html, html_ok := page.(HtmlHandler)
@@ -124,21 +107,7 @@ func ToFiberHandler(page Handler) fiber.Handler {
 	text, text_ok := page.(TextHandler)
 
 	return func(c *fiber.Ctx) error {
-		var err error
-
-		if is_pre {
-			err = pre.Pre(c)
-		}
-
-		if err == nil && is_run {
-			err = run.Run()
-		}
-
-		if err == nil && is_post {
-			err = post.Post(c)
-		}
-
-		if err != nil {
+		if err := page.Run(c); err != nil {
 			if is_recover {
 				return recover.Recover(c, err)
 			}

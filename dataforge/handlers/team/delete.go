@@ -5,17 +5,17 @@ import (
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
-	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 )
 
 type Delete struct {
 	handlers.App
-
-	team *models.Team
 }
 
-func (page *Delete) Pre(c *fiber.Ctx) error {
+func (page *Delete) Run(c *fiber.Ctx) error {
+	ctx, cancel := context.WithCancel(page.Dorothy())
+	defer cancel()
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -25,21 +25,13 @@ func (page *Delete) Pre(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	page.team = team
 
 	if !authUser.CanManageTeam(*team) {
 		return fiber.ErrForbidden
 	}
 
-	return nil
-}
-
-func (page *Delete) Run() error {
-	ctx, cancel := context.WithCancel(page.Dorothy())
-	defer cancel()
-
 	errs := []error{}
-	for _, dataset := range page.team.Datasets {
+	for _, dataset := range team.Datasets {
 		if err := page.DB().DeleteDataset(&dataset); err != nil {
 			errs = append(errs, err)
 			continue
@@ -66,7 +58,7 @@ func (page *Delete) Run() error {
 		)
 	}
 
-	if err := page.DB().DeleteTeam(page.team); err != nil {
+	if err := page.DB().DeleteTeam(team); err != nil {
 		return fmt.Errorf(
 			"%w: We couldn't delete the team for some reason. Try again later?",
 			fiber.ErrInternalServerError,

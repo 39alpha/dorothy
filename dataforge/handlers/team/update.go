@@ -15,7 +15,7 @@ type UpdateForm struct {
 	users []models.User
 }
 
-func (form *UpdateForm) Pre(c *fiber.Ctx) error {
+func (form *UpdateForm) Run(c *fiber.Ctx) error {
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -25,13 +25,13 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
-	form.team = *team
 
 	if !authUser.CanManageTeam(*team) {
 		return fiber.ErrForbidden
 	}
 
-	form.users, _ = form.DB().GetUsersWithTeamAccess(form.team)
+	form.team = *team
+	form.users, _ = form.DB().GetUsersWithTeamAccess(*team)
 
 	return nil
 }
@@ -46,12 +46,10 @@ func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 type Update struct {
 	handlers.App
 
-	authUser *models.User
-	team     *models.Team
-	update   models.UpdateTeam
+	team *models.Team
 }
 
-func (page *Update) Pre(c *fiber.Ctx) error {
+func (page *Update) Run(c *fiber.Ctx) error {
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -66,34 +64,22 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	if err := c.BodyParser(&page.update); err != nil {
+	var update models.UpdateTeam
+	if err := c.BodyParser(&update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	name := models.Slugify(page.update.Name)
+	name := models.Slugify(update.Name)
 	if handlers.IsDisallowedName(name) {
 		return fmt.Errorf("%w: that dataset name is already taken", fiber.ErrConflict)
 	}
 
-	page.team = team
-	page.authUser = authUser
-
-	return nil
-}
-
-func (page *Update) Run() error {
-	var err error
-	page.update.Name, err = page.DB().UpdateTeam(page.update)
+	_, err = page.DB().UpdateTeam(update)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	return nil
-}
-
-func (page *Update) Post(c *fiber.Ctx) error {
-	var err error
-	page.team, err = page.DB().GetTeamById(page.authUser, page.team.ID)
+	page.team, err = page.DB().GetTeamById(authUser, team.ID)
 	return handlers.GormToFiber(err)
 }
 
@@ -104,7 +90,7 @@ func (page *Update) Recover(c *fiber.Ctx, err error) error {
 }
 
 func (page *Update) RenderHtml(c *fiber.Ctx) error {
-	return c.Redirect("/" + page.update.Name)
+	return c.Redirect(page.team.Path())
 }
 
 func (page *Update) RenderJson(c *fiber.Ctx) error {

@@ -15,7 +15,7 @@ type CreateForm struct {
 	team models.Team
 }
 
-func (form *CreateForm) Pre(c *fiber.Ctx) error {
+func (form *CreateForm) Run(c *fiber.Ctx) error {
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -43,50 +43,38 @@ func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
 type Create struct {
 	handlers.App
 
-	authUser   models.User
-	team       models.Team
-	newDataset models.NewDataset
-	dataset    *models.Dataset
+	team    *models.Team
+	dataset *models.Dataset
 }
 
-func (page *Create) Pre(c *fiber.Ctx) (err error) {
+func (page *Create) Run(c *fiber.Ctx) (err error) {
+	ctx, cancel := context.WithCancel(page.Dorothy())
+	defer cancel()
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
-	page.authUser = *authUser
 
-	if err = c.BodyParser(&page.newDataset); err != nil {
+	newDataset := models.NewDataset{}
+	if err = c.BodyParser(&newDataset); err != nil {
 		return fiber.ErrBadRequest
 	}
 
-	name := models.Slugify(page.newDataset.Name)
+	name := models.Slugify(newDataset.Name)
 	if handlers.IsDisallowedName(name) {
 		return fmt.Errorf("%w: that dataset name is already taken", fiber.ErrConflict)
 	}
 
-	team, err := page.DB().GetTeam(&page.authUser, c.Params("team"))
+	team, err := page.DB().GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
-	page.team = *team
+	page.team = team
 
-	if team.ID != page.newDataset.TeamID {
+	if team.ID != newDataset.TeamID {
 		return fiber.ErrBadRequest
 	}
-
-	return nil
-}
-
-func (page *Create) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverForm(&CreateForm{
-		App: page.App,
-	}, c, err)
-}
-
-func (page *Create) Run() error {
-	ctx, cancel := context.WithCancel(page.Dorothy())
-	defer cancel()
 
 	manifest, err := page.Dorothy().Ipfs.CreateEmptyManifest(ctx)
 	if err != nil {
@@ -96,20 +84,12 @@ func (page *Create) Run() error {
 		)
 	}
 
-	page.newDataset.Name, err = page.DB().CreateDataset(page.newDataset, manifest, &page.authUser)
+	newDataset.Name, err = page.DB().CreateDataset(newDataset, manifest, authUser)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	return nil
-}
-
-func (page *Create) Post(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(page.Dorothy())
-	defer cancel()
-
-	var err error
-	page.dataset, err = page.DB().GetDataset(&page.authUser, page.team.Name, page.newDataset.Name)
+	page.dataset, err = page.DB().GetDataset(authUser, page.team.Name, newDataset.Name)
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
@@ -120,6 +100,12 @@ func (page *Create) Post(c *fiber.Ctx) error {
 	}
 
 	return nil
+}
+
+func (page *Create) Recover(c *fiber.Ctx, err error) error {
+	return handlers.RecoverForm(&CreateForm{
+		App: page.App,
+	}, c, err)
 }
 
 func (page *Create) RenderHtml(c *fiber.Ctx) error {

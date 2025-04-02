@@ -12,7 +12,7 @@ type CreateForm struct {
 	handlers.App
 }
 
-func (form *CreateForm) Pre(c *fiber.Ctx) error {
+func (form *CreateForm) Run(c *fiber.Ctx) error {
 	return handlers.RequireLogin(c)
 }
 
@@ -23,42 +23,32 @@ func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
 type Create struct {
 	handlers.App
 
-	authUser models.User
-	newTeam  models.NewTeam
-	team     *models.Team
+	team *models.Team
 }
 
-func (page *Create) Pre(c *fiber.Ctx) error {
+func (page *Create) Run(c *fiber.Ctx) error {
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
-	page.authUser = *authUser
 
-	if err := c.BodyParser(&page.newTeam); err != nil {
+	var newTeam models.NewTeam
+	if err := c.BodyParser(&newTeam); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	name := models.Slugify(page.newTeam.Name)
+	name := models.Slugify(newTeam.Name)
 	if handlers.IsDisallowedName(name) {
 		return fmt.Errorf("%w: that team name is already taken", fiber.ErrConflict)
 	}
 
-	return nil
-}
-
-func (page *Create) Run() error {
 	var err error
-	page.newTeam.Name, err = page.DB().CreateTeam(page.newTeam, &page.authUser)
+	newTeam.Name, err = page.DB().CreateTeam(newTeam, authUser)
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
-	return nil
-}
 
-func (page *Create) Post(c *fiber.Ctx) error {
-	var err error
-	page.team, err = page.DB().GetTeam(&page.authUser, page.newTeam.Name)
+	page.team, err = page.DB().GetTeam(authUser, newTeam.Name)
 	return handlers.GormToFiber(err)
 }
 

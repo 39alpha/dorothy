@@ -16,7 +16,7 @@ type UpdateForm struct {
 	users   []models.User
 }
 
-func (form *UpdateForm) Pre(c *fiber.Ctx) error {
+func (form *UpdateForm) Run(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(form.Dorothy())
 	defer cancel()
 
@@ -35,13 +35,12 @@ func (form *UpdateForm) Pre(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}
 
-	form.dataset = *dataset
-
 	if !authUser.CanManageDataset(*dataset) {
 		return fiber.ErrForbidden
 	}
 
-	form.users, _ = form.DB().GetUsersWithDatasetAccess(form.dataset)
+	form.dataset = *dataset
+	form.users, _ = form.DB().GetUsersWithDatasetAccess(*dataset)
 
 	return nil
 }
@@ -56,12 +55,10 @@ func (form *UpdateForm) RenderHtml(c *fiber.Ctx) error {
 type Update struct {
 	handlers.App
 
-	authUser models.User
-	dataset  models.Dataset
-	update   models.UpdateDataset
+	dataset models.Dataset
 }
 
-func (page *Update) Pre(c *fiber.Ctx) error {
+func (page *Update) Run(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 
@@ -69,7 +66,6 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
-	page.authUser = *authUser
 
 	dataset, err := page.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
@@ -85,36 +81,25 @@ func (page *Update) Pre(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	if err := c.BodyParser(&page.update); err != nil {
+	var update models.UpdateDataset
+	if err := c.BodyParser(&update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	name := models.Slugify(page.update.Name)
+	name := models.Slugify(update.Name)
 	if handlers.IsDisallowedName(name) {
 		return fmt.Errorf("%w: that dataset name is already taken", fiber.ErrConflict)
 	}
 
-	if dataset.Team.ID != page.update.TeamID || dataset.ID != page.update.ID {
+	if dataset.Team.ID != update.TeamID || dataset.ID != update.ID {
 		return fmt.Errorf("%w: There is some inconsistency in your request.", fiber.ErrBadRequest)
 	}
 
-	page.dataset = *dataset
-
-	return nil
-}
-
-func (page *Update) Run() error {
-	if _, err := page.DB().UpdateDataset(page.update); err != nil {
+	if _, err := page.DB().UpdateDataset(update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
-	return nil
-}
 
-func (page *Update) Post(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	dataset, err := page.DB().GetDatasetById(&page.authUser, page.dataset.ID)
+	dataset, err = page.DB().GetDatasetById(authUser, dataset.ID)
 	if err != nil {
 		return err
 	}

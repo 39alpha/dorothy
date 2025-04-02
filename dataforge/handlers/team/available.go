@@ -11,31 +11,28 @@ import (
 type Available struct {
 	handlers.App
 
-	payload struct {
-		Name string
-	}
-
+	desiredName  string
 	name         string
 	isAvailable  bool
 	isDisallowed bool
 }
 
-func (page *Available) Pre(c *fiber.Ctx) error {
+func (page *Available) Run(c *fiber.Ctx) error {
 	if err := handlers.RequireLogin(c); err != nil {
 		return err
 	}
 
-	if err := c.BodyParser(&page.payload); err != nil {
+	var payload struct {
+		Name string
+	}
+	if err := c.BodyParser(&payload); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	page.name = models.Slugify(page.payload.Name)
+	page.desiredName = payload.Name
+	page.name = models.Slugify(page.desiredName)
 	page.isDisallowed = handlers.IsDisallowedName(page.name)
 
-	return nil
-}
-
-func (page *Available) Run() error {
 	if !page.isDisallowed {
 		var err error
 		page.isAvailable, err = page.DB().IsTeamNameAvailable(page.name)
@@ -52,8 +49,8 @@ func (page *Available) Run() error {
 
 func (page *Available) RenderJson(c *fiber.Ctx) error {
 	message := fiber.Map{
-		"needsRewrite":  page.payload.Name != page.name,
-		"name":          page.payload.Name,
+		"needsRewrite":  page.desiredName != page.name,
+		"name":          page.desiredName,
 		"rewrittenName": page.name,
 	}
 

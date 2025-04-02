@@ -15,7 +15,7 @@ type Delete struct {
 	dataset models.Dataset
 }
 
-func (page *Delete) Pre(c *fiber.Ctx) error {
+func (page *Delete) Run(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(page.Dorothy())
 	defer cancel()
 
@@ -39,13 +39,6 @@ func (page *Delete) Pre(c *fiber.Ctx) error {
 	if !authUser.CanManageDataset(*dataset) {
 		return fiber.ErrForbidden
 	}
-
-	return nil
-}
-
-func (page *Delete) Run() error {
-	ctx, cancel := context.WithCancel(page.Dorothy())
-	defer cancel()
 
 	if err := page.DB().DeleteDataset(&page.dataset); err != nil {
 		return fmt.Errorf(

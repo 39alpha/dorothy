@@ -13,7 +13,7 @@ type UserCreateForm struct {
 	handlers.App
 }
 
-func (form *UserCreateForm) Pre(c *fiber.Ctx) error {
+func (form *UserCreateForm) Run(c *fiber.Ctx) error {
 	return RequireAdmin(c)
 }
 
@@ -23,49 +23,42 @@ func (form *UserCreateForm) RenderHtml(c *fiber.Ctx) error {
 
 type UserCreate struct {
 	handlers.App
-
-	title   string
-	baseUrl string
-
-	create models.CreateUser
 }
 
-func (page *UserCreate) Pre(c *fiber.Ctx) error {
+func (page *UserCreate) Run(c *fiber.Ctx) error {
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
 
-	if err := c.BodyParser(&page.create); err != nil {
+	var create models.CreateUser
+	if err := c.BodyParser(&create); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
 	state := c.Locals("State").(fiber.Map)
-	page.title = state["Title"].(string)
-	page.baseUrl = state["BaseUrl"].(string)
+	title := state["Title"].(string)
+	baseUrl := state["BaseUrl"].(string)
 
-	return nil
-}
-
-func (page *UserCreate) Run() error {
-	token, err := page.DB().InviteUser(page.create)
+	token, err := page.DB().InviteUser(create)
 	if err != nil {
 		fmt.Println(err)
 		return handlers.GormToFiber(err)
 	}
 
-	resetUrl := fmt.Sprintf("%s/reset-password?invitation=true&%s", page.baseUrl, token)
+	resetUrl := fmt.Sprintf("%s/reset-password?invitation=true&%s", baseUrl, token)
 
-	err = page.Mailer().Send(mail.Message{
-		To:           page.create.Email,
-		Subject:      fmt.Sprintf("Invitation to %s", page.title),
+	message := mail.Message{
+		To:           create.Email,
+		Subject:      fmt.Sprintf("Invitation to %s", title),
 		HtmlTemplate: "emails/invitation.html",
 		TextTemplate: "emails/invitation.txt",
 		Data: map[string]any{
-			"Title":    page.title,
+			"Title":    title,
 			"ResetUrl": resetUrl,
 		},
-	})
-	if err != nil {
+	}
+
+	if err = page.Mailer().Send(message); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 

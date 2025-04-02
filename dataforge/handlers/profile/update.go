@@ -11,38 +11,30 @@ import (
 type Update struct {
 	handlers.App
 
-	update models.UpdateUser
-	user   *models.User
+	user *models.User
 }
 
-func (page *Update) Pre(c *fiber.Ctx) error {
+func (page *Update) Run(c *fiber.Ctx) error {
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
 
-	if err := c.BodyParser(&page.update); err != nil {
+	var update models.UpdateUser
+	if err := c.BodyParser(&update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	if authUser.ID != page.update.ID {
+	if authUser.ID != update.ID {
 		return fiber.ErrForbidden
 	}
 
-	return nil
-}
-
-func (page *Update) Run() error {
-	if err := page.DB().UpdateUser(page.update); err != nil {
+	if err := page.DB().UpdateUser(update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	return nil
-}
-
-func (page *Update) Post(c *fiber.Ctx) error {
 	var err error
-	page.user, err = page.DB().GetUserById(page.update.ID)
+	page.user, err = page.DB().GetUserById(update.ID)
 	return handlers.GormToFiber(err)
 }
 
