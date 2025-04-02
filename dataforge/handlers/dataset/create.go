@@ -1,7 +1,6 @@
 package dataset
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
@@ -48,7 +47,12 @@ type Create struct {
 }
 
 func (page *Create) Run(c *fiber.Ctx) (err error) {
-	ctx, cancel := context.WithCancel(page.Dorothy())
+	ipfs := handlers.GetIpfs(c)
+	if ipfs == nil {
+		return fmt.Errorf("%w: cannot create datasets right now", fiber.ErrInternalServerError)
+	}
+
+	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
 
 	authUser := handlers.GetAuthUser(c)
@@ -76,7 +80,7 @@ func (page *Create) Run(c *fiber.Ctx) (err error) {
 		return fiber.ErrBadRequest
 	}
 
-	manifest, err := page.Dorothy().Ipfs.CreateEmptyManifest(ctx)
+	manifest, err := ipfs.CreateEmptyManifest(ctx)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: We are having issues with IPFS at the moment. Try again later.",
@@ -94,7 +98,7 @@ func (page *Create) Run(c *fiber.Ctx) (err error) {
 		return handlers.GormToFiber(err)
 	}
 
-	page.dataset.Manifest, err = page.Dorothy().Ipfs.GetManifest(ctx, page.dataset.ManifestHash)
+	page.dataset.Manifest, err = ipfs.GetManifest(ctx, page.dataset.ManifestHash)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}

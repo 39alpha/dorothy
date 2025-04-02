@@ -1,7 +1,6 @@
 package dataset
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
@@ -23,7 +22,12 @@ type Dataset struct {
 }
 
 func (page *Dataset) Run(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(page.Dorothy())
+	ipfs := handlers.GetIpfs(c)
+	if ipfs == nil {
+		return fmt.Errorf("%w: cannot get datasets right now", fiber.ErrInternalServerError)
+	}
+
+	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
 
 	authUser := handlers.GetAuthUser(c)
@@ -33,7 +37,7 @@ func (page *Dataset) Run(c *fiber.Ctx) error {
 		return handlers.GormToFiber(err)
 	}
 
-	dataset.Manifest, err = page.Dorothy().Ipfs.GetManifest(ctx, dataset.ManifestHash)
+	dataset.Manifest, err = ipfs.GetManifest(ctx, dataset.ManifestHash)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	} else if dataset.Manifest == nil {
@@ -54,7 +58,7 @@ func (page *Dataset) Run(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	page.identity = page.Dorothy().Ipfs.Identity
+	page.identity = ipfs.Identity
 
 	return nil
 }

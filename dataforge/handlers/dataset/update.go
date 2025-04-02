@@ -1,7 +1,6 @@
 package dataset
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
@@ -17,7 +16,12 @@ type UpdateForm struct {
 }
 
 func (form *UpdateForm) Run(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(form.Dorothy())
+	ipfs := handlers.GetIpfs(c)
+	if ipfs == nil {
+		return fmt.Errorf("%w: cannot fetch datasets right now", fiber.ErrInternalServerError)
+	}
+
+	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
 
 	authUser := handlers.GetAuthUser(c)
@@ -30,7 +34,7 @@ func (form *UpdateForm) Run(c *fiber.Ctx) error {
 		return handlers.GormToFiber(err)
 	}
 
-	dataset.Manifest, err = form.Dorothy().Ipfs.GetManifest(ctx, dataset.ManifestHash)
+	dataset.Manifest, err = ipfs.GetManifest(ctx, dataset.ManifestHash)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}
@@ -59,7 +63,12 @@ type Update struct {
 }
 
 func (page *Update) Run(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(page.Dorothy())
+	ipfs := handlers.GetIpfs(c)
+	if ipfs == nil {
+		return fmt.Errorf("%w: cannot update datasets right now", fiber.ErrInternalServerError)
+	}
+
+	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
 
 	authUser := handlers.GetAuthUser(c)
@@ -72,7 +81,7 @@ func (page *Update) Run(c *fiber.Ctx) error {
 		return err
 	}
 
-	dataset.Manifest, err = page.Dorothy().Ipfs.GetManifest(ctx, dataset.ManifestHash)
+	dataset.Manifest, err = ipfs.GetManifest(ctx, dataset.ManifestHash)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}
@@ -104,7 +113,7 @@ func (page *Update) Run(c *fiber.Ctx) error {
 		return err
 	}
 
-	dataset.Manifest, err = page.Dorothy().Ipfs.GetManifest(ctx, dataset.ManifestHash)
+	dataset.Manifest, err = ipfs.GetManifest(ctx, dataset.ManifestHash)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}

@@ -1,7 +1,6 @@
 package dataset
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -21,7 +20,12 @@ type Receive struct {
 }
 
 func (page *Receive) Run(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(page.Dorothy(), 15*time.Second)
+	dorothy := handlers.GetDorothy(c)
+	if dorothy == nil {
+		return fmt.Errorf("%w: cannot receive datasets right now", fiber.ErrInternalServerError)
+	}
+
+	ctx, cancel := handlers.GetContext(c, 15*time.Second)
 	defer cancel()
 
 	authUser := handlers.GetAuthUser(c)
@@ -31,7 +35,7 @@ func (page *Receive) Run(c *fiber.Ctx) error {
 		return handlers.GormToFiber(err)
 	}
 
-	dataset.Manifest, err = page.Dorothy().Ipfs.GetManifest(ctx, dataset.ManifestHash)
+	dataset.Manifest, err = dorothy.Ipfs.GetManifest(ctx, dataset.ManifestHash)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}
@@ -49,9 +53,9 @@ func (page *Receive) Run(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	page.identity = page.Dorothy().Ipfs.Identity
+	page.identity = dorothy.Ipfs.Identity
 
-	if err := page.Dorothy().Ipfs.ConnectToPeerById(ctx, payload.PeerIdentity); err != nil {
+	if err := dorothy.Ipfs.ConnectToPeerById(ctx, payload.PeerIdentity); err != nil {
 		if ctx.Err() == nil {
 			return fmt.Errorf("%w: failed to connect to ipfs peer", fiber.ErrInternalServerError)
 		} else {
@@ -59,7 +63,7 @@ func (page *Receive) Run(c *fiber.Ctx) error {
 		}
 	}
 
-	manifest, conflicts, err := page.Dorothy().Receive(page.dataset.Manifest, payload.Hash)
+	manifest, conflicts, err := dorothy.Receive(page.dataset.Manifest, payload.Hash)
 	if len(conflicts) != 0 {
 		return handlers.NewMergeConflict(fiber.ErrBadRequest, conflicts)
 	} else if err != nil {

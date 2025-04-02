@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"maps"
 	"reflect"
 	"slices"
+	"time"
 
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/dataforge/auth"
@@ -49,7 +51,6 @@ func IsDisallowedName(name string) bool {
 }
 
 type App interface {
-	Dorothy() *core.Dorothy
 	DB() *db.DB
 }
 
@@ -135,6 +136,32 @@ func Get[T any](c *fiber.Ctx, name string) T {
 
 func GetAuthUser(c *fiber.Ctx) *models.User {
 	return Get[*models.User](c, "AuthUser")
+}
+
+func GetDorothy(c *fiber.Ctx) *core.Dorothy {
+	return Get[*core.Dorothy](c, "Dorothy")
+}
+
+func GetIpfs(c *fiber.Ctx) *core.Ipfs {
+	dorothy := GetDorothy(c)
+	if dorothy == nil {
+		return nil
+	}
+	return &dorothy.Ipfs
+}
+
+func GetContext(c *fiber.Ctx, timeout ...time.Duration) (context.Context, context.CancelFunc) {
+	var ctx context.Context = context.Background()
+
+	dorothy := GetDorothy(c)
+	if dorothy != nil {
+		ctx = dorothy
+	}
+
+	if len(timeout) > 0 {
+		return context.WithTimeout(ctx, timeout[0])
+	}
+	return context.WithCancel(ctx)
 }
 
 func GetAuth(c *fiber.Ctx) *auth.Auth {

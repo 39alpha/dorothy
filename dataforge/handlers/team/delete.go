@@ -1,7 +1,6 @@
 package team
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/39alpha/dorothy/dataforge/handlers"
@@ -13,7 +12,12 @@ type Delete struct {
 }
 
 func (page *Delete) Run(c *fiber.Ctx) error {
-	ctx, cancel := context.WithCancel(page.Dorothy())
+	ipfs := handlers.GetIpfs(c)
+	if ipfs == nil {
+		return fmt.Errorf("%w: cannot delete teams right now", fiber.ErrInternalServerError)
+	}
+
+	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
 
 	authUser := handlers.GetAuthUser(c)
@@ -39,14 +43,14 @@ func (page *Delete) Run(c *fiber.Ctx) error {
 
 		if dataset.Manifest == nil && dataset.ManifestHash != "" {
 			var err error
-			dataset.Manifest, err = page.Dorothy().Ipfs.GetManifest(ctx, dataset.ManifestHash)
+			dataset.Manifest, err = ipfs.GetManifest(ctx, dataset.ManifestHash)
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
 		}
 
-		if err := page.Dorothy().Ipfs.UnpinManifest(ctx, dataset.Manifest, true); err != nil {
+		if err := ipfs.UnpinManifest(ctx, dataset.Manifest, true); err != nil {
 			errs = append(errs, err)
 		}
 	}

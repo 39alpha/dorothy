@@ -32,10 +32,6 @@ type Server struct {
 	viewsfs http.FileSystem
 }
 
-func (s *Server) Dorothy() *core.Dorothy {
-	return s.dorothy
-}
-
 func (s *Server) DB() *db.DB {
 	return s.db
 }
@@ -190,6 +186,7 @@ func (d *Server) setup() {
 	}))
 
 	d.Use(func(c *fiber.Ctx) error {
+		c.Locals("Dorothy", d.dorothy)
 		c.Locals("Auth", d.auth)
 		c.Locals("Mailer", mail.NewMailer(*d.config.Mail, d.viewsfs))
 		return c.Next()
