@@ -439,27 +439,24 @@ func (d *DB) GetDatasets(user *models.User) ([]models.Dataset, error) {
 }
 
 func (db *DB) GetHotDatasets(user *models.User) ([]models.Dataset, error) {
+	query := db.Model(&models.Dataset{}).Preload("Team").Select("datasets.*")
+
 	datasets := []models.Dataset{}
 	if user == nil {
-		return datasets, db.Model(&models.Dataset{}).
-			Select("datasets.*").
+		query = query.
 			Joins("INNER JOIN `teams` ON `teams`.`id` = `datasets`.`team_id`").
-			Where("`teams`.`is_private` = 0 AND `datasets`.`is_private` = 0").
-			Order("`datasets`.`updated_at` desc").
-			Limit(6).
-			Find(&datasets).
-			Error
+			Where("`teams`.`is_private` = 0 AND `datasets`.`is_private` = 0")
 	} else {
-		return datasets, db.Model(&models.Dataset{}).
-			Preload("Team").
-			Select("datasets.*").
+		query = query.
 			Joins("INNER JOIN `user_dataset_privileges` ON `dataset_id` = `datasets`.`id`").
-			Where("`user_id` = ? AND `privilege_code` != ?", user.ID, models.NoPrivilege).
-			Order("`datasets`.`updated_at` desc").
-			Limit(6).
-			Find(&datasets).
-			Error
+			Where("`user_id` = ? AND `privilege_code` != ?", user.ID, models.NoPrivilege)
 	}
+
+	return datasets, query.
+		Order("`datasets`.`updated_at` desc").
+		Limit(6).
+		Find(&datasets).
+		Error
 }
 
 func (db *DB) GetDatasetById(authUser *models.User, id uint) (*models.Dataset, error) {
