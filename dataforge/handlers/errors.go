@@ -47,6 +47,8 @@ func RecoverForm(form Handler, c *fiber.Ctx, err error) error {
 }
 
 func ErrorHandler(c *fiber.Ctx, err error) error {
+	c.Locals("Error", err)
+
 	page := "error"
 
 	var e *fiber.Error
