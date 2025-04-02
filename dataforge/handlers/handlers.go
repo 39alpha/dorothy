@@ -50,7 +50,6 @@ func IsDisallowedName(name string) bool {
 
 type App interface {
 	Dorothy() *core.Dorothy
-	Auth() *auth.Auth
 	DB() *db.DB
 }
 
@@ -136,6 +135,10 @@ func Get[T any](c *fiber.Ctx, name string) T {
 
 func GetAuthUser(c *fiber.Ctx) *models.User {
 	return Get[*models.User](c, "AuthUser")
+}
+
+func GetAuth(c *fiber.Ctx) *auth.Auth {
+	return Get[*auth.Auth](c, "Auth")
 }
 
 func GetMailer(c *fiber.Ctx) *mail.Mailer {

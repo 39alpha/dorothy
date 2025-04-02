@@ -40,6 +40,11 @@ type Login struct {
 }
 
 func (page *Login) Run(c *fiber.Ctx) error {
+	auth := GetAuth(c)
+	if auth == nil {
+		return fmt.Errorf("%w: login isn't working right now", fiber.ErrInternalServerError)
+	}
+
 	var fields struct {
 		Redirect string
 	}
@@ -62,7 +67,7 @@ func (page *Login) Run(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: an unexpected error occurred", fiber.ErrInternalServerError)
 	}
 
-	token, err := page.Auth().MakeToken(user)
+	token, err := auth.MakeToken(user)
 	if err != nil {
 		return fmt.Errorf("%w: an unexpected error occurred", fiber.ErrInternalServerError)
 	}

@@ -36,10 +36,6 @@ func (s *Server) Dorothy() *core.Dorothy {
 	return s.dorothy
 }
 
-func (s *Server) Auth() *auth.Auth {
-	return s.auth
-}
-
 func (s *Server) DB() *db.DB {
 	return s.db
 }
@@ -194,6 +190,7 @@ func (d *Server) setup() {
 	}))
 
 	d.Use(func(c *fiber.Ctx) error {
+		c.Locals("Auth", d.auth)
 		c.Locals("Mailer", mail.NewMailer(*d.config.Mail, d.viewsfs))
 		return c.Next()
 	})
