@@ -16,12 +16,14 @@ type UpdateForm struct {
 }
 
 func (form *UpdateForm) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
 
-	team, err := form.DB().GetTeam(authUser, c.Params("team"))
+	team, err := db.GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
@@ -31,7 +33,7 @@ func (form *UpdateForm) Run(c *fiber.Ctx) error {
 	}
 
 	form.team = *team
-	form.users, _ = form.DB().GetUsersWithTeamAccess(*team)
+	form.users, _ = db.GetUsersWithTeamAccess(*team)
 
 	return nil
 }
@@ -50,12 +52,14 @@ type Update struct {
 }
 
 func (page *Update) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
 
-	team, err := page.DB().GetTeam(authUser, c.Params("team"))
+	team, err := db.GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
@@ -74,12 +78,12 @@ func (page *Update) Run(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: that dataset name is already taken", fiber.ErrConflict)
 	}
 
-	_, err = page.DB().UpdateTeam(update)
+	_, err = db.UpdateTeam(update)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	page.team, err = page.DB().GetTeamById(authUser, team.ID)
+	page.team, err = db.GetTeamById(authUser, team.ID)
 	return handlers.GormToFiber(err)
 }
 

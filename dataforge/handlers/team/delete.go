@@ -12,10 +12,8 @@ type Delete struct {
 }
 
 func (page *Delete) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
 	ipfs := handlers.GetIpfs(c)
-	if ipfs == nil {
-		return fmt.Errorf("%w: cannot delete teams right now", fiber.ErrInternalServerError)
-	}
 
 	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
@@ -25,7 +23,7 @@ func (page *Delete) Run(c *fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 
-	team, err := page.DB().GetTeam(authUser, c.Params("team"))
+	team, err := db.GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return err
 	}
@@ -36,7 +34,7 @@ func (page *Delete) Run(c *fiber.Ctx) error {
 
 	errs := []error{}
 	for _, dataset := range team.Datasets {
-		if err := page.DB().DeleteDataset(&dataset); err != nil {
+		if err := db.DeleteDataset(&dataset); err != nil {
 			errs = append(errs, err)
 			continue
 		}
@@ -62,7 +60,7 @@ func (page *Delete) Run(c *fiber.Ctx) error {
 		)
 	}
 
-	if err := page.DB().DeleteTeam(team); err != nil {
+	if err := db.DeleteTeam(team); err != nil {
 		return fmt.Errorf(
 			"%w: We couldn't delete the team for some reason. Try again later?",
 			fiber.ErrInternalServerError,

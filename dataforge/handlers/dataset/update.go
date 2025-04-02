@@ -16,10 +16,8 @@ type UpdateForm struct {
 }
 
 func (form *UpdateForm) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
 	ipfs := handlers.GetIpfs(c)
-	if ipfs == nil {
-		return fmt.Errorf("%w: cannot fetch datasets right now", fiber.ErrInternalServerError)
-	}
 
 	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
@@ -29,7 +27,7 @@ func (form *UpdateForm) Run(c *fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 
-	dataset, err := form.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
+	dataset, err := db.GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
@@ -44,7 +42,7 @@ func (form *UpdateForm) Run(c *fiber.Ctx) error {
 	}
 
 	form.dataset = *dataset
-	form.users, _ = form.DB().GetUsersWithDatasetAccess(*dataset)
+	form.users, _ = db.GetUsersWithDatasetAccess(*dataset)
 
 	return nil
 }
@@ -63,10 +61,8 @@ type Update struct {
 }
 
 func (page *Update) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
 	ipfs := handlers.GetIpfs(c)
-	if ipfs == nil {
-		return fmt.Errorf("%w: cannot update datasets right now", fiber.ErrInternalServerError)
-	}
 
 	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
@@ -76,7 +72,7 @@ func (page *Update) Run(c *fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 
-	dataset, err := page.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
+	dataset, err := db.GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
 		return err
 	}
@@ -104,11 +100,11 @@ func (page *Update) Run(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: There is some inconsistency in your request.", fiber.ErrBadRequest)
 	}
 
-	if _, err := page.DB().UpdateDataset(update); err != nil {
+	if _, err := db.UpdateDataset(update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	dataset, err = page.DB().GetDatasetById(authUser, dataset.ID)
+	dataset, err = db.GetDatasetById(authUser, dataset.ID)
 	if err != nil {
 		return err
 	}

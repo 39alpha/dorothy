@@ -33,7 +33,7 @@ func (page *ChangePassword) Run(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	if err := page.DB().UserChangePassword(update); err != nil {
+	if err := handlers.GetDB(c).UserChangePassword(update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 

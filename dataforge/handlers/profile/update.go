@@ -15,6 +15,8 @@ type Update struct {
 }
 
 func (page *Update) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -29,12 +31,12 @@ func (page *Update) Run(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	if err := page.DB().UpdateUser(update); err != nil {
+	if err := db.UpdateUser(update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
 	var err error
-	page.user, err = page.DB().GetUserById(update.ID)
+	page.user, err = db.GetUserById(update.ID)
 	return handlers.GormToFiber(err)
 }
 

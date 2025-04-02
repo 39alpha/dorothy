@@ -30,7 +30,7 @@ func (form *ResetPasswordForm) Run(c *fiber.Ctx) error {
 	token := c.Query("token")
 
 	form.isInvitation = c.QueryBool("invitation")
-	form.user, _ = form.DB().ValidateResetCredentials(token, password, false)
+	form.user, _ = GetDB(c).ValidateResetCredentials(token, password, false)
 
 	return nil
 }
@@ -50,6 +50,8 @@ type ResetPassword struct {
 }
 
 func (page *ResetPassword) Run(c *fiber.Ctx) error {
+	db := GetDB(c)
+
 	authUser := GetAuthUser(c)
 	if authUser != nil {
 		if Redirectable(c) {
@@ -74,7 +76,7 @@ func (page *ResetPassword) Run(c *fiber.Ctx) error {
 			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 		}
 
-		token, err := page.DB().CreatePasswordReset(reset.Email)
+		token, err := db.CreatePasswordReset(reset.Email)
 		if err != nil {
 			return GormToFiber(err)
 		}
@@ -102,7 +104,7 @@ func (page *ResetPassword) Run(c *fiber.Ctx) error {
 		}
 	} else {
 		var err error
-		page.user, err = page.DB().ValidateResetCredentials(token, password, true)
+		page.user, err = db.ValidateResetCredentials(token, password, true)
 		if err != nil {
 			return fiber.ErrInternalServerError
 		}
@@ -111,7 +113,7 @@ func (page *ResetPassword) Run(c *fiber.Ctx) error {
 		if err := c.BodyParser(&change); err != nil {
 			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 		}
-		if err := page.DB().UserChangePassword(change); err != nil {
+		if err := db.UserChangePassword(change); err != nil {
 			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 		}
 	}

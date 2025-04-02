@@ -38,6 +38,8 @@ func (page *UserListing) RedirectWithQueries(c *fiber.Ctx, useQueries, escape bo
 }
 
 func (page *UserListing) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
@@ -57,7 +59,7 @@ func (page *UserListing) Run(c *fiber.Ctx) error {
 		page.perPage = 20
 	}
 
-	count_query := page.DB().Model(&models.User{})
+	count_query := db.Model(&models.User{})
 	if page.search != "" {
 		pattern := fmt.Sprintf("%%%s%%", page.search)
 		count_query = count_query.
@@ -81,7 +83,7 @@ func (page *UserListing) Run(c *fiber.Ctx) error {
 
 	offset := page.perPage * (page.pageNum - 1)
 
-	query := page.DB().
+	query := db.
 		Omit("PasswordHash").
 		Order("name").
 		Offset(offset).

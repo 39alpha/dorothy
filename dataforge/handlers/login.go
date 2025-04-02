@@ -40,10 +40,7 @@ type Login struct {
 }
 
 func (page *Login) Run(c *fiber.Ctx) error {
-	auth := GetAuth(c)
-	if auth == nil {
-		return fmt.Errorf("%w: login isn't working right now", fiber.ErrInternalServerError)
-	}
+	db := GetDB(c)
 
 	var fields struct {
 		Redirect string
@@ -56,18 +53,18 @@ func (page *Login) Run(c *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
-	err := page.DB().ValidateCredentials(userLogin.Email, userLogin.Password)
+	err := db.ValidateCredentials(userLogin.Email, userLogin.Password)
 	if err != nil {
 		return fmt.Errorf("%w: invalid login credentials", fiber.ErrUnauthorized)
 	}
 
 	user := &models.User{Email: userLogin.Email}
-	err = page.DB().Select("id", "email", "name", "orcid").Where(user).First(user).Error
+	err = db.Select("id", "email", "name", "orcid").Where(user).First(user).Error
 	if err != nil {
 		return fmt.Errorf("%w: an unexpected error occurred", fiber.ErrInternalServerError)
 	}
 
-	token, err := auth.MakeToken(user)
+	token, err := GetAuth(c).MakeToken(user)
 	if err != nil {
 		return fmt.Errorf("%w: an unexpected error occurred", fiber.ErrInternalServerError)
 	}

@@ -13,6 +13,8 @@ type DeletePrivilege struct {
 }
 
 func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -31,7 +33,7 @@ func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
 		TeamID: payload.Id,
 	}
 
-	team, err := page.DB().GetTeam(authUser, c.Params("team"))
+	team, err := db.GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	} else if team.ID != privilege.TeamID {
@@ -42,7 +44,7 @@ func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	users, err := page.DB().GetUsersWithTeamAccess(*team)
+	users, err := db.GetUsersWithTeamAccess(*team)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: cannot safely perform the request. Please try again later.",
@@ -72,7 +74,7 @@ func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: cannot remove the last admin user's privileges", fiber.ErrBadRequest)
 	}
 
-	if err := page.DB().DeleteTeamPrivilege(privilege); err != nil {
+	if err := db.DeleteTeamPrivilege(privilege); err != nil {
 		return fmt.Errorf("%w: could not remove the privilege", handlers.GormToFiber(err))
 	}
 
@@ -88,6 +90,8 @@ type CreatePrivilege struct {
 }
 
 func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -108,7 +112,7 @@ func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
 		PrivilegeCode: payload.PrivilegeCode,
 	}
 
-	team, err := page.DB().GetTeam(authUser, c.Params("team"))
+	team, err := db.GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	} else if team.ID != privilege.TeamID {
@@ -119,7 +123,7 @@ func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	users, err := page.DB().GetUsersWithTeamAccess(*team)
+	users, err := db.GetUsersWithTeamAccess(*team)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: cannot safely perform the request. Please try again later.",
@@ -147,7 +151,7 @@ func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: cannot remove the last admin user's admin privileges", fiber.ErrBadRequest)
 	}
 
-	if err := page.DB().UpdateTeamPrivilege(privilege); err != nil {
+	if err := db.UpdateTeamPrivilege(privilege); err != nil {
 		return fmt.Errorf("%w: could not update the privilege", handlers.GormToFiber(err))
 	}
 

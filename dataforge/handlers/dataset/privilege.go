@@ -13,6 +13,8 @@ type DeletePrivilege struct {
 }
 
 func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -32,7 +34,7 @@ func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
 		DatasetID: payload.Id,
 	}
 
-	dataset, err := page.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
+	dataset, err := db.GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	} else if dataset.ID != privilege.DatasetID {
@@ -43,7 +45,7 @@ func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	users, err := page.DB().GetUsersWithDatasetAccess(*dataset)
+	users, err := db.GetUsersWithDatasetAccess(*dataset)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: cannot safely perform the request. Please try again later.",
@@ -73,7 +75,7 @@ func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: cannot remove the last admin user's privileges", fiber.ErrBadRequest)
 	}
 
-	if err := page.DB().DeleteDatasetPrivilege(privilege); err != nil {
+	if err := db.DeleteDatasetPrivilege(privilege); err != nil {
 		return fmt.Errorf("%w: could not remove the privilege", handlers.GormToFiber(err))
 	}
 
@@ -89,6 +91,8 @@ type CreatePrivilege struct {
 }
 
 func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -110,7 +114,7 @@ func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
 		PrivilegeCode: payload.PrivilegeCode,
 	}
 
-	dataset, err := page.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
+	dataset, err := db.GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	} else if dataset.ID != privilege.DatasetID {
@@ -121,7 +125,7 @@ func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
 		return fiber.ErrForbidden
 	}
 
-	users, err := page.DB().GetUsersWithDatasetAccess(*dataset)
+	users, err := db.GetUsersWithDatasetAccess(*dataset)
 	if err != nil {
 		return fmt.Errorf(
 			"%w: cannot safely perform the request. Please try again later.",
@@ -149,7 +153,7 @@ func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: cannot remove the last admin user's admin privileges", fiber.ErrBadRequest)
 	}
 
-	if err := page.DB().UpdateDatasetPrivilege(privilege); err != nil {
+	if err := db.UpdateDatasetPrivilege(privilege); err != nil {
 		return fmt.Errorf("%w: could not update the privilege", handlers.GormToFiber(err))
 	}
 

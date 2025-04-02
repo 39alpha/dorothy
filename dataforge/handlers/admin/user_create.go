@@ -26,6 +26,8 @@ type UserCreate struct {
 }
 
 func (page *UserCreate) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
@@ -39,7 +41,7 @@ func (page *UserCreate) Run(c *fiber.Ctx) error {
 	title := state["Title"].(string)
 	baseUrl := state["BaseUrl"].(string)
 
-	token, err := page.DB().InviteUser(create)
+	token, err := db.InviteUser(create)
 	if err != nil {
 		fmt.Println(err)
 		return handlers.GormToFiber(err)

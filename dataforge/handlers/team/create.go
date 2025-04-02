@@ -27,6 +27,8 @@ type Create struct {
 }
 
 func (page *Create) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -43,12 +45,12 @@ func (page *Create) Run(c *fiber.Ctx) error {
 	}
 
 	var err error
-	newTeam.Name, err = page.DB().CreateTeam(newTeam, authUser)
+	newTeam.Name, err = db.CreateTeam(newTeam, authUser)
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
 
-	page.team, err = page.DB().GetTeam(authUser, newTeam.Name)
+	page.team, err = db.GetTeam(authUser, newTeam.Name)
 	return handlers.GormToFiber(err)
 }
 

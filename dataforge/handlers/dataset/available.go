@@ -18,6 +18,8 @@ type Available struct {
 }
 
 func (page *Available) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
@@ -37,7 +39,7 @@ func (page *Available) Run(c *fiber.Ctx) error {
 	if !page.isDisallowed {
 		teamName := c.Params("team")
 
-		team, err := page.DB().GetTeam(authUser, teamName)
+		team, err := db.GetTeam(authUser, teamName)
 		if err != nil {
 			return handlers.GormToFiber(err)
 		}
@@ -46,7 +48,7 @@ func (page *Available) Run(c *fiber.Ctx) error {
 			return fiber.ErrForbidden
 		}
 
-		page.isAvailable, err = page.DB().IsDatasetNameAvailable(teamName, page.name)
+		page.isAvailable, err = db.IsDatasetNameAvailable(teamName, page.name)
 		if err != nil {
 			return fmt.Errorf(
 				"%w: cannot check availability at this time",

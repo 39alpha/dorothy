@@ -22,17 +22,15 @@ type Dataset struct {
 }
 
 func (page *Dataset) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
 	ipfs := handlers.GetIpfs(c)
-	if ipfs == nil {
-		return fmt.Errorf("%w: cannot get datasets right now", fiber.ErrInternalServerError)
-	}
 
 	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
 
 	authUser := handlers.GetAuthUser(c)
 
-	dataset, err := page.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
+	dataset, err := db.GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}

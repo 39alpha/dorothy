@@ -35,7 +35,7 @@ func (page *Available) Run(c *fiber.Ctx) error {
 
 	if !page.isDisallowed {
 		var err error
-		page.isAvailable, err = page.DB().IsTeamNameAvailable(page.name)
+		page.isAvailable, err = handlers.GetDB(c).IsTeamNameAvailable(page.name)
 		if err != nil {
 			return fmt.Errorf(
 				"%w: cannot check availability at this time",

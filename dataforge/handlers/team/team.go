@@ -20,7 +20,7 @@ type Team struct {
 func (page *Team) Run(c *fiber.Ctx) (err error) {
 	page.authUser = handlers.GetAuthUser(c)
 
-	page.team, err = page.DB().GetTeam(page.authUser, c.Params("team"))
+	page.team, err = handlers.GetDB(c).GetTeam(page.authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}

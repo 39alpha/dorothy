@@ -32,10 +32,6 @@ type Server struct {
 	viewsfs http.FileSystem
 }
 
-func (s *Server) DB() *db.DB {
-	return s.db
-}
-
 func NewServer(global bool) (*Server, error) {
 	dorothy, err := core.NewDorothy()
 	if err != nil {
@@ -186,13 +182,6 @@ func (d *Server) setup() {
 	}))
 
 	d.Use(func(c *fiber.Ctx) error {
-		c.Locals("Dorothy", d.dorothy)
-		c.Locals("Auth", d.auth)
-		c.Locals("Mailer", mail.NewMailer(*d.config.Mail, d.viewsfs))
-		return c.Next()
-	})
-
-	d.Use(func(c *fiber.Ctx) error {
 		state := fiber.Map{
 			"BaseUrl":           d.config.BaseUrl,
 			"Title":             "Dorothy",
@@ -210,6 +199,26 @@ func (d *Server) setup() {
 		}
 		c.Locals("State", state)
 
+		return c.Next()
+	})
+
+	d.Use(func(c *fiber.Ctx) error {
+		if d.db == nil {
+			return fmt.Errorf("%w: cannot load %q right now", fiber.ErrInternalServerError, c.Path())
+		}
+		c.Locals("Database", d.db)
+
+		if d.dorothy == nil {
+			return fmt.Errorf("%w: cannot load %q right now", fiber.ErrInternalServerError, c.Path())
+		}
+		c.Locals("Dorothy", d.dorothy)
+
+		if d.auth == nil {
+			return fmt.Errorf("%w: cannot load %q right now", fiber.ErrInternalServerError, c.Path())
+		}
+		c.Locals("Auth", d.auth)
+
+		c.Locals("Mailer", mail.NewMailer(*d.config.Mail, d.viewsfs))
 		return c.Next()
 	})
 

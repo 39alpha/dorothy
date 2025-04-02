@@ -15,12 +15,14 @@ type CreateForm struct {
 }
 
 func (form *CreateForm) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	authUser := handlers.GetAuthUser(c)
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
 
-	team, err := form.DB().GetTeam(authUser, c.Params("team"))
+	team, err := db.GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
@@ -47,10 +49,8 @@ type Create struct {
 }
 
 func (page *Create) Run(c *fiber.Ctx) (err error) {
+	db := handlers.GetDB(c)
 	ipfs := handlers.GetIpfs(c)
-	if ipfs == nil {
-		return fmt.Errorf("%w: cannot create datasets right now", fiber.ErrInternalServerError)
-	}
 
 	ctx, cancel := handlers.GetContext(c)
 	defer cancel()
@@ -70,7 +70,7 @@ func (page *Create) Run(c *fiber.Ctx) (err error) {
 		return fmt.Errorf("%w: that dataset name is already taken", fiber.ErrConflict)
 	}
 
-	team, err := page.DB().GetTeam(authUser, c.Params("team"))
+	team, err := db.GetTeam(authUser, c.Params("team"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
@@ -88,12 +88,12 @@ func (page *Create) Run(c *fiber.Ctx) (err error) {
 		)
 	}
 
-	newDataset.Name, err = page.DB().CreateDataset(newDataset, manifest, authUser)
+	newDataset.Name, err = db.CreateDataset(newDataset, manifest, authUser)
 	if err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	page.dataset, err = page.DB().GetDataset(authUser, page.team.Name, newDataset.Name)
+	page.dataset, err = db.GetDataset(authUser, page.team.Name, newDataset.Name)
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}

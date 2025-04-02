@@ -12,7 +12,7 @@ type Home struct {
 }
 
 func (page *Home) Run(c *fiber.Ctx) error {
-	page.datasets, _ = page.DB().GetHotDatasets(GetAuthUser(c))
+	page.datasets, _ = GetDB(c).GetHotDatasets(GetAuthUser(c))
 
 	return nil
 }

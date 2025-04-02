@@ -20,17 +20,15 @@ type Receive struct {
 }
 
 func (page *Receive) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
 	dorothy := handlers.GetDorothy(c)
-	if dorothy == nil {
-		return fmt.Errorf("%w: cannot receive datasets right now", fiber.ErrInternalServerError)
-	}
 
 	ctx, cancel := handlers.GetContext(c, 15*time.Second)
 	defer cancel()
 
 	authUser := handlers.GetAuthUser(c)
 
-	dataset, err := page.DB().GetDataset(authUser, c.Params("team"), c.Params("dataset"))
+	dataset, err := db.GetDataset(authUser, c.Params("team"), c.Params("dataset"))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
@@ -71,7 +69,7 @@ func (page *Receive) Run(c *fiber.Ctx) error {
 	}
 
 	page.dataset.ManifestHash = manifest.Hash
-	if err := page.DB().Save(&page.dataset).Error; err != nil {
+	if err := db.Save(&page.dataset).Error; err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrInternalServerError, err)
 	}
 

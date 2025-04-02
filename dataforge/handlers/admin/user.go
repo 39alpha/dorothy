@@ -16,6 +16,8 @@ type UserForm struct {
 }
 
 func (form *UserForm) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
@@ -25,7 +27,7 @@ func (form *UserForm) Run(c *fiber.Ctx) error {
 		return fiber.ErrNotFound
 	}
 
-	if form.user, err = form.DB().GetUserById(uint(userId)); err != nil {
+	if form.user, err = db.GetUserById(uint(userId)); err != nil {
 		return handlers.GormToFiber(err)
 	}
 
@@ -45,6 +47,8 @@ type UserUpdate struct {
 }
 
 func (page *UserUpdate) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
@@ -54,14 +58,14 @@ func (page *UserUpdate) Run(c *fiber.Ctx) error {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	user, err := page.DB().GetUserById(update.ID)
+	user, err := db.GetUserById(update.ID)
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
 
 	if user.RoleCode == models.AdminRole && update.Role != models.AdminRole {
 		var admin_count int64
-		if err := page.DB().Model(&models.User{}).Where("role_code = ?", models.AdminRole).Count(&admin_count).Error; err != nil {
+		if err := db.Model(&models.User{}).Where("role_code = ?", models.AdminRole).Count(&admin_count).Error; err != nil {
 			return handlers.GormToFiber(err)
 		}
 
@@ -70,11 +74,11 @@ func (page *UserUpdate) Run(c *fiber.Ctx) error {
 		}
 	}
 
-	if err := page.DB().UpdateUserWithRole(update); err != nil {
+	if err := db.UpdateUserWithRole(update); err != nil {
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
-	page.user, err = page.DB().GetUserById(update.ID)
+	page.user, err = db.GetUserById(update.ID)
 	return handlers.GormToFiber(err)
 }
 
@@ -101,6 +105,8 @@ type UserDelete struct {
 }
 
 func (page *UserDelete) Run(c *fiber.Ctx) error {
+	db := handlers.GetDB(c)
+
 	if err := RequireAdmin(c); err != nil {
 		return err
 	}
@@ -110,14 +116,14 @@ func (page *UserDelete) Run(c *fiber.Ctx) error {
 		return fiber.ErrNotFound
 	}
 
-	user, err := page.DB().GetUserById(uint(userId))
+	user, err := db.GetUserById(uint(userId))
 	if err != nil {
 		return handlers.GormToFiber(err)
 	}
 
 	if user.RoleCode == models.AdminRole {
 		var admin_count int64
-		if err := page.DB().Model(&models.User{}).Where("role_code = ?", models.AdminRole).Count(&admin_count).Error; err != nil {
+		if err := db.Model(&models.User{}).Where("role_code = ?", models.AdminRole).Count(&admin_count).Error; err != nil {
 			return handlers.GormToFiber(err)
 		}
 
@@ -126,7 +132,7 @@ func (page *UserDelete) Run(c *fiber.Ctx) error {
 		}
 	}
 
-	if err := page.DB().DeleteUser(user); err != nil {
+	if err := db.DeleteUser(user); err != nil {
 		return fmt.Errorf(
 			"%w: We couldn't delete the user for some reason. Try again later?",
 			fiber.ErrInternalServerError,

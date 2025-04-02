@@ -50,9 +50,7 @@ func IsDisallowedName(name string) bool {
 	return ok
 }
 
-type App interface {
-	DB() *db.DB
-}
+type App any
 
 type Handler interface {
 	App
@@ -136,6 +134,10 @@ func Get[T any](c *fiber.Ctx, name string) T {
 
 func GetAuthUser(c *fiber.Ctx) *models.User {
 	return Get[*models.User](c, "AuthUser")
+}
+
+func GetDB(c *fiber.Ctx) *db.DB {
+	return Get[*db.DB](c, "Database")
 }
 
 func GetDorothy(c *fiber.Ctx) *core.Dorothy {

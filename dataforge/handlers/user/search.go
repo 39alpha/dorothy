@@ -30,7 +30,7 @@ func (page *Search) Run(c *fiber.Ctx) error {
 	}
 
 	var err error
-	page.users, err = page.DB().SearchUsers(pattern, limit)
+	page.users, err = handlers.GetDB(c).SearchUsers(pattern, limit)
 	return handlers.GormToFiber(err)
 }
 

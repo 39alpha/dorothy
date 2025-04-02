@@ -28,13 +28,12 @@ type Register struct {
 }
 
 func (page *Register) Run(c *fiber.Ctx) error {
-	newUser := models.NewUser{}
-
+	var newUser models.NewUser
 	if err := c.BodyParser(&newUser); err != nil {
 		return fiber.ErrBadRequest
 	}
 
-	if err := page.DB().NewUser(&newUser); err != nil {
+	if err := GetDB(c).NewUser(&newUser); err != nil {
 		return fmt.Errorf("%w: User already exists", fiber.ErrBadRequest)
 	}
 
