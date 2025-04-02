@@ -30,7 +30,6 @@ type Server struct {
 	auth    *auth.Auth
 	db      *db.DB
 	viewsfs http.FileSystem
-	mailer  *mail.Mailer
 }
 
 func (s *Server) Dorothy() *core.Dorothy {
@@ -43,10 +42,6 @@ func (s *Server) Auth() *auth.Auth {
 
 func (s *Server) DB() *db.DB {
 	return s.db
-}
-
-func (s *Server) Mailer() *mail.Mailer {
-	return s.mailer
 }
 
 func NewServer(global bool) (*Server, error) {
@@ -77,6 +72,18 @@ func NewServerFromConfigFile(filename string, noinherit, global bool) (*Server, 
 	return NewServerFromDorothy(dorothy, global)
 }
 
+func checkConfig(config *core.ServerConfig) error {
+	if config == nil {
+		return fmt.Errorf("no server configuration provided")
+	} else if config.Database == nil {
+		return fmt.Errorf("no server.database configuration provided")
+	} else if config.Mail == nil {
+		return fmt.Errorf("no server.mail configuration provided")
+	}
+
+	return nil
+}
+
 func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 	if global {
 		if dorothy.Config.Ipfs == nil {
@@ -93,16 +100,8 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 	}
 
 	config := dorothy.Config.Server
-	if config == nil {
-		return nil, fmt.Errorf("no server configuration provided")
-	}
-
-	if config.Database == nil {
-		return nil, fmt.Errorf("no server.database configuration provided")
-	}
-
-	if config.Mail == nil {
-		return nil, fmt.Errorf("no server.mail configuration provided")
+	if err := checkConfig(config); err != nil {
+		return nil, err
 	}
 
 	if err := dorothy.ConnectIpfs(); err != nil {
@@ -154,9 +153,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		ErrorHandler:  handlers.ErrorHandler,
 	})
 
-	mailer := mail.NewMailer(*config.Mail, viewsfs)
-
-	server := &Server{app, dorothy, config, jwtAuth, session, viewsfs, mailer}
+	server := &Server{app, dorothy, config, jwtAuth, session, viewsfs}
 	server.setup()
 
 	return server, nil
@@ -195,6 +192,11 @@ func (d *Server) setup() {
 		FileSystem: d.viewsfs,
 		File:       "/static/favicon.ico",
 	}))
+
+	d.Use(func(c *fiber.Ctx) error {
+		c.Locals("Mailer", mail.NewMailer(*d.config.Mail, d.viewsfs))
+		return c.Next()
+	})
 
 	d.Use(func(c *fiber.Ctx) error {
 		state := fiber.Map{

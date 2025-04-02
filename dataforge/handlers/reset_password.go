@@ -76,7 +76,12 @@ func (page *ResetPassword) Run(c *fiber.Ctx) error {
 
 		token, err := page.DB().CreatePasswordReset(reset.Email)
 		if err != nil {
-			return err
+			return GormToFiber(err)
+		}
+
+		mailer := GetMailer(c)
+		if mailer == nil {
+			return fmt.Errorf("%w: cannot send invitations right now", fiber.ErrInternalServerError)
 		}
 
 		resetUrl := fmt.Sprintf("%s/reset-password?%s", baseUrl, token)
@@ -92,7 +97,7 @@ func (page *ResetPassword) Run(c *fiber.Ctx) error {
 			},
 		}
 
-		if err = page.Mailer().Send(message); err != nil {
+		if err = mailer.Send(message); err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}
 	} else {

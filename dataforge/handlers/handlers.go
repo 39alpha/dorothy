@@ -52,7 +52,6 @@ type App interface {
 	Dorothy() *core.Dorothy
 	Auth() *auth.Auth
 	DB() *db.DB
-	Mailer() *mail.Mailer
 }
 
 type Handler interface {
@@ -130,21 +129,21 @@ func ToFiberHandler(page Handler) fiber.Handler {
 	}
 }
 
-func RequireLogin(c *fiber.Ctx) error {
-	if GetAuthUser(c) == nil {
-		return fiber.ErrUnauthorized
-	}
-	return nil
+func Get[T any](c *fiber.Ctx, name string) T {
+	entity, _ := c.Locals(name).(T)
+	return entity
 }
 
 func GetAuthUser(c *fiber.Ctx) *models.User {
-	user, _ := c.Locals("AuthUser").(*models.User)
-	return user
+	return Get[*models.User](c, "AuthUser")
+}
+
+func GetMailer(c *fiber.Ctx) *mail.Mailer {
+	return Get[*mail.Mailer](c, "Mailer")
 }
 
 func GetError(c *fiber.Ctx) error {
-	err, _ := c.Locals("Error").(error)
-	return err
+	return Get[error](c, "Error")
 }
 
 func Bind(c *fiber.Ctx, local ...fiber.Map) fiber.Map {
@@ -178,4 +177,11 @@ func AcceptsText(c *fiber.Ctx) bool {
 
 func Redirectable(c *fiber.Ctx) bool {
 	return AcceptsHtml(c) || (!AcceptsJson(c) && !AcceptsText(c))
+}
+
+func RequireLogin(c *fiber.Ctx) error {
+	if GetAuthUser(c) == nil {
+		return fiber.ErrUnauthorized
+	}
+	return nil
 }
