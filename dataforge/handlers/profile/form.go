@@ -5,9 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Form struct {
-	handlers.App
-}
+type Form struct{}
 
 func (form *Form) Run(c *fiber.Ctx) error {
 	return handlers.RequireLogin(c)

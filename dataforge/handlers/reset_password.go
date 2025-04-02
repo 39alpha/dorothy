@@ -10,8 +10,6 @@ import (
 )
 
 type ResetPasswordForm struct {
-	App
-
 	isInvitation bool
 	user         *models.User
 }
@@ -43,8 +41,6 @@ func (form *ResetPasswordForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type ResetPassword struct {
-	App
-
 	isInvitation bool
 	user         *models.User
 }

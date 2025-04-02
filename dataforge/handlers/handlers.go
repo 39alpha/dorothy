@@ -50,10 +50,7 @@ func IsDisallowedName(name string) bool {
 	return ok
 }
 
-type App any
-
 type Handler interface {
-	App
 	Run(c *fiber.Ctx) error
 }
 
@@ -77,7 +74,7 @@ type TextHandler interface {
 	RenderText(c *fiber.Ctx) error
 }
 
-func MakeHandler(handler Handler, app App) Handler {
+func MakeHandler(handler Handler) Handler {
 	t := reflect.TypeOf(handler)
 	var ptr reflect.Value
 	if t.Kind() == reflect.Pointer {
@@ -85,14 +82,12 @@ func MakeHandler(handler Handler, app App) Handler {
 	} else {
 		ptr = reflect.New(t)
 	}
-	field := ptr.Elem().FieldByName("App")
-	field.Set(reflect.ValueOf(app))
 	return ptr.Interface().(Handler)
 }
 
-func PerRequest(handler Handler, app App) fiber.Handler {
+func PerRequest(handler Handler) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return ToFiberHandler(MakeHandler(handler, app))(c)
+		return ToFiberHandler(MakeHandler(handler))(c)
 	}
 }
 

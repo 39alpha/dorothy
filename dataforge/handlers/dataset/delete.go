@@ -9,8 +9,6 @@ import (
 )
 
 type Delete struct {
-	handlers.App
-
 	dataset models.Dataset
 }
 

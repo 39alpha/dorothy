@@ -9,8 +9,6 @@ import (
 )
 
 type Search struct {
-	handlers.App
-
 	users []models.User
 }
 

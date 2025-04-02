@@ -230,7 +230,7 @@ func (d *Server) setup() {
 			continue
 		}
 
-		handler := handlers.PerRequest(route.handler, d)
+		handler := handlers.PerRequest(route.handler)
 
 		switch route.method {
 		case GET:

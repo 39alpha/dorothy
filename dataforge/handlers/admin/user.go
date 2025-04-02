@@ -10,8 +10,6 @@ import (
 )
 
 type UserForm struct {
-	handlers.App
-
 	user *models.User
 }
 
@@ -41,8 +39,6 @@ func (form *UserForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type UserUpdate struct {
-	handlers.App
-
 	user *models.User
 }
 
@@ -83,9 +79,7 @@ func (page *UserUpdate) Run(c *fiber.Ctx) error {
 }
 
 func (page *UserUpdate) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverForm(&UserForm{
-		App: page.App,
-	}, c, err)
+	return handlers.RecoverForm(&UserForm{}, c, err)
 }
 
 func (page *UserUpdate) RenderHtml(c *fiber.Ctx) error {
@@ -100,9 +94,7 @@ func (page *UserUpdate) RenderText(c *fiber.Ctx) error {
 	return c.SendString("success")
 }
 
-type UserDelete struct {
-	handlers.App
-}
+type UserDelete struct{}
 
 func (page *UserDelete) Run(c *fiber.Ctx) error {
 	db := handlers.GetDB(c)

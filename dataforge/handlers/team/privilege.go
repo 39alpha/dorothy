@@ -8,9 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type DeletePrivilege struct {
-	handlers.App
-}
+type DeletePrivilege struct{}
 
 func (page *DeletePrivilege) Run(c *fiber.Ctx) error {
 	db := handlers.GetDB(c)
@@ -85,9 +83,7 @@ func (page *DeletePrivilege) RenderJson(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "success"})
 }
 
-type CreatePrivilege struct {
-	handlers.App
-}
+type CreatePrivilege struct{}
 
 func (page *CreatePrivilege) Run(c *fiber.Ctx) error {
 	db := handlers.GetDB(c)

@@ -13,8 +13,6 @@ import (
 )
 
 type Receive struct {
-	handlers.App
-
 	dataset  models.Dataset
 	identity peer.ID
 }

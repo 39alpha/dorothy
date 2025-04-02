@@ -15,9 +15,7 @@ func RequireAdmin(c *fiber.Ctx) error {
 	return nil
 }
 
-type Dashboard struct {
-	handlers.App
-}
+type Dashboard struct{}
 
 func (page *Dashboard) Run(c *fiber.Ctx) error {
 	return RequireAdmin(c)

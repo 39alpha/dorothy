@@ -8,20 +8,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type LoginForm struct {
-	App
-
-	authUser *models.User
-}
+type LoginForm struct{}
 
 func (form *LoginForm) Run(c *fiber.Ctx) error {
 	return nil
 }
 
 func (form *LoginForm) RenderHtml(c *fiber.Ctx) error {
-	authUser := GetAuthUser(c)
-
-	if authUser != nil {
+	if GetAuthUser(c) != nil {
 		return c.Redirect("/")
 	}
 
@@ -34,8 +28,6 @@ func (form *LoginForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type Login struct {
-	App
-
 	Redirect string
 }
 
@@ -79,9 +71,7 @@ func (page *Login) Run(c *fiber.Ctx) error {
 }
 
 func (page *Login) Recover(c *fiber.Ctx, err error) error {
-	return RecoverForm(&LoginForm{
-		App: page.App,
-	}, c, err)
+	return RecoverForm(&LoginForm{}, c, err)
 }
 
 func (page *Login) RenderHtml(c *fiber.Ctx) error {

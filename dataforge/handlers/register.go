@@ -7,9 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type RegisterForm struct {
-	App
-}
+type RegisterForm struct{}
 
 func (form *RegisterForm) Run(c *fiber.Ctx) error {
 	return nil
@@ -23,9 +21,7 @@ func (form *RegisterForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("register", Bind(c), "layouts/main")
 }
 
-type Register struct {
-	App
-}
+type Register struct{}
 
 func (page *Register) Run(c *fiber.Ctx) error {
 	var newUser models.NewUser
@@ -41,9 +37,7 @@ func (page *Register) Run(c *fiber.Ctx) error {
 }
 
 func (page *Register) Recover(c *fiber.Ctx, err error) error {
-	return RecoverForm(&RegisterForm{
-		App: page.App,
-	}, c, err)
+	return RecoverForm(&RegisterForm{}, c, err)
 }
 
 func (*Register) RenderHtml(c *fiber.Ctx) error {

@@ -9,9 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type UserCreateForm struct {
-	handlers.App
-}
+type UserCreateForm struct{}
 
 func (form *UserCreateForm) Run(c *fiber.Ctx) error {
 	return RequireAdmin(c)
@@ -21,9 +19,7 @@ func (form *UserCreateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("admin/user-create", handlers.Bind(c), "layouts/main")
 }
 
-type UserCreate struct {
-	handlers.App
-}
+type UserCreate struct{}
 
 func (page *UserCreate) Run(c *fiber.Ctx) error {
 	db := handlers.GetDB(c)
@@ -73,9 +69,7 @@ func (page *UserCreate) Run(c *fiber.Ctx) error {
 }
 
 func (page *UserCreate) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverForm(&UserCreateForm{
-		App: page.App,
-	}, c, err)
+	return handlers.RecoverForm(&UserCreateForm{}, c, err)
 }
 
 func (page *UserCreate) RenderHtml(c *fiber.Ctx) error {

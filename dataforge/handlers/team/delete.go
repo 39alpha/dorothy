@@ -7,9 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Delete struct {
-	handlers.App
-}
+type Delete struct{}
 
 func (page *Delete) Run(c *fiber.Ctx) error {
 	db := handlers.GetDB(c)

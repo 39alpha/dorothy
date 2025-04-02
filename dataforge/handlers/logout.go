@@ -4,9 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Logout struct {
-	App
-}
+type Logout struct{}
 
 func (*Logout) Run(c *fiber.Ctx) error {
 	c.ClearCookie("jwt")

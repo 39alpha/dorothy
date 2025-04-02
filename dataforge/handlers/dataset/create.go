@@ -9,8 +9,6 @@ import (
 )
 
 type CreateForm struct {
-	handlers.App
-
 	team models.Team
 }
 
@@ -42,8 +40,6 @@ func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
 }
 
 type Create struct {
-	handlers.App
-
 	team    *models.Team
 	dataset *models.Dataset
 }
@@ -107,9 +103,7 @@ func (page *Create) Run(c *fiber.Ctx) (err error) {
 }
 
 func (page *Create) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverForm(&CreateForm{
-		App: page.App,
-	}, c, err)
+	return handlers.RecoverForm(&CreateForm{}, c, err)
 }
 
 func (page *Create) RenderHtml(c *fiber.Ctx) error {

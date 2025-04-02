@@ -12,8 +12,6 @@ import (
 )
 
 type UserListing struct {
-	handlers.App
-
 	users    []models.User
 	search   string
 	pageNum  int

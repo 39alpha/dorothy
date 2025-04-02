@@ -6,8 +6,6 @@ import (
 )
 
 type Home struct {
-	App
-
 	datasets []models.Dataset
 }
 

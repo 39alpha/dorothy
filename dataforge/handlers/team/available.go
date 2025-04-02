@@ -9,8 +9,6 @@ import (
 )
 
 type Available struct {
-	handlers.App
-
 	desiredName  string
 	name         string
 	isAvailable  bool

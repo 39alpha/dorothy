@@ -7,8 +7,6 @@ import (
 )
 
 type Team struct {
-	handlers.App
-
 	authUser *models.User
 	team     *models.Team
 

@@ -9,9 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type ChangePassword struct {
-	handlers.App
-}
+type ChangePassword struct{}
 
 func (page *ChangePassword) Run(c *fiber.Ctx) error {
 	authUser := handlers.GetAuthUser(c)
@@ -41,9 +39,7 @@ func (page *ChangePassword) Run(c *fiber.Ctx) error {
 }
 
 func (page *ChangePassword) Recover(c *fiber.Ctx, err error) error {
-	return handlers.RecoverForm(&Form{
-		App: page.App,
-	}, c, err)
+	return handlers.RecoverForm(&Form{}, c, err)
 }
 
 func (page *ChangePassword) RenderJson(c *fiber.Ctx) error {
