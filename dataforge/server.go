@@ -1,7 +1,9 @@
 package dataforge
 
 import (
+	"crypto/rand"
 	"embed"
+	"encoding/base64"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -11,6 +13,7 @@ import (
 	"github.com/39alpha/dorothy/dataforge/auth"
 	"github.com/39alpha/dorothy/dataforge/db"
 	"github.com/39alpha/dorothy/dataforge/handlers"
+	"github.com/39alpha/dorothy/dataforge/log"
 	"github.com/39alpha/dorothy/dataforge/mail"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -30,6 +33,7 @@ type Server struct {
 	auth    *auth.Auth
 	db      *db.DB
 	viewsfs http.FileSystem
+	logger  log.Logger
 }
 
 func NewServer(global bool) (*Server, error) {
@@ -92,37 +96,44 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return nil, err
 	}
 
+	logger, _ := log.NewLogger(config.Log)
+
+	logger.Trace(nil).Msg("Connecting to IPFS")
 	if err := dorothy.ConnectIpfs(); err != nil {
 		return nil, err
 	}
 
+	logger.Trace(nil).Msg("Generating Auth")
 	jwtAuth, err := auth.New()
 	if err != nil {
 		return nil, err
 	}
 
+	logger.Trace(nil).Msg("Opening Database")
 	session, err := db.Open(config.Database)
 	if err != nil {
 		return nil, err
 	}
 
+	logger.Trace(nil).Msg("Initializing Database")
 	if err = session.Initialize(); err != nil {
 		return nil, err
 	}
 
 	var viewsfs http.FileSystem
 	if config.Views == "" {
-		fmt.Println("INFO: Using embedded views")
+		logger.Info(nil).Msg("Using embeddedViews views")
 		fsys, err := fs.Sub(embeddedViews, "views")
 		if err != nil {
 			panic(err)
 		}
 		viewsfs = http.FS(fsys)
 	} else {
-		fmt.Println("INFO: Using live views")
+		logger.Info(nil).Msg("Using live views")
 		viewsfs = http.Dir(config.Views)
 	}
 
+	logger.Trace(nil).Msg("Creating Engine")
 	engine := html.NewFileSystem(viewsfs, ".html")
 	engine.AddFunc("TimeFmt", func(t time.Time) string {
 		return t.Format("2006-01-02 15:04:05")
@@ -131,6 +142,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return dorothy.Config.Ipfs.GatewayUrl(hash)
 	})
 
+	logger.Trace(nil).Msg("Creating App")
 	app := fiber.New(fiber.Config{
 		Prefork:       false,
 		CaseSensitive: false,
@@ -141,7 +153,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		ErrorHandler:  handlers.ErrorHandler,
 	})
 
-	server := &Server{app, dorothy, config, jwtAuth, session, viewsfs}
+	server := &Server{app, dorothy, config, jwtAuth, session, viewsfs, logger}
 	server.setup()
 
 	return server, nil
@@ -164,6 +176,24 @@ func (d *Server) ListenOnPort(port int) error {
 }
 
 func (d *Server) setup() {
+	d.logger.Trace(nil).Msg("Setting up App")
+
+	d.Use(func(c *fiber.Ctx) error {
+		key := make([]byte, 16)
+		_, _ = rand.Read(key)
+		id := base64.RawURLEncoding.EncodeToString(key)
+		c.Locals("RequestID", id)
+
+		d.logger.
+			Trace(nil).
+			Str("method", c.Method()).
+			Str("path", c.Path()).
+			Str("request_id", id).
+			Msg("Initiated Request")
+
+		return c.Next()
+	})
+
 	d.Use(recover.New())
 
 	d.Use(cors.New(cors.Config{
@@ -182,6 +212,28 @@ func (d *Server) setup() {
 	}))
 
 	d.Use(func(c *fiber.Ctx) error {
+		d.logger.Trace(nil).
+			Str("request_id", handlers.RequestID(c)).
+			Msg("Setting Locals")
+
+		if d.db == nil || d.dorothy == nil || d.auth == nil {
+			return fmt.Errorf("%w: cannot load %s %s right now", fiber.ErrInternalServerError, c.Method(), c.Path())
+		}
+
+		c.Locals("Database", d.db)
+		c.Locals("Dorothy", d.dorothy)
+		c.Locals("Auth", d.auth)
+		c.Locals("Mailer", mail.NewMailer(*d.config.Mail, d.viewsfs))
+		c.Locals("Logger", &d.logger)
+
+		return c.Next()
+	})
+
+	d.Use(func(c *fiber.Ctx) error {
+		d.logger.Trace(nil).
+			Str("request_id", handlers.RequestID(c)).
+			Msg("Setting Local State")
+
 		state := fiber.Map{
 			"BaseUrl":           d.config.BaseUrl,
 			"Title":             "Dorothy",
@@ -202,30 +254,15 @@ func (d *Server) setup() {
 		return c.Next()
 	})
 
-	d.Use(func(c *fiber.Ctx) error {
-		if d.db == nil {
-			return fmt.Errorf("%w: cannot load %s %s right now", fiber.ErrInternalServerError, c.Method(), c.Path())
-		}
-		c.Locals("Database", d.db)
-
-		if d.dorothy == nil {
-			return fmt.Errorf("%w: cannot load %s %s right now", fiber.ErrInternalServerError, c.Method(), c.Path())
-		}
-		c.Locals("Dorothy", d.dorothy)
-
-		if d.auth == nil {
-			return fmt.Errorf("%w: cannot load %s %s right now", fiber.ErrInternalServerError, c.Method(), c.Path())
-		}
-		c.Locals("Auth", d.auth)
-
-		c.Locals("Mailer", mail.NewMailer(*d.config.Mail, d.viewsfs))
-		return c.Next()
-	})
-
 	d.Use(d.auth.Verifier())
 	d.Use(d.auth.Authenticator(d.db))
 
 	for _, route := range Routes() {
+		d.logger.Trace(nil).
+			Str("endpoint", route.endpoint).
+			Str("method", string(route.method)).
+			Msg("Adding Route")
+
 		if !d.config.AllowRegistration && route.endpoint == "/register" {
 			continue
 		}

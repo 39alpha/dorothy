@@ -9,12 +9,12 @@ import (
 	"github.com/39alpha/dorothy/dataforge/handlers/user"
 )
 
-type Method int
+type Method string
 
 const (
-	GET = iota
-	POST
-	DELETE
+	GET    Method = "GET"
+	POST   Method = "POST"
+	DELETE Method = "DELETE"
 )
 
 type Route struct {

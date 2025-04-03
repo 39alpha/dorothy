@@ -10,6 +10,7 @@ import (
 	"github.com/39alpha/dorothy/core"
 	"github.com/39alpha/dorothy/dataforge/auth"
 	"github.com/39alpha/dorothy/dataforge/db"
+	"github.com/39alpha/dorothy/dataforge/log"
 	"github.com/39alpha/dorothy/dataforge/mail"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
@@ -99,25 +100,38 @@ func ToFiberHandler(page Handler) fiber.Handler {
 	text, text_ok := page.(TextHandler)
 
 	return func(c *fiber.Ctx) error {
+		logger := GetLogger(c)
+
+		logger.Trace(c).
+			Bool("html_ok", html_ok).
+			Bool("json_ok", json_ok).
+			Bool("text_ok", text_ok).
+			Msg("Running Handler")
+
 		if err := page.Run(c); err != nil {
 			if is_recover {
+				logger.Trace(c).Msg("Recovering")
 				return recover.Recover(c, err)
 			}
 			return err
 		}
 
 		if html_ok && c.Accepts("text/html") != "" {
+			logger.Trace(c).Msg("Rendering Html")
 			return html.RenderHtml(c)
 		}
 
 		if json_ok && c.Accepts("application/json") != "" {
+			logger.Trace(c).Msg("Rendering JSON")
 			return json.RenderJson(c)
 		}
 
 		if text_ok && c.Accepts("text/plain") != "" {
+			logger.Trace(c).Msg("Rendering Text")
 			return text.RenderText(c)
 		}
 
+		logger.Trace(c).Msg("No Content")
 		return c.SendStatus(fiber.StatusNoContent)
 	}
 }
@@ -169,14 +183,23 @@ func GetMailer(c *fiber.Ctx) *mail.Mailer {
 	return Get[*mail.Mailer](c, "Mailer")
 }
 
+func GetLogger(c *fiber.Ctx) *log.Logger {
+	return Get[*log.Logger](c, "Logger")
+}
+
 func GetError(c *fiber.Ctx) error {
 	return Get[error](c, "Error")
 }
 
+func RequestID(c *fiber.Ctx) string {
+	return Get[string](c, "RequestID")
+}
+
 func Bind(c *fiber.Ctx, local ...fiber.Map) fiber.Map {
 	bind := fiber.Map{
-		"AuthUser": GetAuthUser(c),
-		"Error":    GetError(c),
+		"AuthUser":  GetAuthUser(c),
+		"Error":     GetError(c),
+		"RequestID": RequestID(c),
 	}
 
 	state, ok := c.Locals("State").(fiber.Map)

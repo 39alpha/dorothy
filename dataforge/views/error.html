@@ -2,5 +2,14 @@
 
 <p>An unexpected error occured. You should probably complain about it.</p>
 {{ with .Error }}
-    <p><code>{{ . }}</code></p>
+    <p class="ml-10">
+        <code>{{ . }}</code>
+    </p>
+{{ end }}
+
+{{ with .RequestID }}
+    <p>If you decide to report this to your administrator, include the following ID:</p>
+    <p class="ml-10">
+        <code>{{ . }}</code>
+    </p>
 {{ end }}

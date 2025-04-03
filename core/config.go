@@ -129,13 +129,15 @@ func (c IpfsConfig) GatewayUrl(hash string) string {
 }
 
 type DatabaseConfig struct {
-	Path string `toml:"path"`
+	Path string       `toml:"path"`
+	Log  LoggerConfig `toml:"log,omitempty"`
 }
 
 type ServerConfig struct {
 	Database *DatabaseConfig `toml:"database,omitempty"`
 	Views    string          `toml:"views,omitempty"`
 	Mail     *MailConfig     `toml:"mail,omitempty"`
+	Log      LoggerConfig    `toml:"log,omitempty"`
 
 	BaseUrl           string `toml:"base_url,omitempty"`
 	Title             string `toml:"title,omitempty"`
@@ -151,6 +153,25 @@ type MailConfig struct {
 	Port           int    `toml:"port"`
 	Username       string `toml:"username"`
 	Password       string `toml:"password"`
+}
+
+type LogLevel string
+
+const (
+	LogPanic   LogLevel = "panic"
+	LogFatal   LogLevel = "fatal"
+	LogError   LogLevel = "error"
+	LogWarn    LogLevel = "warn"
+	LogInfo    LogLevel = "info"
+	LogDebug   LogLevel = "debug"
+	LogTrace   LogLevel = "trace"
+	LogDisable LogLevel = "disable"
+	LogDefault LogLevel = ""
+)
+
+type LoggerConfig struct {
+	Level LogLevel `toml:"level"`
+	Path  string   `toml:"path"`
 }
 
 func (config *Config) ReadFile(filename string) error {

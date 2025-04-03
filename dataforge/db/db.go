@@ -4,18 +4,16 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/39alpha/dorothy/core"
+	"github.com/39alpha/dorothy/dataforge/log"
 	"github.com/39alpha/dorothy/dataforge/models"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 type DB struct {
@@ -27,19 +25,10 @@ func Open(config *core.DatabaseConfig) (*DB, error) {
 		return nil, fmt.Errorf("no server database configuration provided")
 	}
 
-	newlogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags),
-		logger.Config{
-			SlowThreshold:             50 * time.Millisecond,
-			LogLevel:                  logger.Warn,
-			IgnoreRecordNotFoundError: false,
-			Colorful:                  false,
-		},
-	)
-
+	logger, _ := log.NewGormLogger(config.Log)
 	path := config.Path + "?_foreign_keys=on&cache=shared"
 	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{
-		Logger: newlogger,
+		Logger: logger,
 	})
 	if err != nil {
 		return nil, err
