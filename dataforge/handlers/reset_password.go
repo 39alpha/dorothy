@@ -66,7 +66,7 @@ func (page *ResetPassword) Run(c *fiber.Ctx) error {
 	title := state["Title"].(string)
 	baseUrl := state["BaseUrl"].(string)
 
-	if password == "" && token == "" {
+	if password == "" || token == "" {
 		reset := models.RequestPasswordReset{}
 		if err := c.BodyParser(&reset); err != nil {
 			return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
