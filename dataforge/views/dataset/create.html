@@ -1,34 +1,61 @@
-<section>
-    <h1>Create a dataset for {{ .Team.Name }}</h1>
+<h2>Create a dataset</h2>
 
-    <form class="flex flex-col max-w-sm" method="POST">
-        {{ template "partials/error-message" . }}
+{{ if or .Team .Teams }}
+<form class="flex flex-col max-w-sm" method="POST">
+    {{ template "partials/error-message" . }}
 
-        <input class="hidden" name="teamId" type="number" value="{{ .Team.ID }}" readonly />
+    {{ with .Team }}
+        <input class="hidden" name="teamId" type="number" value="{{ .ID }}" readonly />
+    {{ else }}
+        <label class="font-bold" for="team">Team</label>
+        <select id="team" name="teamId" type="number" required>
+            <option disabled selected value>Select a Team</option>
+            {{ range .Teams }}
+            <option value="{{ .ID }}">{{ .FullName }}</option>
+            {{ end }}
+        </select>
+    {{ end }}
 
-        <label class="font-bold" for="name">Name</label>
-        <input id="name" name="name" type="text" placeholder="Dataset Name" autofocus required />
-        <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
+    <label class="font-bold" for="name">Name</label>
+    <input id="name" name="name" type="text" placeholder="Dataset Name" required {{ if and .Teams (not .Team) }}disabled{{end}} />
+    <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
 
-        <label class="font-bold" for="contact">Contact Email</label>
-        <input id="contact" name="contact" type="email" value="{{ .AuthUser.Email }}" required />
+    <label class="font-bold" for="contact">Contact Email</label>
+    <input id="contact" name="contact" type="email" value="{{ .AuthUser.Email }}" required />
 
-        <label class="font-bold" for="description">Description</label>
-        <textarea id="description" name="description" rows="4" placeholder="Dataset Description"></textarea>
+    <label class="font-bold" for="description">Description</label>
+    <textarea id="description" name="description" rows="4" placeholder="Dataset Description"></textarea>
 
-        <div class="inline">
-            <label class="font-bold" for="isPrivate">Private?</label>
-            <input id="isPrivate" name="isPrivate" type="checkbox" value="true" />
-        </div>
+    <div class="inline">
+        <label class="font-bold" for="isPrivate">Private?</label>
+        <input id="isPrivate" name="isPrivate" type="checkbox" value="true" />
+    </div>
 
-        <button type="submit">Create Dataset ▶</button>
-    </form>
-</section>
+    <button type="submit" disabled>Create Dataset ▶</button>
+</form>
+{{ else }}
+<p>You do have have write access to any teams. Perhaps <a href="/team/create">create one?</a></p>
+{{ end }}
 
+{{ if .Team }}
 <script>
-    checkAvailability("dataset", "/{{ .Team.Name }}/dataset/availability", {
+    checkAvailability('dataset', '/{{ .Team.Name }}/dataset/availability', {
         startDisabled: true,
         trigger: 'button[type="submit"]',
         target_parent: true,
     });
 </script>
+{{ else if .Teams }}
+<script>
+    $('#team').on('change', (event) => {
+        $("#name").prop('disabled', false);
+        const teamName = $(event.target).find(':selected').text();
+        $('button[type="submit"]').off('keyup');
+        checkAvailability('dataset', `/${teamName}/dataset/availability`, {
+            startDisabled: true,
+            trigger: 'button[type="submit"]',
+            target_parent: true,
+        });
+    });
+</script>
+{{ end }}

@@ -9,7 +9,8 @@ import (
 )
 
 type CreateForm struct {
-	team models.Team
+	team  *models.Team
+	teams []models.Team
 }
 
 func (form *CreateForm) Run(c *fiber.Ctx) error {
@@ -20,14 +21,40 @@ func (form *CreateForm) Run(c *fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 
-	team, err := db.GetTeam(authUser, c.Params("team"))
-	if err != nil {
-		return handlers.GormToFiber(err)
-	}
-	form.team = *team
+	if c.Params("team") == "" {
+		if authUser.HasAdminRole() {
+			if err := db.Find(&form.teams).Error; err != nil {
+				return handlers.GormToFiber(err)
+			}
+		} else {
+			err := db.Select("`teams`.*").
+				Joins("INNER JOIN `user_team_privileges` AS `utp` ON `utp`.`team_id` = `teams`.`id`").
+				Where(
+					"`utp`.`user_id` = ? AND `utp`.`privilege_code` IN (?)",
+					authUser.ID,
+					[]models.PrivilegeCode{
+						models.WritePrivilege,
+						models.AdminPrivilege,
+					},
+				).
+				Order("`teams`.`name`").
+				Find(&form.teams).
+				Error
 
-	if !authUser.CanWriteTeam(*team) {
-		return fiber.ErrForbidden
+			if err != nil {
+				return handlers.GormToFiber(err)
+			}
+		}
+	} else {
+		var err error
+		form.team, err = db.GetTeam(authUser, c.Params("team"))
+		if err != nil {
+			return handlers.GormToFiber(err)
+		}
+
+		if !authUser.CanWriteTeam(*form.team) {
+			return fiber.ErrForbidden
+		}
 	}
 
 	return nil
@@ -35,7 +62,8 @@ func (form *CreateForm) Run(c *fiber.Ctx) error {
 
 func (form *CreateForm) RenderHtml(c *fiber.Ctx) error {
 	return c.Render("dataset/create", handlers.Bind(c, fiber.Map{
-		"Team": form.team,
+		"Team":  form.team,
+		"Teams": form.teams,
 	}), "layouts/main")
 }
 
@@ -55,6 +83,8 @@ func (page *Create) Run(c *fiber.Ctx) (err error) {
 	if authUser == nil {
 		return fiber.ErrUnauthorized
 	}
+
+	fmt.Println(string(c.BodyRaw()))
 
 	newDataset := models.NewDataset{}
 	if err = c.BodyParser(&newDataset); err != nil {

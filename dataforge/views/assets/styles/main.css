@@ -11,8 +11,12 @@ body {
     @apply px-5 w-fit max-w-full text-base sm:text-xl;
 }
 
-input, textarea {
+input, textarea, select, option {
     @apply text-base;
+}
+
+select, option {
+    @apply py-1;
 }
 
 button {
