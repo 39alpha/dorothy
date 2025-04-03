@@ -60,10 +60,10 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 			if Redirectable(c) {
 				return c.Redirect("/login?Redirect=" + url.QueryEscape(c.Path()))
 			}
+		case fiber.ErrForbidden:
+			page = "403"
 		case fiber.ErrNotFound:
 			page = "404"
-		case fiber.ErrForbidden:
-			page = "405"
 		}
 	} else {
 		c.Status(fiber.StatusInternalServerError)
