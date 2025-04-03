@@ -5,12 +5,12 @@
         <ul>
         {{ if .AuthUser }}
             <li><a href="/profile">{{.AuthUser.Name}}</a></li>
-            <li><a href="/logout">Logout</a></li>
+            <li><a href="/team/create">Create a Team</a></li>
+            <li><a href="/dataset/create">Create a Dataset</a></li>
             {{ if .AuthUser.HasAdminRole }}
                 <li><a href="/admin">Admin Dashboard</a></li>
             {{ end }}
-            <li><a href="/team/create">Create a Team</a></li>
-            <li><a href="/dataset/create">Create a Dataset</a></li>
+            <li><a href="/logout">Logout</a></li>
         {{ else }}
             <li><a href="/login?Redirect={{ .Path }}">Login</a></li>
             {{ if .AllowRegistration }}
