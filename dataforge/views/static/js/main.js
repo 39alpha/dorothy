@@ -181,6 +181,18 @@ const guardResponse = async ({ response, body }) => {
     return { response, body };
 };
 
+const displayError = (target, err) => {
+    console.error(err);
+    const message_div = $(target)
+        .find(".error")
+        .html(err.message ?? err)
+        .parent()
+        .removeClass("hidden");
+    $("html, body").animate({
+        scrollTop: message_div.offset().top,
+    });
+};
+
 const sendDelete = (resource, redirect, event) => {
     event.preventDefault();
 
@@ -193,16 +205,7 @@ const sendDelete = (resource, redirect, event) => {
         },
     }).then(readResponse).then(guardResponse).then(() => {
         window.location.href = redirect;
-    }).catch((err) => {
-        const message_div = $(event.target)
-            .find(".error")
-            .html(err)
-            .parent()
-            .removeClass("hidden");
-        $("html, body").animate({
-            scrollTop: message_div.offset().top,
-        });
-    });
+    }).catch((err) => displayError(event.target, err));
 };
 
 const confirmNameChange = (entity) => {
@@ -426,12 +429,7 @@ const updatePrivileges = async (resource, entity) => {
                 body: JSON.stringify(payload),
             }).then(readResponse).then(guardResponse).then(() => {
                 form.find(".error").parent().addClass("hidden");
-            }).catch((err) => {
-                console.log(err);
-                form.find(".error").html(err.message).parent().removeClass(
-                    "hidden",
-                );
-            });
+            }).catch((err) => displayError(form, err));
         }
     }
 };
@@ -460,7 +458,5 @@ const removePrivileges = (resource, entity) => {
     }).then(readResponse).then(guardResponse).then(() => {
         form.find(".error").parent().addClass("hidden");
         $(entity).parents("fieldset").remove();
-    }).catch((err) => {
-        form.find(".error").html(err.message).parent().removeClass("hidden");
-    });
+    }).catch((err) => displayError(form, err));
 };

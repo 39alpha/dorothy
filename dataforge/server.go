@@ -204,17 +204,17 @@ func (d *Server) setup() {
 
 	d.Use(func(c *fiber.Ctx) error {
 		if d.db == nil {
-			return fmt.Errorf("%w: cannot load %q right now", fiber.ErrInternalServerError, c.Path())
+			return fmt.Errorf("%w: cannot load %s %s right now", fiber.ErrInternalServerError, c.Method(), c.Path())
 		}
 		c.Locals("Database", d.db)
 
 		if d.dorothy == nil {
-			return fmt.Errorf("%w: cannot load %q right now", fiber.ErrInternalServerError, c.Path())
+			return fmt.Errorf("%w: cannot load %s %s right now", fiber.ErrInternalServerError, c.Method(), c.Path())
 		}
 		c.Locals("Dorothy", d.dorothy)
 
 		if d.auth == nil {
-			return fmt.Errorf("%w: cannot load %q right now", fiber.ErrInternalServerError, c.Path())
+			return fmt.Errorf("%w: cannot load %s %s right now", fiber.ErrInternalServerError, c.Method(), c.Path())
 		}
 		c.Locals("Auth", d.auth)
 

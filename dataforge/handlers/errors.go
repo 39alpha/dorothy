@@ -73,7 +73,7 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		return c.Render(page, Bind(c), "layouts/main")
 	} else if AcceptsJson(c) {
 		return c.JSON(fiber.Map{
-			"error": err,
+			"error": err.Error(),
 		})
 	} else if AcceptsText(c) {
 		return c.SendString(err.Error())
