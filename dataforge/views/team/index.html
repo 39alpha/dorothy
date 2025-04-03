@@ -7,15 +7,19 @@
         <i class="fa-solid fa-lock-open"></i>
         {{ end }}
     </h1>
-    {{ if .AuthUser }}
+    {{ if and .AuthUser (or .CanManage .CanWrite) }}
     <nav>
         <ul class="mt-0">
             {{ if .CanManage }}
-            <li>
-                <a href="{{ $team.Path }}/settings">Settings</a>
-            </li>
+                <li>
+                    <a href="{{ $team.Path }}/settings">Settings</a>
+                </li>
             {{ end }}
-            <li><a href="{{ $team.Path }}/dataset/create">Create a Dataset</a></li>
+            {{ if .CanWrite }}
+                <li>
+                    <a href="{{ $team.Path }}/dataset/create">Create a Dataset</a>
+                </li>
+            {{ end }}
         </ul>
     </nav>
     {{ end }}
