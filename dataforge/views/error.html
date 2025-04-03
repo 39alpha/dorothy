@@ -1,8 +1,6 @@
-<section>
-    <h1>Something wicked this way comes...</h1>
-    <p>An unexpected error occured. You should probably complain about it.</p>
-    {{ with .Error }}
-        <p><code>{{ . }}</code></p>
-    {{ end }}
-    </main>
-</section>
+<h2>Something wicked this way comes...</h2>
+
+<p>An unexpected error occured. You should probably complain about it.</p>
+{{ with .Error }}
+    <p><code>{{ . }}</code></p>
+{{ end }}

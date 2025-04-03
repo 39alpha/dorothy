@@ -1,13 +1,13 @@
 {{ $team := .Team }}
-<section>
-    <h1 class="mb-0">
-        {{ $team.FullName }}
 
-        {{ if $team.IsPrivate }}
-        <i class="fa-solid fa-lock-open"></i>
-        {{ end }}
-    </h1>
-    {{ if and .AuthUser (or .CanManage .CanWrite) }}
+<h2 class="mb-0">
+    {{ $team.FullName }}
+
+    {{ if $team.IsPrivate }}
+    <i class="fa-solid fa-lock-open"></i>
+    {{ end }}
+</h2>
+{{ if and .AuthUser (or .CanManage .CanWrite) }}
     <nav>
         <ul class="mt-0">
             {{ if .CanManage }}
@@ -22,13 +22,12 @@
             {{ end }}
         </ul>
     </nav>
-    {{ end }}
+{{ end }}
 
-    <p class="italic">{{ $team.Description }}</p>
+<p class="italic">{{ $team.Description }}</p>
 
-    {{ with $team.Datasets }}
+{{ with $team.Datasets }}
     {{ template "partials/asset-entry" . }}
-    {{ else }}
+{{ else }}
     <p class="font-bold">No datasets have been created yet.</p>
-    {{ end }}
-</section>
+{{ end }}

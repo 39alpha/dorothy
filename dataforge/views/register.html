@@ -1,27 +1,23 @@
-<section>
-    <header>
-        <h1>Register</h1>
-    </header>
+<h2>Register</h2>
 
-    <form class="flex flex-col max-w-sm" method="POST">
-        {{ template "partials/error-message" . }}
+<form class="flex flex-col max-w-sm" method="POST">
+    {{ template "partials/error-message" . }}
 
-        <label class="font-bold" for="name">Name</label>
-        <input id="name" name="name" type="text" placeholder="Enter Name" autofocus required />
+    <label class="font-bold" for="name">Name</label>
+    <input id="name" name="name" type="text" placeholder="Enter Name" autofocus required />
 
-        <label class="font-bold" for="email">Email</label>
-        <input id="email" name="email" type="email" autocomplete="email" placeholder="Enter Email" required />
+    <label class="font-bold" for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" placeholder="Enter Email" required />
 
-        <label class="font-bold" for="password">New Password</label>
-        <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter Password" onkeyup="checkPasswordConfirmation()" required />
+    <label class="font-bold" for="password">New Password</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Enter Password" onkeyup="checkPasswordConfirmation()" required />
 
-        <label class="font-bold" for="confirmPassword">Confirm New Password</label>
-        <input id="confirmPassword" name="confirm-password" type="password" autocomplete="new-password" placeholder="Confirm Password" onkeyup="checkPasswordConfirmation()" required />
-        <p class="mt-0 mb-2 hidden"><small id="passwordCheck"></small></p>
+    <label class="font-bold" for="confirmPassword">Confirm New Password</label>
+    <input id="confirmPassword" name="confirm-password" type="password" autocomplete="new-password" placeholder="Confirm Password" onkeyup="checkPasswordConfirmation()" required />
+    <p class="mt-0 mb-2 hidden"><small id="passwordCheck"></small></p>
 
-        <label class="font-bold" for="orcid">ORCiD (optional)</label>
-        <input class="mb-4" id="orcid" name="orcid" type="text" placeholder="0000-0000-0000-0000" />
+    <label class="font-bold" for="orcid">ORCiD (optional)</label>
+    <input class="mb-4" id="orcid" name="orcid" type="text" placeholder="0000-0000-0000-0000" />
 
-        <button type="submit" disabled>Register ▶</button>
-    </form>
-</section>
+    <button type="submit" disabled>Register ▶</button>
+</form>

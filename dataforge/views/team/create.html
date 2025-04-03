@@ -1,27 +1,25 @@
-<section>
-    <h1>Create a team</h1>
+<h2>Create a team</h2>
 
-    <form class="flex flex-col max-w-sm" method="POST">
-        {{ template "partials/error-message" . }}
+<form class="flex flex-col max-w-sm" method="POST">
+    {{ template "partials/error-message" . }}
 
-        <label class="font-bold" for="name">Name</label>
-        <input id="name" name="name" type="text" placeholder="Team Name" autofocus required />
-        <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
+    <label class="font-bold" for="name">Name</label>
+    <input id="name" name="name" type="text" placeholder="Team Name" autofocus required />
+    <p class="mt-0 mb-2 hidden"><small id="availability"></small></p>
 
-        <label class="font-bold" for="contact">Contact Email</label>
-        <input id="contact" name="contact" type="email" value="{{ .AuthUser.Email }}" required />
+    <label class="font-bold" for="contact">Contact Email</label>
+    <input id="contact" name="contact" type="email" value="{{ .AuthUser.Email }}" required />
 
-        <label class="font-bold" for="description">Description</label>
-        <textarea id="description" name="description" rows="4" placeholder="Team Description"></textarea>
+    <label class="font-bold" for="description">Description</label>
+    <textarea id="description" name="description" rows="4" placeholder="Team Description"></textarea>
 
-        <div class="mb-4 flex flex-row items-center gap-5">
-            <label class="font-bold" for="isPrivate">Private?</label>
-            <input id="isPrivate" name="isPrivate" type="checkbox" value="true" />
-        </div>
+    <div class="mb-4 flex flex-row items-center gap-5">
+        <label class="font-bold" for="isPrivate">Private?</label>
+        <input id="isPrivate" name="isPrivate" type="checkbox" value="true" />
+    </div>
 
-        <button id="submit" type="submit" disabled>Create Team ▶</button>
-    </form>
-</section>
+    <button id="submit" type="submit" disabled>Create Team ▶</button>
+</form>
 
 <script>
     checkAvailability("team", "/team/availability", {

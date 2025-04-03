@@ -1,30 +1,28 @@
-<section>
-    <h1 class="mb-0">
-        <a href="{{ .Dataset.Team.Path }}">{{ .Dataset.Team.FullName }}</a>/{{ .Dataset.Name }}
+<h2 class="mb-0">
+    <a href="{{ .Dataset.Team.Path }}">{{ .Dataset.Team.FullName }}</a>/{{ .Dataset.Name }}
 
-        {{ if .Dataset.IsPrivate }}
+    {{ if .Dataset.IsPrivate }}
         <i class="fa-solid fa-lock-open"></i>
-        {{ end }}
-    </h1>
-    <nav>
-        <ul class="mt-0">
-            {{ if .CanManage }}
+    {{ end }}
+</h2>
+<nav>
+    <ul class="mt-0">
+        {{ if .CanManage }}
             <li>
                 <a href="{{ .Dataset.Team.Path }}/{{ .Dataset.Name }}/settings">Settings</i></a>
             </li>
-            {{ end }}
-        </ul>
-    </nav>
+        {{ end }}
+    </ul>
+</nav>
 
-    <p class="italic">{{ .Dataset.Description }}</p>
+<p class="italic">{{ .Dataset.Description }}</p>
 
-    {{ if .Dataset.Manifest.Versions }}
+{{ if .Dataset.Manifest.Versions }}
     <ul>
         {{ range .Dataset.Manifest.ReverseVersions }}
         {{ template "partials/version" . }}
         {{ end }}
     </ul>
-    {{ else }}
+{{ else }}
     <p class="font-bold">No versions have been uploaded quite yet!</p>
-    {{ end }}
-</section>
+{{ end }}
