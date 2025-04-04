@@ -18,5 +18,5 @@ teardown() {
 
 @test "can run dorothy" {
   run dorothy
-  assert_output --partial "A stab at data management"
+  assert_output --partial "A dataset management tool and dataforge"
 }
