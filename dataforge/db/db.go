@@ -428,20 +428,29 @@ func (d *DB) GetDatasets(user *models.User) ([]models.Dataset, error) {
 }
 
 func (db *DB) GetHotDatasets(user *models.User) ([]models.Dataset, error) {
-	query := db.Model(&models.Dataset{}).Preload("Team").Select("datasets.*")
-
 	datasets := []models.Dataset{}
 	if user == nil {
-		query = query.
+		return datasets, db.Model(&models.Dataset{}).
+			Preload("Team").
+			Select("datasets.*").
 			Joins("INNER JOIN `teams` ON `teams`.`id` = `datasets`.`team_id`").
-			Where("`teams`.`is_private` = 0 AND `datasets`.`is_private` = 0")
-	} else {
-		query = query.
-			Joins("INNER JOIN `user_dataset_privileges` ON `dataset_id` = `datasets`.`id`").
-			Where("`user_id` = ? AND `privilege_code` != ?", user.ID, models.NoPrivilege)
+			Where("`teams`.`is_private` = 0 AND `datasets`.`is_private` = 0").
+			Order("`datasets`.`updated_at` desc").
+			Limit(6).
+			Find(&datasets).
+			Error
 	}
 
-	return datasets, query.
+	return datasets, db.Model(&models.Dataset{}).
+		Preload("Team").
+		Select("datasets.*").
+		Joins("LEFT JOIN `user_dataset_privileges` AS `udp` ON `udp`.`dataset_id` = `datasets`.`id` AND `udp`.`user_id` = ?", user.ID).
+		Joins("INNER JOIN `teams` ON `teams`.`id` = `datasets`.`team_id`").
+		Joins("LEFT JOIN `user_team_privileges` AS `utp` ON `utp`.`team_id` = `teams`.`id` AND `utp`.`user_id` = ?", user.ID).
+		Where("`udp`.`privilege_code` NOT IN ('', ?) OR (`utp`.`privilege_code` NOT IN ('', ?) AND `datasets`.`is_private` = 0)",
+			models.NoPrivilege,
+			models.NoPrivilege,
+		).
 		Order("`datasets`.`updated_at` desc").
 		Limit(6).
 		Find(&datasets).
