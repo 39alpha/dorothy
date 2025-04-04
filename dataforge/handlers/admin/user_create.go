@@ -39,7 +39,6 @@ func (page *UserCreate) Run(c *fiber.Ctx) error {
 
 	token, err := db.InviteUser(create)
 	if err != nil {
-		fmt.Println(err)
 		return handlers.GormToFiber(err)
 	}
 

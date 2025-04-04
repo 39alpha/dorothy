@@ -84,8 +84,6 @@ func (page *Create) Run(c *fiber.Ctx) (err error) {
 		return fiber.ErrUnauthorized
 	}
 
-	fmt.Println(string(c.BodyRaw()))
-
 	newDataset := models.NewDataset{}
 	if err = c.BodyParser(&newDataset); err != nil {
 		return fiber.ErrBadRequest
