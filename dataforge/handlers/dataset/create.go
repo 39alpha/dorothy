@@ -112,7 +112,7 @@ func (page *Create) Run(c *fiber.Ctx) (err error) {
 	logger.Trace().Msg("Parse Request Body")
 	newDataset := models.NewDataset{}
 	if err = c.BodyParser(&newDataset); err != nil {
-		logger.Error(err).Msg("Bad Request")
+		logger.Debug().Err(err).Str("body", string(c.BodyRaw())).Msg("Bad Request")
 		return fiber.ErrBadRequest
 	}
 

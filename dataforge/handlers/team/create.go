@@ -39,7 +39,7 @@ func (page *Create) Run(c *fiber.Ctx) error {
 	logger.Trace().Msg("Parse Request Body")
 	var newTeam models.NewTeam
 	if err := c.BodyParser(&newTeam); err != nil {
-		logger.Debug().Str("body", string(c.BodyRaw())).Msg("Bad Request")
+		logger.Debug().Err(err).Str("body", string(c.BodyRaw())).Msg("Bad Request")
 		return fmt.Errorf("%w: %v", fiber.ErrBadRequest, err)
 	}
 
