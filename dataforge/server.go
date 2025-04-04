@@ -98,42 +98,42 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 
 	logger, _ := log.NewLogger(config.Log)
 
-	logger.Trace(nil).Msg("Connecting to IPFS")
+	logger.Trace().Msg("Connecting to IPFS")
 	if err := dorothy.ConnectIpfs(); err != nil {
 		return nil, err
 	}
 
-	logger.Trace(nil).Msg("Generating Auth")
+	logger.Trace().Msg("Generating Auth")
 	jwtAuth, err := auth.New()
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Trace(nil).Msg("Opening Database")
+	logger.Trace().Msg("Opening Database")
 	session, err := db.Open(config.Database)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Trace(nil).Msg("Initializing Database")
+	logger.Trace().Msg("Initializing Database")
 	if err = session.Initialize(); err != nil {
 		return nil, err
 	}
 
 	var viewsfs http.FileSystem
 	if config.Views == "" {
-		logger.Info(nil).Msg("Using embeddedViews views")
+		logger.Info().Msg("Using embeddedViews views")
 		fsys, err := fs.Sub(embeddedViews, "views")
 		if err != nil {
 			panic(err)
 		}
 		viewsfs = http.FS(fsys)
 	} else {
-		logger.Info(nil).Msg("Using live views")
+		logger.Info().Msg("Using live views")
 		viewsfs = http.Dir(config.Views)
 	}
 
-	logger.Trace(nil).Msg("Creating Engine")
+	logger.Trace().Msg("Creating Engine")
 	engine := html.NewFileSystem(viewsfs, ".html")
 	engine.AddFunc("TimeFmt", func(t time.Time) string {
 		return t.Format("2006-01-02 15:04:05")
@@ -142,7 +142,7 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return dorothy.Config.Ipfs.GatewayUrl(hash)
 	})
 
-	logger.Trace(nil).Msg("Creating App")
+	logger.Trace().Msg("Creating App")
 	app := fiber.New(fiber.Config{
 		Prefork:       false,
 		CaseSensitive: false,
@@ -176,7 +176,7 @@ func (d *Server) ListenOnPort(port int) error {
 }
 
 func (d *Server) setup() {
-	d.logger.Trace(nil).Msg("Setting up App")
+	d.logger.Trace().Msg("Setting up App")
 
 	d.Use(func(c *fiber.Ctx) error {
 		key := make([]byte, 16)
@@ -184,8 +184,11 @@ func (d *Server) setup() {
 		id := base64.RawURLEncoding.EncodeToString(key)
 		c.Locals("RequestID", id)
 
+		logger := d.logger.RequestContext(c)
+		c.Locals("Logger", &logger)
+
 		d.logger.
-			Trace(nil).
+			Trace().
 			Str("method", c.Method()).
 			Str("path", c.Path()).
 			Str("request_id", id).
@@ -212,7 +215,7 @@ func (d *Server) setup() {
 	}))
 
 	d.Use(func(c *fiber.Ctx) error {
-		d.logger.Trace(nil).
+		d.logger.Trace().
 			Str("request_id", handlers.RequestID(c)).
 			Msg("Setting Locals")
 
@@ -224,13 +227,12 @@ func (d *Server) setup() {
 		c.Locals("Dorothy", d.dorothy)
 		c.Locals("Auth", d.auth)
 		c.Locals("Mailer", mail.NewMailer(*d.config.Mail, d.viewsfs))
-		c.Locals("Logger", &d.logger)
 
 		return c.Next()
 	})
 
 	d.Use(func(c *fiber.Ctx) error {
-		d.logger.Trace(nil).
+		d.logger.Trace().
 			Str("request_id", handlers.RequestID(c)).
 			Msg("Setting Local State")
 
@@ -258,7 +260,7 @@ func (d *Server) setup() {
 	d.Use(d.auth.Authenticator(d.db))
 
 	for _, route := range Routes() {
-		d.logger.Trace(nil).
+		d.logger.Trace().
 			Str("endpoint", route.endpoint).
 			Str("method", string(route.method)).
 			Msg("Adding Route")

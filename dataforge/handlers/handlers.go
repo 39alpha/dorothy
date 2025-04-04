@@ -102,7 +102,7 @@ func ToFiberHandler(page Handler) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		logger := GetLogger(c)
 
-		logger.Trace(c).
+		logger.Trace().
 			Bool("html_ok", html_ok).
 			Bool("json_ok", json_ok).
 			Bool("text_ok", text_ok).
@@ -110,28 +110,28 @@ func ToFiberHandler(page Handler) fiber.Handler {
 
 		if err := page.Run(c); err != nil {
 			if is_recover {
-				logger.Trace(c).Msg("Recovering")
+				logger.Trace().Msg("Recovering")
 				return recover.Recover(c, err)
 			}
 			return err
 		}
 
 		if html_ok && c.Accepts("text/html") != "" {
-			logger.Trace(c).Msg("Rendering Html")
+			logger.Trace().Msg("Rendering Html")
 			return html.RenderHtml(c)
 		}
 
 		if json_ok && c.Accepts("application/json") != "" {
-			logger.Trace(c).Msg("Rendering JSON")
+			logger.Trace().Msg("Rendering JSON")
 			return json.RenderJson(c)
 		}
 
 		if text_ok && c.Accepts("text/plain") != "" {
-			logger.Trace(c).Msg("Rendering Text")
+			logger.Trace().Msg("Rendering Text")
 			return text.RenderText(c)
 		}
 
-		logger.Trace(c).Msg("No Content")
+		logger.Trace().Msg("No Content")
 		return c.SendStatus(fiber.StatusNoContent)
 	}
 }

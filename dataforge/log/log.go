@@ -47,9 +47,10 @@ func (event *Event) Err(err error) *Event {
 	return event.next(event.Event.Err(err))
 }
 
-func (event *Event) Mark(c *fiber.Ctx) *Event {
-	if c != nil {
-		requestId, _ := c.Locals("RequestID").(string)
+func (event *Event) Mark() *Event {
+	ctx := event.Logger.ctx
+	if ctx != nil {
+		requestId, _ := ctx.Locals("RequestID").(string)
 		return event.next(event.Str("request_id", requestId))
 	}
 	return event
@@ -69,54 +70,60 @@ func (event *Event) Recover(handler string) *Event {
 
 type Logger struct {
 	zerolog.Logger
+	ctx *fiber.Ctx
 }
 
-func (l *Logger) Panic(c *fiber.Ctx, err error) *Event {
+func (l *Logger) Panic(err error) *Event {
 	e := &Event{
 		Event:  l.Logger.Panic(),
 		Logger: l,
 	}
-	return e.Stack().Mark(c).Err(err)
+	return e.Stack().Mark().Err(err)
 }
 
-func (l *Logger) Fatal(c *fiber.Ctx, err error) *Event {
+func (l *Logger) Fatal(err error) *Event {
 	e := &Event{
 		Event:  l.Logger.Fatal(),
 		Logger: l,
 	}
-	return e.Stack().Mark(c).Err(err)
+	return e.Stack().Mark().Err(err)
 }
 
-func (l *Logger) Error(c *fiber.Ctx, err error) *Event {
+func (l *Logger) Error(err error) *Event {
 	e := &Event{
 		Event:  l.Logger.Error(),
 		Logger: l,
 	}
-	return e.Stack().Mark(c).Err(err)
+	return e.Stack().Mark().Err(err)
 }
 
-func (l *Logger) Info(c *fiber.Ctx) *Event {
+func (l *Logger) Info() *Event {
 	e := &Event{
 		Event:  l.Logger.Info(),
 		Logger: l,
 	}
-	return e.Mark(c)
+	return e.Mark()
 }
 
-func (l *Logger) Debug(c *fiber.Ctx) *Event {
+func (l *Logger) Debug() *Event {
 	e := &Event{
 		Event:  l.Logger.Debug(),
 		Logger: l,
 	}
-	return e.Mark(c)
+	return e.Mark()
 }
 
-func (l *Logger) Trace(c *fiber.Ctx) *Event {
+func (l *Logger) Trace() *Event {
 	e := &Event{
 		Event:  l.Logger.Trace(),
 		Logger: l,
 	}
-	return e.Mark(c)
+	return e.Mark()
+}
+
+func (l Logger) RequestContext(ctx *fiber.Ctx) Logger {
+	l.ctx = ctx
+	return l
 }
 
 func NewLogger(config core.LoggerConfig) (Logger, error) {
@@ -141,21 +148,28 @@ func NewLogger(config core.LoggerConfig) (Logger, error) {
 	}
 
 	logger := Logger{
-		zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).With().Timestamp().Logger().Level(level),
+		Logger: zerolog.
+			New(zerolog.ConsoleWriter{Out: os.Stderr}).
+			With().
+			Timestamp().
+			Logger().
+			Level(level),
+		ctx: nil,
 	}
 
 	if config.Path != "" {
 		w, err := os.OpenFile(config.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
 		if err != nil {
 			logger.
-				Error(nil, err).
+				Error(err).
 				Str("path", config.Path).
 				Msg("falling back to stderr logs")
 			return logger, err
 		}
 
 		logger = Logger{
-			zerolog.New(w).Level(level),
+			Logger: zerolog.New(w).Level(level),
+			ctx:    nil,
 		}
 	}
 

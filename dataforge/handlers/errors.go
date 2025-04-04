@@ -47,14 +47,14 @@ func RecoverForm(form Handler, c *fiber.Ctx, err error) error {
 }
 
 func ErrorHandler(c *fiber.Ctx, err error) error {
-	logger := GetLogger(c).Trace(c).Handler("Error").Send()
+	logger := GetLogger(c).Trace().Handler("Error").Send()
 
 	c.Locals("Error", err)
 
 	page := "error"
 	var e *fiber.Error
 	if errors.As(err, &e) {
-		logger.Trace(c).Err(err).Bool("is_fiber", true).Int("code", e.Code).Msg("Handling Error")
+		logger.Trace().Err(err).Bool("is_fiber", true).Int("code", e.Code).Msg("Handling Error")
 
 		c.Status(e.Code)
 
@@ -69,27 +69,27 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 			page = "404"
 		}
 
-		logger.Trace(c).Str("error_page", page).Msg("Error Page Selected")
+		logger.Trace().Str("error_page", page).Msg("Error Page Selected")
 	} else {
-		logger.Trace(c).Err(err).Bool("is_fiber", false).Msg("Handling Error")
+		logger.Trace().Err(err).Bool("is_fiber", false).Msg("Handling Error")
 
 		c.Status(fiber.StatusInternalServerError)
 	}
 
 	if AcceptsHtml(c) {
-		logger.Trace(c).Msg("Responding with HTML")
+		logger.Trace().Msg("Responding with HTML")
 		return c.Render(page, Bind(c), "layouts/main")
 	} else if AcceptsJson(c) {
-		logger.Trace(c).Msg("Responding with JSON")
+		logger.Trace().Msg("Responding with JSON")
 		return c.JSON(fiber.Map{
 			"error":      err.Error(),
 			"request_id": RequestID(c),
 		})
 	} else if AcceptsText(c) {
-		logger.Trace(c).Msg("Responding with Text")
+		logger.Trace().Msg("Responding with Text")
 		return c.SendString(err.Error())
 	}
 
-	logger.Trace(c).Msg("Responding No Content")
+	logger.Trace().Msg("Responding No Content")
 	return c.SendStatus(fiber.StatusNoContent)
 }
