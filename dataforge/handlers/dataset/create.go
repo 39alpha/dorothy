@@ -143,5 +143,5 @@ func (page *Create) RenderJson(c *fiber.Ctx) error {
 }
 
 func (page *Create) RenderText(c *fiber.Ctx) error {
-	return c.JSON(page.dataset.Name)
+	return c.SendString(page.dataset.Name)
 }
