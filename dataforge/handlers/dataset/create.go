@@ -94,14 +94,20 @@ func (page *Create) Run(c *fiber.Ctx) (err error) {
 		return fmt.Errorf("%w: that dataset name is already taken", fiber.ErrConflict)
 	}
 
-	team, err := db.GetTeam(authUser, c.Params("team"))
-	if err != nil {
-		return handlers.GormToFiber(err)
-	}
-	page.team = team
 
-	if team.ID != newDataset.TeamID {
-		return fiber.ErrBadRequest
+	if teamName != "" {
+		page.team, err = db.GetTeam(authUser, teamName)
+		if err != nil {
+		}
+
+		if page.team.ID != newDataset.TeamID {
+			return fiber.ErrBadRequest
+		}
+	} else {
+		page.team, err = db.GetTeamById(authUser, newDataset.TeamID)
+		if err != nil {
+			return handlers.GormToFiber(err)
+		}
 	}
 
 	manifest, err := ipfs.CreateEmptyManifest(ctx)
