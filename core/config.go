@@ -139,6 +139,7 @@ type ServerConfig struct {
 	Mail     *MailConfig     `toml:"mail,omitempty"`
 	Log      LoggerConfig    `toml:"log,omitempty"`
 
+	GatewayUrl        string `toml:"gateway_url,omitempty"`
 	BaseUrl           string `toml:"base_url,omitempty"`
 	Title             string `toml:"title,omitempty"`
 	SubTitle          string `toml:"subtitle,omitempty"`

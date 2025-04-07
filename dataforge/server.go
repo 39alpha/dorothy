@@ -139,7 +139,11 @@ func NewServerFromDorothy(dorothy *core.Dorothy, global bool) (*Server, error) {
 		return t.Format("2006-01-02 15:04:05")
 	})
 	engine.AddFunc("GatewayUrl", func(hash string) string {
-		return dorothy.Config.Ipfs.GatewayUrl(hash)
+		if config.GatewayUrl != "" {
+			return fmt.Sprintf("%s/%s", config.GatewayUrl, "hash")
+		} else {
+			return dorothy.Config.Ipfs.GatewayUrl(hash)
+		}
 	})
 
 	logger.Trace().Msg("Creating App")
